@@ -49,7 +49,4 @@ a.append_message("a0")
 a.send_message("B", "a0")
 print a.sync_state["a0"]
 
-
-# Maybe good idea to read the spec yeh
-# Stupid not to use the protobuf stuff IMO
-# Lets reorg
+# TODO: Use the actual protobufs
