@@ -10,6 +10,9 @@ import time
 # TODO: send_time should be time
 # TODO: Use .proto files
 
+def log(message):
+    print message
+
 class Node():
     def __init__(self, name):
         self.name = name
@@ -18,44 +21,53 @@ class Node():
         self.peers = {}
 
     def append_message(self, message):
-        self.log.append(message)
-        self.sync_state[message] = {"hold_flag": 0,
-                                    "ack_flag": 0,
-                                    "request_flag": 0,
-                                    "send_count": 0,
-                                    "send_time": 0}
+        message_id = get_message_id(message)
+        self.log.append({"id": message_id,
+                         "message": message})
+        self.sync_state[message_id] = {"hold_flag": 0,
+                                       "ack_flag": 0,
+                                       "request_flag": 0,
+                                       "send_count": 0,
+                                       "send_time": 0}
 
-    def send_message(self, peer, message):
+    def send_message(self, peer_id, message):
+        message_id = get_message_id(message)
+        peer = self.peers[peer_id]
         # TODO: Use peer to update sync_state
-        self.sync_state[message]["send_count"] = 1
-        self.sync_state[message]["send_time"] = 1
+        self.sync_state[message_id]["send_count"] = 1
+        self.sync_state[message_id]["send_time"] = 1
+
+        log('MESSAGE ({} -> {})'.format(self.name, peer.name))
 
         # XXX: Tightly coupled
-        receiver = self.peers[peer]
-        receiver.receive_message(self.name, message)
+        peer.receive_message(self.name, message)
 
     def receive_message(self, sender, message):
-        print "received message", sender, message
+        print "received message", sender, get_message_id(message)
         # Should be of certain type
         # TODO: Acknowledge message
+        # Generate ack message
 
-# Mock
+def sha1(message):
+    sha = hashlib.sha1(message)
+    return sha.hexdigest()
 
-a = Node("A")
-b = Node("B")
+#- message\_id = HASH("MESSAGE\_ID", group\_id, timestamp, message\_body)
+# TODO: Create a message
+def create_message(body):
+    group_id = "0xdeadbeef"
+    timestamp = time.time()
+    message_body = body
+    message = {"group_id": group_id, "timestamp": timestamp, "message_body": message_body}
+    return message
 
-a.peers["B"] = b
-b.peers["A"] = a
+# XXX: Is this hashing correctly?
+def get_message_id(message_record):
+    msg = message_record.payload.message
+    s = "MESSAGE_ID" + msg.group_id + str(msg.timestamp) + msg.body
+    #print s
+    return sha1(s)
 
-a.append_message("a0")
-
-# TODO: send_message should be based on send_time
-a.send_message("B", "a0")
-print a.sync_state["a0"]
-
-# TODO: Use the actual protobufs
-
-# this is a record
 # XXX: where is the message id?
 def new_message_record(body):
     msg = sync_pb2.Record()
@@ -71,6 +83,30 @@ def new_message_record(body):
     msg.payload.message.body = body
     return msg
 
+# Mocking
+################################################################################
+
+# Create nodes
+a = Node("A")
+b = Node("B")
+
+# Add as sharing nodes
+# NOTE: Assumes just one sharing context
+a.peers["B"] = b
+b.peers["A"] = a
+
+# NOTE: For proof of concept this is simply a text field
+# More realistic example would include sender signature, and parent message ids
+a0 = new_message_record("hello world")
+
+# Local append
+a.append_message(a0)
+
+# TODO: send_message should be based on send_time
+a.send_message("B", a0)
+
+# TODO: Use the actual protobufs
+
 # need to be bytes
 acks = sync_pb2.Record()
 acks.header.version = 1
@@ -79,30 +115,6 @@ acks.header.type = 0
 acks.header.length = 10
 acks.payload.ack.id.extend(["a", "b"])
 
-# XXX: Where do we use this?
-def sha1(message):
-    sha = hashlib.sha1(message)
-    return sha.hexdigest()
-
-#- message\_id = HASH("MESSAGE\_ID", group\_id, timestamp, message\_body)
-
-# TODO: Create a message
-
-def create_message(body):
-    group_id = "0xdeadbeef"
-    timestamp = time.time()
-    message_body = body
-    message = {"group_id": group_id, "timestamp": timestamp, "message_body": message_body}
-    return message
-
-# XXX: Is this hashing correctly?
-def get_message_id(message_record):
-    msg = message_record.payload.message
-    s = "MESSAGE_ID" + msg.group_id + str(msg.timestamp) + msg.body
-    print s
-    return sha1(s)
-
-# So... a message doesn't have anything pertaining to where it came from?
-# Signatures etc but be inside the body payload
-foo = new_message_record("hello world")
-foo_id = get_message_id(foo)
+print "*** Sync state before receive:"
+print "A", a.sync_state
+print "B", b.sync_state
