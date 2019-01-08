@@ -13,12 +13,49 @@ import time
 def log(message):
     print message
 
+# NOTE: Inspired by github.com/ethereum/research networksim.py.
+class NetworkSimulator():
+    def __init__(self):
+        self.nodes = []
+        self.time = 0
+        self.queue = {}
+        self.peers = {}
+
+    def tick(self):
+        if self.time in self.queue:
+            # XXX: Should sender be here?
+            for sender, receiver, msg in self.queue[self.time]:
+                # NOTE: Assumes 100% reliability
+                receiver.on_receive(sender, msg)
+        # Discrete time model
+        print "tick", self.time
+        for n in self.nodes:
+            n.tick()
+        self.time += 1
+
+    # NOTE: Direct message, no broadcast etc
+    def send_message(self, sender_id, receiver_id, message):
+        # XXX: Assuming sender exists
+        sender = self.peers[sender_id]
+        receiver = self.peers[receiver_id]
+        recv_time = self.time + 1
+        if recv_time not in self.queue:
+            self.queue[recv_time] = []
+        self.queue[recv_time].append((sender, receiver, message))
+
 class Node():
-    def __init__(self, name):
+    def __init__(self, name, network):
         self.name = name
         self.log = []
         self.sync_state = {}
         self.peers = {}
+        self.network = network
+        self.time = 0
+
+    def tick(self):
+        # XXX: What else do?
+        # TODO: Send message if reached send time
+        self.time += 1
 
     def append_message(self, message):
         message_id = get_message_id(message)
@@ -35,19 +72,56 @@ class Node():
         peer = self.peers[peer_id]
         # TODO: Use peer to update sync_state
         self.sync_state[message_id]["send_count"] = 1
+        # XXX: Use tick clock for this
         self.sync_state[message_id]["send_time"] = 1
 
-        log('MESSAGE ({} -> {})'.format(self.name, peer.name))
+        log('MESSAGE ({} -> {}): {}'.format(self.name, peer.name, message_id))
 
-        # XXX: Tightly coupled
-        peer.receive_message(self.name, message)
+        # XXX: Can introduce latency here
+        self.network.send_message(self.name, peer_id, message)
 
-    def receive_message(self, sender, message):
-        print "received message", sender, get_message_id(message)
-        # Should be of certain type
-        # TODO: Acknowledge message
-        # Generate ack message
+    def on_receive(self, sender, message):
+        if (message.header.type == 1):
+            self.on_receive_message(sender, message)
+        elif (message.header.type == 0):
+            self.on_receive_ack(sender, message)
+        else:
+            print "XXX: unknown message type"
 
+    def on_receive_message(self, sender, message):
+        message_id = get_message_id(message)
+        # Message coming from A
+        self.sync_state[message_id] = {"hold_flag": 1,
+                                       "ack_flag": 0,
+                                       "request_flag": 0,
+                                       "send_count": 0,
+                                       "send_time": 0}
+
+        # XXX How is this sent?
+        ack_rec = new_ack_record(message_id)
+        self.network.send_message(self.name, sender.name, ack_rec)
+        log("ACK ({} -> {}): {}".format(self.name, sender.name, message_id))
+
+    def on_receive_ack(self, sender, message):
+        for ack in message.payload.ack.id:
+            self.sync_state[ack]["hold_flag"] = 1
+
+    def print_sync_state(self):
+        #log("{}'s view of .other peer".format(self.name))
+        #log("---------------------------")
+        n = self.name
+        for message_id, flags in self.sync_state.items():
+            m = message_id[:4]
+            r = flags['request_flag']
+            h = flags['hold_flag']
+            a = flags['ack_flag']
+            c = flags['send_count']
+            t = flags['send_time']
+            log("{}(wrt other peer): {} | hold={} req={} ack={} time={} count={}".format(n, m, h, r, a, t, c))
+        #log("---------------------------")
+
+
+# XXX: Self-describing better in practice, format?
 def sha1(message):
     sha = hashlib.sha1(message)
     return sha.hexdigest()
@@ -83,12 +157,32 @@ def new_message_record(body):
     msg.payload.message.body = body
     return msg
 
+# XXX: Only takes one id
+def new_ack_record(id):
+    msg = sync_pb2.Record()
+    msg.header.version = 1
+    # assert based on type and length
+    msg.header.type = 0 # ACK type
+    # XXX: Should be inferred
+    msg.header.length = 10
+    msg.payload.ack.id.append(id)
+    return msg
+
 # Mocking
 ################################################################################
 
+print "\n"
+
+n = NetworkSimulator()
+
 # Create nodes
-a = Node("A")
-b = Node("B")
+a = Node("A", n)
+b = Node("B", n)
+
+# XXX: Want names as pubkey sender
+n.peers["A"] = a
+n.peers["B"] = b
+n.nodes = [a, b]
 
 # Add as sharing nodes
 # NOTE: Assumes just one sharing context
@@ -115,6 +209,18 @@ acks.header.type = 0
 acks.header.length = 10
 acks.payload.ack.id.extend(["a", "b"])
 
-print "*** Sync state before receive:"
-print "A", a.sync_state
-print "B", b.sync_state
+n.tick()
+a.print_sync_state()
+b.print_sync_state()
+
+n.tick()
+a.print_sync_state()
+b.print_sync_state()
+
+n.tick()
+a.print_sync_state()
+b.print_sync_state()
+
+
+
+print "\n"
