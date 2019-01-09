@@ -6,5 +6,5 @@ As well as some PoC around it
 
 ```
 make
-make run # see test.py
+make run # see sync.py
 ```

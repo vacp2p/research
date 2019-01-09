@@ -7,4 +7,4 @@ protoc_python: sync.proto
 	protoc -I=. --python_out=. ./sync.proto
 
 run:
-	python -i test.py
+	python -i sync.py

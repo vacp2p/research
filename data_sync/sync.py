@@ -42,10 +42,10 @@ class NetworkSimulator():
             # XXX: Should sender be here?
             for sender, receiver, msg in self.queue[self.time]:
                 if random.random() < self.reliability:
-                    print "*** message ok", sender.name, "->", receiver.name
+                    #print "*** message ok", sender.name, "->", receiver.name
                     receiver.on_receive(sender, msg)
-                else:
-                    print "*** message dropped", sender.name, "->", receiver.name
+                #else:
+                    #print "*** message dropped", sender.name, "->", receiver.name
         #print ""
         #print "tick", self.time + 1
         #print "-----------"
@@ -260,9 +260,11 @@ def run(steps=10):
 
     print "\nAssuming one group context (A-B share):"
 
+    # XXX: Conditional append to get message graph?
+    # TODO: Actually need to encode graph, client concern
     local_appends = {
-        1: [[a, "hello world"]],
-        2: [[b, "hello"]],
+        1: [[a, "A: hello world"]],
+        2: [[b, "B: hello!"]],
     }
 
     for i in range(steps):
@@ -281,6 +283,13 @@ def run(steps=10):
         acc += msg.payload.message.body + "\n"
     # XXX: Where is the sender stored? in msg?
     print "A POV:", acc
+
+    acc = "\n"
+    for _, msg in b.messages.items():
+        acc += msg.payload.message.body + "\n"
+    print "B POV:", acc
+
+
 
 run()
 
@@ -321,3 +330,20 @@ run()
 # XXX: Encode offline mostly
 
 # XXX: How does B look at the message?
+
+# XXX: If A,B reliability 0.1 and C 0.9
+# How does that actually realistically look?
+
+# Need to encode the other actions and offer etc
+# Exponential backoff too probably
+
+# Then C can offer messages to B, e.g.
+
+# How viz message graph?
+
+# What does a message look like, roughly:
+# This is actually client specific!
+ex = {'payload': "hello_world",
+      'content-type': "text/plain",
+      'signed_sender': 'A-signed-pubkey',
+      'dependencies': ["foo_message_id"]}
