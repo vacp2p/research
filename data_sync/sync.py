@@ -372,4 +372,19 @@ ex = {'payload': "hello_world",
 # C no op? it acks but A ignores it?
 # Duh, C sends but A doesn't see it...
 
+# TODO: When A comes online, whenever that is
+# It needs to requests messages
+# Aka ask C (or whomever) for messages
+# How?
+# - **Request** any messages **offered** by the peer that the device does not
+# But how would it know to offer messages?
+# It could play nice and offer all messages it has to C, but if C has all
+# There needs to be some way for C to go for it, unless A is going to over-offer with bloom filter or so
+# Look into this a bit more, naive way is signal
+#
+# Also think unreliability isn't necessary same as being offline and online
+# Once online it is reliable, so it is bursty - how best encode that?
+
+# Ok let's stop for now
+
 run(5)
