@@ -264,7 +264,11 @@ def run(steps=4):
         a.print_sync_state()
         b.print_sync_state()
 
-    print a.messages
+    acc = "\n"
+    for _, msg in a.messages.items():
+        acc += msg.payload.message.body + "\n"
+    # XXX: Where is the sender stored? in msg?
+    print "A POV:", acc
 
 run()
 
