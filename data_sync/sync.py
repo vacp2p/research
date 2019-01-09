@@ -5,10 +5,11 @@ import sync_pb2
 import time
 
 # TODO: Expand message to be a payload with message hash
-# TODO: Add support for multiple peers
 # TODO: Introduce latency and unreliability
 # TODO: send_time should be time
 # TODO: Use .proto files
+
+# Lets expand with multiple peers
 
 def log(message):
     print message
@@ -61,19 +62,23 @@ class Node():
         message_id = get_message_id(message)
         self.log.append({"id": message_id,
                          "message": message})
-        self.sync_state[message_id] = {"hold_flag": 0,
-                                       "ack_flag": 0,
-                                       "request_flag": 0,
-                                       "send_count": 0,
-                                       "send_time": 0}
+        self.sync_state[message_id] = {}
+        # XXX: For each peer
+        # Ensure added for each peer
+        # If we add peer at different time, ensure state init
+        for peer in self.peers.keys():
+            self.sync_state[message_id][peer] = {"hold_flag": 0,
+                                                 "ack_flag": 0,
+                                                 "request_flag": 0,
+                                                 "send_count": 0,
+                                                 "send_time": 0}
 
     def send_message(self, peer_id, message):
         message_id = get_message_id(message)
         peer = self.peers[peer_id]
-        # TODO: Use peer to update sync_state
-        self.sync_state[message_id]["send_count"] = 1
         # XXX: Use tick clock for this
-        self.sync_state[message_id]["send_time"] = 1
+        self.sync_state[message_id][peer_id]["send_count"] = 1
+        self.sync_state[message_id][peer_id]["send_time"] = 1
 
         log('MESSAGE ({} -> {}): {}'.format(self.name, peer.name, message_id))
 
@@ -91,11 +96,15 @@ class Node():
     def on_receive_message(self, sender, message):
         message_id = get_message_id(message)
         # Message coming from A
-        self.sync_state[message_id] = {"hold_flag": 1,
-                                       "ack_flag": 0,
-                                       "request_flag": 0,
-                                       "send_count": 0,
-                                       "send_time": 0}
+        if message_id not in self.sync_state:
+            self.sync_state[message_id] = {}
+        self.sync_state[message_id][sender.name] = {
+            "hold_flag": 1,
+            "ack_flag": 0,
+            "request_flag": 0,
+            "send_count": 0,
+            "send_time": 0
+        }
 
         # XXX How is this sent?
         ack_rec = new_ack_record(message_id)
@@ -104,21 +113,22 @@ class Node():
 
     def on_receive_ack(self, sender, message):
         for ack in message.payload.ack.id:
-            self.sync_state[ack]["hold_flag"] = 1
+            self.sync_state[ack][sender.name]["hold_flag"] = 1
 
     def print_sync_state(self):
         #log("{}'s view of .other peer".format(self.name))
         #log("---------------------------")
         n = self.name
-        for message_id, flags in self.sync_state.items():
-            m = message_id[:4]
-            r = flags['request_flag']
-            h = flags['hold_flag']
-            a = flags['ack_flag']
-            c = flags['send_count']
-            t = flags['send_time']
-            log("{}(wrt other peer): {} | hold={} req={} ack={} time={} count={}".format(n, m, h, r, a, t, c))
-        #log("---------------------------")
+        for message_id, x in self.sync_state.items():
+            for peer, flags in x.items():
+                m = message_id[:4]
+                r = flags['request_flag']
+                h = flags['hold_flag']
+                a = flags['ack_flag']
+                c = flags['send_count']
+                t = flags['send_time']
+                log("{}(view of {}): {} | hold={} req={} ack={} time={} count={}".format(n, peer, m, h, r, a, t, c))
+                #log("---------------------------")
 
 
 # XXX: Self-describing better in practice, format?
@@ -178,15 +188,18 @@ n = NetworkSimulator()
 # Create nodes
 a = Node("A", n)
 b = Node("B", n)
+c = Node("C", n) # Passive node?
 
 # XXX: Want names as pubkey sender
 n.peers["A"] = a
 n.peers["B"] = b
-n.nodes = [a, b]
+n.peers["C"] = c
+n.nodes = [a, b, c]
 
 # Add as sharing nodes
 # NOTE: Assumes just one sharing context
 a.peers["B"] = b
+a.peers["C"] = c
 b.peers["A"] = a
 
 # NOTE: For proof of concept this is simply a text field
