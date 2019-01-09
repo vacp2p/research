@@ -7,8 +7,6 @@ import time
 # TODO: Expand message to be a payload with message hash
 # TODO: Encode group with message graph and immutable messages
 # TODO: Introduce latency and unreliability
-# TODO: send_time should be time
-# TODO: Use .proto files
 
 ## TODO: Encode things like client, group scope, etc
 # client\_id = R(HASH\_LEN)
@@ -225,70 +223,40 @@ def new_ack_record(id):
 # Mocking
 ################################################################################
 
-print "\n"
+def run(steps=4):
+    n = NetworkSimulator()
 
-n = NetworkSimulator()
+    a = Node("A", n)
+    b = Node("B", n)
+    c = Node("C", n)
 
-# Create nodes
-a = Node("A", n)
-b = Node("B", n)
+    n.peers["A"] = a
+    n.peers["B"] = b
+    n.peers["C"] = c
+    n.nodes = [a, b, c]
 
-# Let's say C is a peer to A but A doesn't share with C
-c = Node("C", n) # Passive node?
+    a.addPeer("B", b)
+    a.addPeer("C", c)
+    b.addPeer("A", a)
+    c.addPeer("A", a)
 
-# XXX: Want names as pubkey sender
-n.peers["A"] = a
-n.peers["B"] = b
-n.peers["C"] = c
-n.nodes = [a, b, c]
+    # NOTE: Client should decide policy, implict group
+    a.share("B")
+    b.share("A")
 
-a.addPeer("B", b)
-a.addPeer("C", c)
+    print "\nAssuming one group context (A-B share):"
 
-b.addPeer("A", a)
+    for i in range(steps):
+        # NOTE: include signature and parent message
+        if n.time == 1:
+            a0 = new_message_record("hello world")
+            a.append_message(a0)
 
-c.addPeer("A", a)
+        n.tick()
+        a.print_sync_state()
+        b.print_sync_state()
 
-
-# XXX: Client should decide sharing policy
-# Encode sharing, notice C being left out
-# Implicit group context
-a.share("B")
-b.share("A")
-
-print "Assuming one group context (A-B share):"
-
-# NOTE: For proof of concept this is simply a text field
-# More realistic example would include sender signature, and parent message ids
-a0 = new_message_record("hello world")
-
-
-# XXX: remove
-# TODO: send_message should be based on send_time and sharing
-#a.send_message("B", a0)
-
-n.tick()
-a.print_sync_state()
-b.print_sync_state()
-
-# Local append
-a.append_message(a0)
-
-n.tick()
-a.print_sync_state()
-b.print_sync_state()
-
-n.tick()
-a.print_sync_state()
-b.print_sync_state()
-
-n.tick()
-a.print_sync_state()
-b.print_sync_state()
-
-
-
-print "\n"
+run()
 
 ## TODO: Sync modes, interactive (+bw -latency) and batch (v.v.)
 
