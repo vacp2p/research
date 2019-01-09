@@ -5,11 +5,22 @@ import sync_pb2
 import time
 
 # TODO: Expand message to be a payload with message hash
+# TODO: Encode group with message graph and immutable messages
 # TODO: Introduce latency and unreliability
 # TODO: send_time should be time
 # TODO: Use .proto files
 
-# Lets expand with multiple peers
+## TODO: Encode things like client, group scope, etc
+# client\_id = R(HASH\_LEN)
+CLIENT_ID = "0xdeadbeef"
+
+# Each group belongs to a client.
+# Hardcoded for now.
+# group\_id = HASH("GROUP\_ID", client\_id, group\_descriptor)
+GROUP_ID = "0xdeadbeef"
+
+# TODO: Sync state: Store bounded cache list of messages ids
+# offered by peer and not ack/req by device
 
 def log(message):
     print message
@@ -53,10 +64,21 @@ class Node():
         self.network = network
         self.time = 0
 
+        # XXX: Assumes only one group
+        self.group_id = GROUP_ID
+        self.sharing = {GROUP_ID: set()}
+
     def tick(self):
         # XXX: What else do?
         # TODO: Send message if reached send time
         self.time += 1
+
+    # XXX: Why would node know about peer and not just name?
+    def addPeer(self, peer_id, peer):
+        self.peers[peer_id] = peer
+
+    def share(self, peer_id):
+        self.sharing[self.group_id].add(peer_id)
 
     def append_message(self, message):
         message_id = get_message_id(message)
@@ -66,12 +88,16 @@ class Node():
         # XXX: For each peer
         # Ensure added for each peer
         # If we add peer at different time, ensure state init
+        # TODO: Only share with certain peers, e.g. clientPolicy
         for peer in self.peers.keys():
-            self.sync_state[message_id][peer] = {"hold_flag": 0,
-                                                 "ack_flag": 0,
-                                                 "request_flag": 0,
-                                                 "send_count": 0,
-                                                 "send_time": 0}
+            if peer in self.sharing[self.group_id]:
+                self.sync_state[message_id][peer] = {
+                    "hold_flag": 0,
+                    "ack_flag": 0,
+                    "request_flag": 0,
+                    "send_count": 0,
+                    "send_time": 0
+                    }
 
     def send_message(self, peer_id, message):
         message_id = get_message_id(message)
@@ -188,6 +214,8 @@ n = NetworkSimulator()
 # Create nodes
 a = Node("A", n)
 b = Node("B", n)
+
+# Let's say C is a peer to A but A doesn't share with C
 c = Node("C", n) # Passive node?
 
 # XXX: Want names as pubkey sender
@@ -196,31 +224,32 @@ n.peers["B"] = b
 n.peers["C"] = c
 n.nodes = [a, b, c]
 
-# Add as sharing nodes
-# NOTE: Assumes just one sharing context
-a.peers["B"] = b
-a.peers["C"] = c
-b.peers["A"] = a
+a.addPeer("B", b)
+a.addPeer("C", c)
+
+b.addPeer("A", a)
+
+c.addPeer("A", a)
+
+
+# XXX: Client should decide sharing policy
+# Encode sharing, notice C being left out
+# Implicit group context
+a.share("B")
+b.share("A")
+
+print "Assuming one group context (A-B share):"
 
 # NOTE: For proof of concept this is simply a text field
 # More realistic example would include sender signature, and parent message ids
 a0 = new_message_record("hello world")
 
+
 # Local append
 a.append_message(a0)
 
-# TODO: send_message should be based on send_time
+# TODO: send_message should be based on send_time and sharing
 a.send_message("B", a0)
-
-# TODO: Use the actual protobufs
-
-# need to be bytes
-acks = sync_pb2.Record()
-acks.header.version = 1
-# XXX: not showing up if version is 0
-acks.header.type = 0
-acks.header.length = 10
-acks.payload.ack.id.extend(["a", "b"])
 
 n.tick()
 a.print_sync_state()
@@ -237,3 +266,35 @@ b.print_sync_state()
 
 
 print "\n"
+
+## TODO: Sync modes, interactive (+bw -latency) and batch (v.v.)
+
+# Need to encode logic for actions taken at given time,
+# respect send_time etc,
+# WRT offer messages and so on
+
+# Batch mode first (less coordination):
+# - **Acknowledge** any messages **sent** by the peer that the device has not yet
+#   acknowledged
+# - **Acknowledge** any messages **offered** by the peer that the device holds,
+#   and has not yet acknowledged
+# - **Request** any messages **offered** by the peer that the device does not
+#   hold, and has not yet requested
+# - **Send** any messages that the device is **sharing** with the peer, that have
+#   been **requested** by the peer, and that have reached their send times
+# - **Send** any messages that the device is **sharing** with the peer, and does
+#   not know whether the peer holds, and that have reached their send times
+
+# SEND messages device is SHARING with the peer, doesn't know if peer holds,
+# and reached send time
+# What mean by sharing
+
+# Member of a group:
+# Two peers sync group message they share group
+# Membership and sharing dynamic
+
+# How do we de determine if two peers synchronize a
+# specific group's messages with eachother?
+
+# For any given (data) group, a device can decide
+# if they want to share or not with a peer.
