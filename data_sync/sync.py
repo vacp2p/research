@@ -149,6 +149,8 @@ class Node():
             "send_time": 0
         }
 
+        self.messages[message_id] = message
+
         ack_rec = new_ack_record(message_id)
         self.network.send_message(self.name, sender.name, ack_rec)
         log("ACK ({} -> {}): {}".format(self.name, sender.name, message_id))
@@ -246,15 +248,23 @@ def run(steps=4):
 
     print "\nAssuming one group context (A-B share):"
 
+    local_appends = {
+        1: [[a, "hello world"]],
+        2: [[b, "hello"]],
+    }
+
     for i in range(steps):
         # NOTE: include signature and parent message
-        if n.time == 1:
-            a0 = new_message_record("hello world")
-            a.append_message(a0)
+        if n.time in local_appends:
+            for peer, msg in local_appends[n.time]:
+                rec = new_message_record(msg)
+                peer.append_message(rec)
 
         n.tick()
         a.print_sync_state()
         b.print_sync_state()
+
+    print a.messages
 
 run()
 
@@ -290,3 +300,9 @@ run()
 
 # For any given (data) group, a device can decide
 # if they want to share or not with a peer.
+
+
+# TODO: ACK should also be share policy
+# XXX: Encode offline mostly
+
+# XXX: How does B look at the message?
