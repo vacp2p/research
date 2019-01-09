@@ -34,7 +34,7 @@ class NetworkSimulator():
         self.queue = {}
         self.peers = {}
         # Global network reliability
-        self.reliability = 0.9
+        self.reliability = 1 # 0.95? Dunno.
 
     def tick(self):
         if self.time in self.queue:
@@ -175,19 +175,25 @@ class Node():
             self.sync_state[ack][sender.name]["hold_flag"] = 1
 
     def print_sync_state(self):
-        #log("{}'s view of .other peer".format(self.name))
-        #log("---------------------------")
+        log("\n{} POV @{}".format(self.name, self.time))
+        log("-" * 60)
         n = self.name
         for message_id, x in self.sync_state.items():
+            line = message_id[:4] + " | "
             for peer, flags in x.items():
-                m = message_id[:4]
-                r = flags['request_flag']
-                h = flags['hold_flag']
-                a = flags['ack_flag']
-                c = flags['send_count']
-                t = flags['send_time']
-                log("{}(view of {}): {} | hold={} req={} ack={} time={} count={}".format(n, peer, m, h, r, a, t, c))
-                #log("---------------------------")
+                line += peer + ": "
+                if flags['hold_flag']:
+                    line += "hold "
+                if flags['ack_flag']:
+                    line += "ack "
+                if flags['request_flag']:
+                    line += "req "
+                line += "@" + str(flags['send_time'])
+                line += "(" + str(flags['send_count']) + ")"
+                line += " | "
+
+            log(line)
+        log("-" * 60)
 
 
 # XXX: Self-describing better in practice, format?
@@ -245,7 +251,7 @@ def run(steps=10):
 
     a = Node("A", n, 0.1) # mobile
     b = Node("B", n, 0.1) # mobile
-    c = Node("C", n, 0.9) # desktop/server
+    c = Node("C", n, 1) # desktop/server
 
     n.peers["A"] = a
     n.peers["B"] = b
@@ -284,8 +290,9 @@ def run(steps=10):
                 peer.append_message(rec)
 
         n.tick()
-        #a.print_sync_state()
+        a.print_sync_state()
         #b.print_sync_state()
+        #c.print_sync_state()
 
     # XXX: This confuses things somewhat, as this is
     # client concerns
@@ -300,9 +307,6 @@ def run(steps=10):
         acc += msg.payload.message.body + "\n"
     print "B POV:", acc
 
-
-
-run()
 
 ## TODO: Sync modes, interactive (+bw -latency) and batch (v.v.)
 
@@ -362,3 +366,10 @@ ex = {'payload': "hello_world",
 # XXX: How will C receive the message from A to B?
 # TODO: Requires offering to B, e.g.
 # Or B requesting it
+
+# Why is A sending same message to C over again
+# and again, with reliability = 1,1?
+# C no op? it acks but A ignores it?
+# Duh, C sends but A doesn't see it...
+
+run(5)
