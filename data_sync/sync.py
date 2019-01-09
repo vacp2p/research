@@ -1,6 +1,7 @@
 # Sync protocol PoC
 
 import hashlib
+import random
 import sync_pb2
 import time
 
@@ -32,16 +33,22 @@ class NetworkSimulator():
         self.time = 0
         self.queue = {}
         self.peers = {}
+        # XXX: Assuming nodes are offline most of the time
+        # This is different types of nodes, not global
+        self.reliability = 0.5
 
     def tick(self):
         if self.time in self.queue:
             # XXX: Should sender be here?
             for sender, receiver, msg in self.queue[self.time]:
-                # NOTE: Assumes 100% reliability
-                receiver.on_receive(sender, msg)
-        print ""
-        print "tick", self.time + 1
-        print "-----------"
+                if random.random() < self.reliability:
+                    print "*** message ok", sender.name, "->", receiver.name
+                    receiver.on_receive(sender, msg)
+                else:
+                    print "*** message dropped", sender.name, "->", receiver.name
+        #print ""
+        #print "tick", self.time + 1
+        #print "-----------"
         for n in self.nodes:
             n.tick()
         self.time += 1
@@ -225,7 +232,7 @@ def new_ack_record(id):
 # Mocking
 ################################################################################
 
-def run(steps=4):
+def run(steps=10):
     n = NetworkSimulator()
 
     a = Node("A", n)
@@ -261,8 +268,8 @@ def run(steps=4):
                 peer.append_message(rec)
 
         n.tick()
-        a.print_sync_state()
-        b.print_sync_state()
+        #a.print_sync_state()
+        #b.print_sync_state()
 
     acc = "\n"
     for _, msg in a.messages.items():
@@ -304,7 +311,6 @@ run()
 
 # For any given (data) group, a device can decide
 # if they want to share or not with a peer.
-
 
 # TODO: ACK should also be share policy
 # XXX: Encode offline mostly
