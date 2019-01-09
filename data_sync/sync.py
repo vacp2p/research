@@ -33,9 +33,8 @@ class NetworkSimulator():
         self.time = 0
         self.queue = {}
         self.peers = {}
-        # XXX: Assuming nodes are offline most of the time
-        # This is different types of nodes, not global
-        self.reliability = 0.5
+        # Global network reliability
+        self.reliability = 0.9
 
     def tick(self):
         if self.time in self.queue:
@@ -70,7 +69,7 @@ class NetworkSimulator():
         self.queue[recv_time].append((sender, receiver, message))
 
 class Node():
-    def __init__(self, name, network):
+    def __init__(self, name, network, reliability=0.9):
         self.name = name
         self.log = []
         self.messages = {}
@@ -78,6 +77,7 @@ class Node():
         self.peers = {}
         self.network = network
         self.time = 0
+        self.reliability = reliability
 
         # XXX: Assumes only one group
         self.group_id = GROUP_ID
@@ -140,13 +140,16 @@ class Node():
         self.network.send_message(self.name, peer_id, message)
 
     def on_receive(self, sender, message):
-        #print "*** {} received message from {}".format(self.name, sender.name)
-        if (message.header.type == 1):
-            self.on_receive_message(sender, message)
-        elif (message.header.type == 0):
-            self.on_receive_ack(sender, message)
+        if random.random() < self.reliability:
+            #print "*** {} received message from {}".format(self.name, sender.name)
+            if (message.header.type == 1):
+                self.on_receive_message(sender, message)
+            elif (message.header.type == 0):
+                self.on_receive_ack(sender, message)
+            else:
+                print "XXX: unknown message type"
         else:
-            print "XXX: unknown message type"
+            print "*** node offline, dropping message"
 
     def on_receive_message(self, sender, message):
         message_id = get_message_id(message)
@@ -240,9 +243,9 @@ def new_ack_record(id):
 def run(steps=10):
     n = NetworkSimulator()
 
-    a = Node("A", n)
-    b = Node("B", n)
-    c = Node("C", n)
+    a = Node("A", n, 0.1) # mobile
+    b = Node("B", n, 0.1) # mobile
+    c = Node("C", n, 0.9) # desktop/server
 
     n.peers["A"] = a
     n.peers["B"] = b
@@ -257,6 +260,12 @@ def run(steps=10):
     # NOTE: Client should decide policy, implict group
     a.share("B")
     b.share("A")
+
+    # XXX: Hm, a lot of coordination here? Weird?
+    a.share("C")
+    b.share("C")
+    c.share("A")
+    c.share("B")
 
     print "\nAssuming one group context (A-B share):"
 
@@ -278,6 +287,8 @@ def run(steps=10):
         #a.print_sync_state()
         #b.print_sync_state()
 
+    # XXX: This confuses things somewhat, as this is
+    # client concerns
     acc = "\n"
     for _, msg in a.messages.items():
         acc += msg.payload.message.body + "\n"
@@ -347,3 +358,7 @@ ex = {'payload': "hello_world",
       'content-type': "text/plain",
       'signed_sender': 'A-signed-pubkey',
       'dependencies': ["foo_message_id"]}
+
+# XXX: How will C receive the message from A to B?
+# TODO: Requires offering to B, e.g.
+# Or B requesting it
