@@ -48,7 +48,7 @@ class NetworkSimulator():
                 #else:
                     #print "*** message dropped", sender.name, "->", receiver.name
         #print ""
-        #print "tick", self.time + 1
+        print "tick", self.time + 1
         #print "-----------"
         for n in self.nodes:
             n.tick()
@@ -86,15 +86,23 @@ class Node():
 
         self.profile = profile
         # for index in pulsating reseries if mobile node
-        self.randomSeed = random.randint(1,20)
+
+        # XXX: Hacky
+        if (self.name == 'A'):
+            self.randomSeed = 0
+        elif (self.name == 'B'):
+            self.randomSeed = 5
+        else:
+            self.randomSeed = random.randint(1,10)
 
         if profile == 'burstyMobile':
             self.reliability = 0.1
-            self.update_bursty_reliability()
+            self.update_availability()
         elif profile == 'onlineDesktop':
             self.reliability = 1 # or 0.9
         else:
             self.reliability = 1
+        self.availability = self.reliability
 
     def tick(self):
         # XXX: What else do?
@@ -102,7 +110,14 @@ class Node():
         self.time += 1
 
         if (self.profile == 'burstyMobile'):
-            self.update_bursty_reliability()
+            self.update_availability()
+
+        if (self.availability == 1):
+            print "*** node available", self.name
+        elif (self.availability == 0):
+            print "*** node NOT available", self.name
+        else:
+            print "*** conflation overload, reliability/availability mismatch"
 
         # Depending on sync mode, do appropriate actions
         self.send_messages()
@@ -191,8 +206,8 @@ class Node():
             self.sync_state[ack][sender.name]["hold_flag"] = 1
 
     def print_sync_state(self):
-        log("\n{} POV @{}".format(self.name, self.time))
-        log("-" * 60)
+        #log("\n{} POV @{}".format(self.name, self.time))
+        #log("-" * 60)
         n = self.name
         for message_id, x in self.sync_state.items():
             line = message_id[:4] + " | "
@@ -209,15 +224,14 @@ class Node():
                 line += " | "
 
             log(line)
-        log("-" * 60)
+        #log("-" * 60)
 
-    # XXX: Bad naming, more like offline/online behavior
-    def update_bursty_reliability(self):
-        # If mobile node, online 5 tick, offline 10, etc
-        arr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
-        idx = (self.time + self.randomSeed) % 15
+    def update_availability(self):
+        arr = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+        idx = (self.time + self.randomSeed) % 10
         self.reliability = arr[idx]
-
+        # XXX conflating these for now, depends on POV/agency
+        self.availability = arr[idx]
 
 # XXX: Self-describing better in practice, format?
 def sha1(message):
@@ -410,5 +424,9 @@ ex = {'payload': "hello_world",
 
 # Ok let's stop for now
 
-run(5)
+run(10)
 
+
+# Scenario:
+# A online / offline / onlie
+# B vice versa
