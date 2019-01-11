@@ -9,6 +9,8 @@ import time
 # TODO: Encode group with message graph and immutable messages
 # TODO: Introduce latency and unreliability
 
+# TODO: Encode mobile node bursty behavior better
+
 ## TODO: Encode things like client, group scope, etc
 # client\_id = R(HASH\_LEN)
 CLIENT_ID = "0xdeadbeef"
@@ -69,7 +71,7 @@ class NetworkSimulator():
         self.queue[recv_time].append((sender, receiver, message))
 
 class Node():
-    def __init__(self, name, network, reliability=0.9):
+    def __init__(self, name, network, profile):
         self.name = name
         self.log = []
         self.messages = {}
@@ -77,16 +79,30 @@ class Node():
         self.peers = {}
         self.network = network
         self.time = 0
-        self.reliability = reliability
 
         # XXX: Assumes only one group
         self.group_id = GROUP_ID
         self.sharing = {GROUP_ID: set()}
 
+        self.profile = profile
+        # for index in pulsating reseries if mobile node
+        self.randomSeed = random.randint(1,20)
+
+        if profile == 'burstyMobile':
+            self.reliability = 0.1
+            self.update_bursty_reliability()
+        elif profile == 'onlineDesktop':
+            self.reliability = 1 # or 0.9
+        else:
+            self.reliability = 1
+
     def tick(self):
         # XXX: What else do?
         # TODO: Send message if reached send time
         self.time += 1
+
+        if (self.profile == 'burstyMobile'):
+            self.update_bursty_reliability()
 
         # Depending on sync mode, do appropriate actions
         self.send_messages()
@@ -195,6 +211,13 @@ class Node():
             log(line)
         log("-" * 60)
 
+    # XXX: Bad naming, more like offline/online behavior
+    def update_bursty_reliability(self):
+        # If mobile node, online 5 tick, offline 10, etc
+        arr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+        idx = (self.time + self.randomSeed) % 15
+        self.reliability = arr[idx]
+
 
 # XXX: Self-describing better in practice, format?
 def sha1(message):
@@ -249,9 +272,9 @@ def new_ack_record(id):
 def run(steps=10):
     n = NetworkSimulator()
 
-    a = Node("A", n, 0.1) # mobile
-    b = Node("B", n, 0.1) # mobile
-    c = Node("C", n, 1) # desktop/server
+    a = Node("A", n, 'burstyMobile')
+    b = Node("B", n, 'burstyMobile')
+    c = Node("C", n, 'desktop')
 
     n.peers["A"] = a
     n.peers["B"] = b
@@ -388,3 +411,4 @@ ex = {'payload': "hello_world",
 # Ok let's stop for now
 
 run(5)
+
