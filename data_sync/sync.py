@@ -113,14 +113,16 @@ class Node():
             self.update_availability()
 
         if (self.availability == 1):
-            print "*** node available", self.name
-        elif (self.availability == 0):
-            print "*** node NOT available", self.name
-        else:
-            print "*** conflation overload, reliability/availability mismatch"
+            # TODO: Do stuff like actions here
+            #print "*** node available", self.name
+            # Depending on sync mode, do appropriate actions
+            self.send_messages()
 
-        # Depending on sync mode, do appropriate actions
-        self.send_messages()
+        #elif (self.availability == 0):
+            #print "*** node NOT available", self.name
+        #else:
+        #    print "*** conflation overload, reliability/availability mismatch"
+
 
     def send_messages(self):
         for message_id, x in self.sync_state.items():
@@ -165,7 +167,7 @@ class Node():
         peer = self.peers[peer_id]
         self.sync_state[message_id][peer_id]["send_count"] += 1
         self.sync_state[message_id][peer_id]["send_time"] += 2
-        log('MESSAGE ({} -> {}): {}'.format(self.name, peer.name, message_id))
+        log('MESSAGE ({} -> {}): {} sent'.format(self.name, peer.name, message_id [:4]))
 
         # XXX: Can introduce latency here
         self.network.send_message(self.name, peer_id, message)
@@ -180,10 +182,11 @@ class Node():
             else:
                 print "XXX: unknown message type"
         else:
-            print "*** node offline, dropping message"
+            log("*** node {} offline, dropping message".format(self.name))
 
     def on_receive_message(self, sender, message):
         message_id = get_message_id(message)
+        log('MESSAGE ({} -> {}): {} received'.format(sender.name, self.name, message_id[:4]))
         # Message coming from A
         if message_id not in self.sync_state:
             self.sync_state[message_id] = {}
@@ -199,10 +202,11 @@ class Node():
 
         ack_rec = new_ack_record(message_id)
         self.network.send_message(self.name, sender.name, ack_rec)
-        log("ACK ({} -> {}): {}".format(self.name, sender.name, message_id))
+        log("    ACK ({} -> {}): {}".format(self.name, sender.name, message_id[:4]))
 
     def on_receive_ack(self, sender, message):
         for ack in message.payload.ack.id:
+            log('    ACK ({} -> {}): {} received'.format(sender.name, self.name, ack[:4]))
             self.sync_state[ack][sender.name]["hold_flag"] = 1
 
     def print_sync_state(self):
@@ -310,7 +314,7 @@ def run(steps=10):
     c.share("A")
     c.share("B")
 
-    print "\nAssuming one group context (A-B share):"
+    print "\nAssuming one group context (A-B-C share):"
 
     # XXX: Conditional append to get message graph?
     # TODO: Actually need to encode graph, client concern
@@ -327,22 +331,23 @@ def run(steps=10):
                 peer.append_message(rec)
 
         n.tick()
-        a.print_sync_state()
+        #a.print_sync_state()
         #b.print_sync_state()
         #c.print_sync_state()
 
+    # TODO: Move to client
     # XXX: This confuses things somewhat, as this is
     # client concerns
-    acc = "\n"
-    for _, msg in a.messages.items():
-        acc += msg.payload.message.body + "\n"
-    # XXX: Where is the sender stored? in msg?
-    print "A POV:", acc
+    #acc = "\n"
+    #for _, msg in a.messages.items():
+    #    acc += msg.payload.message.body + "\n"
+    ## XXX: Where is the sender stored? in msg?
+    #print "A POV:", acc
 
-    acc = "\n"
-    for _, msg in b.messages.items():
-        acc += msg.payload.message.body + "\n"
-    print "B POV:", acc
+    #acc = "\n"
+    #for _, msg in b.messages.items():
+    #    acc += msg.payload.message.body + "\n"
+    #print "B POV:", acc
 
 
 ## TODO: Sync modes, interactive (+bw -latency) and batch (v.v.)
@@ -393,6 +398,7 @@ def run(steps=10):
 
 # How viz message graph?
 
+# TODO: Move into separate client namespace
 # What does a message look like, roughly:
 # This is actually client specific!
 ex = {'payload': "hello_world",
@@ -430,3 +436,5 @@ run(10)
 # Scenario:
 # A online / offline / onlie
 # B vice versa
+
+# Why is B sending ACK to A if it is offline? not true?
