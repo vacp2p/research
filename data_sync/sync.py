@@ -5,16 +5,6 @@ import random
 import sync_pb2
 import time
 
-# TODO: Expand message to be a payload with message hash
-# TODO: Encode group with message graph and immutable messages
-# TODO: Introduce latency and unreliability
-
-# TODO: Encode mobile node bursty behavior better
-
-## TODO: Encode things like client, group scope, etc
-# client\_id = R(HASH\_LEN)
-CLIENT_ID = "0xdeadbeef"
-
 # Each group belongs to a client.
 # Hardcoded for now.
 # group\_id = HASH("GROUP\_ID", client\_id, group\_descriptor)
@@ -341,22 +331,6 @@ def run(steps=10):
     b.print_sync_state()
     c.print_sync_state()
 
-
-    # TODO: Move to client
-    # XXX: This confuses things somewhat, as this is
-    # client concerns
-    #acc = "\n"
-    #for _, msg in a.messages.items():
-    #    acc += msg.payload.message.body + "\n"
-    ## XXX: Where is the sender stored? in msg?
-    #print "A POV:", acc
-
-    #acc = "\n"
-    #for _, msg in b.messages.items():
-    #    acc += msg.payload.message.body + "\n"
-    #print "B POV:", acc
-
-
 ## TODO: Sync modes, interactive (+bw -latency) and batch (v.v.)
 
 # Need to encode logic for actions taken at given time,
@@ -404,15 +378,6 @@ def run(steps=10):
 # Then C can offer messages to B, e.g.
 
 # How viz message graph?
-
-# TODO: Move into separate client namespace
-# What does a message look like, roughly:
-# This is actually client specific!
-ex = {'payload': "hello_world",
-      'content-type': "text/plain",
-      'signed_sender': 'A-signed-pubkey',
-      'dependencies': ["foo_message_id"]}
-
 # XXX: How will C receive the message from A to B?
 # TODO: Requires offering to B, e.g.
 # Or B requesting it
@@ -431,17 +396,5 @@ ex = {'payload': "hello_world",
 # It could play nice and offer all messages it has to C, but if C has all
 # There needs to be some way for C to go for it, unless A is going to over-offer with bloom filter or so
 # Look into this a bit more, naive way is signal
-#
-# Also think unreliability isn't necessary same as being offline and online
-# Once online it is reliable, so it is bursty - how best encode that?
-
-# Ok let's stop for now
 
 run(30)
-
-
-# Scenario:
-# A online / offline / onlie
-# B vice versa
-
-# Why is B sending ACK to A if it is offline? not true?
