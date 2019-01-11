@@ -76,7 +76,16 @@ class Node():
     # - **Acknowledge** any messages **sent** by the peer that the device has not yet
     #   acknowledged
     def ack_sent_messages(self):
-        print "TODO"
+        # TODO: Accumulate and send all in one go
+
+        # XXX: Better Pythonesque way to do this
+        for mid, x in self.sync_state.items():
+            for peer, flags in x.items():
+                if flags['ack_flag'] == 1:
+                    ack_rec = new_ack_record(mid)
+                    self.network.send_message(self.name, peer, ack_rec)
+                    self.sync_state[mid][peer]['ack_flag'] = 0
+                    log("    ACK ({} -> {}): {}".format(self.name, peer, mid[:4]))
 
     # - **Acknowledge** any messages **offered** by the peer that the device holds,
     #   and has not yet acknowledged
@@ -158,22 +167,17 @@ class Node():
     def on_receive_message(self, sender, message):
         message_id = get_message_id(message)
         log('MESSAGE ({} -> {}): {} received'.format(sender.name, self.name, message_id[:4]))
-        # Message coming from A
         if message_id not in self.sync_state:
             self.sync_state[message_id] = {}
         self.sync_state[message_id][sender.name] = {
             "hold_flag": 1,
-            "ack_flag": 0,
+            "ack_flag": 1,
             "request_flag": 0,
             "send_count": 0,
             "send_time": 0
         }
 
         self.messages[message_id] = message
-
-        ack_rec = new_ack_record(message_id)
-        self.network.send_message(self.name, sender.name, ack_rec)
-        log("    ACK ({} -> {}): {}".format(self.name, sender.name, message_id[:4]))
 
     def on_receive_ack(self, sender, message):
         for ack in message.payload.ack.id:
