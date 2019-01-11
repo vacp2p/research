@@ -56,7 +56,9 @@ class NetworkSimulator():
 
     # XXX: This should be normal distribution or Poisson
     def latency_uniform_random(self):
-        latency = random.randint(1,3)
+        # XXX: Hardcode for now, easier analyze
+        latency = 1
+        #latency = random.randint(1,3)
         return latency
 
     # NOTE: Direct message, no broadcast etc
