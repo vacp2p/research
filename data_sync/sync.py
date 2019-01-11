@@ -61,17 +61,40 @@ class Node():
             self.update_availability()
 
         if (self.availability == 1):
-            # TODO: Do stuff like actions here
-            #print "*** node available", self.name
-            # Depending on sync mode, do appropriate actions
+            # Batch mode
+            self.ack_sent_messages()
+            self.ack_offered_messages()
+            self.req_offered_messages()
+            self.send_requested_messages()
             self.send_messages()
-
+            # TODO: Interactive mode
         #elif (self.availability == 0):
             #print "*** node NOT available", self.name
         #else:
         #    print "*** conflation overload, reliability/availability mismatch"
 
+    # - **Acknowledge** any messages **sent** by the peer that the device has not yet
+    #   acknowledged
+    def ack_sent_messages(self):
+        print "TODO"
 
+    # - **Acknowledge** any messages **offered** by the peer that the device holds,
+    #   and has not yet acknowledged
+    def ack_offered_messages(self):
+        print "TODO"
+
+    # - **Request** any messages **offered** by the peer that the device does not
+    #   hold, and has not yet requested
+    def req_offered_messages(self):
+        print "TODO"
+
+    # - **Send** any messages that the device is **sharing** with the peer, that have
+    #   been **requested** by the peer, and that have reached their send times
+    def send_requested_messages(self):
+        print "TODO"
+
+    # - **Send** any messages that the device is **sharing** with the peer, and does
+    #   not know whether the peer holds, and that have reached their send times
     def send_messages(self):
         for message_id, x in self.sync_state.items():
             for peer, flags in x.items():
