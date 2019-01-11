@@ -210,8 +210,8 @@ class Node():
             self.sync_state[ack][sender.name]["hold_flag"] = 1
 
     def print_sync_state(self):
-        #log("\n{} POV @{}".format(self.name, self.time))
-        #log("-" * 60)
+        log("\n{} POV @{}".format(self.name, self.time))
+        log("-" * 60)
         n = self.name
         for message_id, x in self.sync_state.items():
             line = message_id[:4] + " | "
@@ -335,6 +335,11 @@ def run(steps=10):
         #b.print_sync_state()
         #c.print_sync_state()
 
+    a.print_sync_state()
+    b.print_sync_state()
+    c.print_sync_state()
+
+
     # TODO: Move to client
     # XXX: This confuses things somewhat, as this is
     # client concerns
@@ -430,7 +435,7 @@ ex = {'payload': "hello_world",
 
 # Ok let's stop for now
 
-run(10)
+run(30)
 
 
 # Scenario:
