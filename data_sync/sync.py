@@ -45,6 +45,7 @@ class Node():
         if (self.name == 'A'):
             self.randomSeed = 0
         elif (self.name == 'B'):
+            # NOTE: if 5 then online never overlap, 4=some overlap, 1=a lot
             self.randomSeed = 5
         else:
             self.randomSeed = random.randint(1,10)
@@ -577,3 +578,23 @@ run(30)
 # Actually C should have other message right? Oh no can't, need 4th node
 # Voila, introduce 4th node only semi conected and awareness
 # Even if never online or never both connected to same super node!
+
+# It is even the case that message from A 4ea1 then B 9e70
+# So A holds data from B without knowing B has it! Propagated through C
+# And C got it from D!
+# But if A and B online same time then this data is available
+
+# One problem is that you don't know REQ/etc state of data. Chill and OK?
+
+# What do we want to measure here? In terms of reliability of perf etc
+
+# Probably want to clean up this file a bit as well
+# Different basic scenarios with assumptions?
+# Message propagation? Not sure
+
+# Privacy and sharing implications
+# Exact diff with peer connected to and sharing
+# If you introduce new party for sharing data, well they know you connecting
+# What does this imply exactly? Esp if network topology is certain way
+
+# Write down specific questions/concerns here
