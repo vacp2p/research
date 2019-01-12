@@ -17,6 +17,11 @@ GROUP_ID = "0xdeadbeef"
 def log(message):
     print message
 
+def merge_two_dicts(x, y):
+    z = x.copy()
+    z.update(y)
+    return z
+
 class Node():
     def __init__(self, name, network, profile, mode='batch'):
         self.name = name
@@ -119,16 +124,26 @@ class Node():
     # No logic for backoff, and atm not a bounded list
     # If A thinks C is req, wy not resend?
     # TODO: Consider logic for request back-off - use send_time?
+    # NOTE: (Overloaded?) use of send_time and send_count for reqs.
+    # Seems OK since hold flag clarifies if you need to offer/send or ack.
     def req_offered_messages(self):
         # XXX: Not removing from cache, instead letting it grow indefinitely
         # (later: bounded) UNLESS ACK etc is received
-        for peer, message_ids in self.offeredMessages.items():
+        for peer_id, message_ids in self.offeredMessages.items():
             for message_id in message_ids:
                 if message_id not in self.messages:
                     # XXX: Slurp up
                     req_rec = new_req_record([message_id])
-                    self.network.send_message(self.name, peer, req_rec)
-                    log("REQUEST ({} -> {}): {}".format(self.name, peer, message_id[:4]))
+                    self.network.send_message(self.name, peer_id, req_rec)
+
+                    n = self.sync_state[message_id][peer_id]["send_count"] + 1
+                    self.update_sync_state(message_id, peer_id, {
+                        'hold_flag': 1,
+                        'send_count': n,
+                        'send_time': self.time + int(n**2)
+                    })
+
+                    log("REQUEST ({} -> {}): {}".format(self.name, peer_id, message_id[:4]))
                     # XXX: It is double requesting, should be polite
 
     # - **Send** any messages that the device is **sharing** with the peer, that have
@@ -190,6 +205,23 @@ class Node():
 
     def share(self, peer_id):
         self.sharing[self.group_id].add(peer_id)
+
+    # Helper method
+    def update_sync_state(self, message_id, peer_id, new_state):
+        if message_id not in self.sync_state:
+            self.sync_state[message_id] = {}
+        if peer_id not in self.sync_state[message_id]:
+            self.sync_state[message_id][peer_id] = {
+                "hold_flag": 0,
+                "ack_flag": 0,
+                "request_flag": 0,
+                "send_count": 0,
+                "send_time": self.time + 1
+            }
+
+        current = self.sync_state[message_id][peer_id]
+        new = merge_two_dicts(current, new_state)
+        self.sync_state[message_id][peer_id] = new
 
     def append_message(self, message):
         #print "*** append_message", self.name
@@ -410,9 +442,9 @@ def run(steps=10):
 
     # XXX: Not clear to me what's best here
     # Interactive: less BW, Batch: less coordination
-    a = Node("A", n, 'burstyMobile', 'batch')
-    b = Node("B", n, 'burstyMobile', 'batch')
-    c = Node("C", n, 'desktop', 'batch')
+    a = Node("A", n, 'burstyMobile', 'interactive')
+    b = Node("B", n, 'burstyMobile', 'interactive')
+    c = Node("C", n, 'desktop', 'interactive')
 
     n.peers["A"] = a
     n.peers["B"] = b
