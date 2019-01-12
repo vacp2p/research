@@ -11,15 +11,14 @@ import time
 # group\_id = HASH("GROUP\_ID", client\_id, group\_descriptor)
 GROUP_ID = "0xdeadbeef"
 
-# TODO: Sync state: Store bounded cache list of messages ids
-# offered by peer and not ack/req by device
+# TODO: Introduce exponential back-off for send_time based on send_count
 
 # XXX: Add debug log level
 def log(message):
     print message
 
 class Node():
-    def __init__(self, name, network, profile):
+    def __init__(self, name, network, profile, mode='batch'):
         self.name = name
         self.log = []
         self.messages = {}
@@ -27,6 +26,8 @@ class Node():
         self.peers = {}
         self.network = network
         self.time = 0
+        self.mode = mode
+        self.offeredMessages = {} # XXX: Should be bounded
 
         # XXX: Assumes only one group
         self.group_id = GROUP_ID
@@ -61,17 +62,28 @@ class Node():
             self.update_availability()
 
         if (self.availability == 1):
-            # Batch mode
-            self.ack_sent_messages()
-            self.ack_offered_messages()
-            self.req_offered_messages()
-            self.send_requested_messages()
-            self.send_messages()
-            # TODO: Interactive mode
+            if (self.mode == 'batch'):
+                self.ack_sent_messages()
+                self.ack_offered_messages()
+                self.req_offered_messages()
+                self.send_requested_messages()
+                self.send_messages()
+            elif (self.mode == 'interactive'):
+                self.ack_received_messages()
+                self.ack_offered_messages()
+                self.req_offered_messages()
+                self.send_requested_messages()
+                self.offer_messages()
         #elif (self.availability == 0):
             #print "*** node NOT available", self.name
         #else:
         #    print "*** conflation overload, reliability/availability mismatch"
+
+    # NOTE: Assuming same semantics for batch and interactive mode.
+    #- **Acknowledge** any messages **received** from the peer that the device has
+    #not yet acknowledged
+    def ack_received_messages(self):
+        self.ack_sent_messages()
 
     # - **Acknowledge** any messages **sent** by the peer that the device has not yet
     #   acknowledged
@@ -82,7 +94,7 @@ class Node():
         for mid, x in self.sync_state.items():
             for peer, flags in x.items():
                 if flags['ack_flag'] == 1:
-                    ack_rec = new_ack_record(mid)
+                    ack_rec = new_ack_record([mid])
                     self.network.send_message(self.name, peer, ack_rec)
                     self.sync_state[mid][peer]['ack_flag'] = 0
                     log("    ACK ({} -> {}): {}".format(self.name, peer, mid[:4]))
@@ -90,28 +102,88 @@ class Node():
     # - **Acknowledge** any messages **offered** by the peer that the device holds,
     #   and has not yet acknowledged
     def ack_offered_messages(self):
-        print "TODO"
+        for peer, message_ids in self.offeredMessages.items():
+            for message_id in message_ids:
+                if message_id in self.messages:
+                    # XXX: Slurp up
+                    ack_rec = new_ack_record([message_id])
+                    self.network.send_message(self.name, peer, ack_rec)
 
-    # - **Request** any messages **offered** by the peer that the device does not
+
+    #  **Request** any messages **offered** by the peer that the device does not
     #   hold, and has not yet requested
+    # XXX: If you do this every tick, that's a problem no? "Not yet requested"
+    # No logic for backoff, and atm not a bounded list
+    # If A thinks C is req, wy not resend?
+    # TODO: Consider logic for request back-off
     def req_offered_messages(self):
-        print "TODO"
+        # XXX: Not removing from cache, instead letting it grow indefinitely
+        # (later: bounded) UNLESS ACK etc is received
+        for peer, message_ids in self.offeredMessages.items():
+            for message_id in message_ids:
+                if message_id not in self.messages:
+                    # XXX: Slurp up
+                    req_rec = new_req_record([message_id])
+                    self.network.send_message(self.name, peer, req_rec)
+                    log("REQUEST ({} -> {}): {}".format(self.name, peer, message_id[:4]))
+                    # XXX: It is double requesting, should be polite
 
     # - **Send** any messages that the device is **sharing** with the peer, that have
     #   been **requested** by the peer, and that have reached their send times
     def send_requested_messages(self):
-        print "TODO"
+        for message_id, x in self.sync_state.items():
+            for peer_id, flags in x.items():
+                if (peer_id in self.sharing[self.group_id] and
+                    flags['request_flag'] == 1 and
+                    flags['send_time'] <= self.time):
+                    message = self.messages[message_id]
+                    self.sync_state[message_id][peer_id]["send_count"] += 1
+                    self.sync_state[message_id][peer_id]["send_time"] += 2
+                    # Huh?
+                    self.sync_state[message_id][peer_id]["request_flag"] = 0
+                    # XXX: Bug, says C req flag is set, shouldn't be
+                    print "XXX", self.sync_state[message_id][peer_id]
+
+                    log('MESSAGE ({} -> {}): {} requested and sent'.format(self.name, peer_id, message_id [:4]))
+                    # XXX: Can introduce latency here
+                    self.network.send_message(self.name, peer_id, message)
+
+    # When turn off request flag?
+
+    # Three above requires OFFER functionality
+    # Interactive mode
+
+    #- **Offer** any messages that the device is **sharing** with the peer, and does
+    #  not know whether the peer holds, and that have reached their send times
+    # XXX: Not tested yet, interactive mode
+    def offer_messages(self):
+        for message_id, x in self.sync_state.items():
+            for peer_id, flags in x.items():
+                ids = []
+                if (peer_id in self.sharing[self.group_id] and
+                    flags['hold_flag'] == 0 and
+                    flags['send_time'] <= self.time):
+                    # TODO: Extend to slurp up all, need index peer->message
+                    offer_rec = new_offer_record([message_id])
+                    self.network.send_message(self.name, peer_id, offer_rec)
+                    self.sync_state[message_id][peer_id]["send_count"] += 1
+                    self.sync_state[message_id][peer_id]["send_time"] += 2
+                    log("  OFFER ({} -> {}): {}".format(self.name, peer_id, message_id[:4]))
 
     # - **Send** any messages that the device is **sharing** with the peer, and does
     #   not know whether the peer holds, and that have reached their send times
     def send_messages(self):
         for message_id, x in self.sync_state.items():
-            for peer, flags in x.items():
-                if (peer in self.sharing[self.group_id] and
+            for peer_id, flags in x.items():
+                if (peer_id in self.sharing[self.group_id] and
                     flags['hold_flag'] == 0 and
-                    flags['send_time'] == self.time):
-                    msg = self.messages[message_id]
-                    self.send_message(peer, msg)
+                    flags['send_time'] <= self.time):
+                    message = self.messages[message_id]
+                    self.sync_state[message_id][peer_id]["send_count"] += 1
+                    self.sync_state[message_id][peer_id]["send_time"] += 2
+                    log('MESSAGE ({} -> {}): {} sent'.format(self.name, peer_id, message_id [:4]))
+                    # XXX: Can introduce latency here
+                    self.network.send_message(self.name, peer_id, message)
 
     # XXX: Why would node know about peer and not just name?
     def addPeer(self, peer_id, peer):
@@ -142,16 +214,6 @@ class Node():
                     "send_time": self.time + 1
                     }
 
-    def send_message(self, peer_id, message):
-        message_id = get_message_id(message)
-        peer = self.peers[peer_id]
-        self.sync_state[message_id][peer_id]["send_count"] += 1
-        self.sync_state[message_id][peer_id]["send_time"] += 2
-        log('MESSAGE ({} -> {}): {} sent'.format(self.name, peer.name, message_id [:4]))
-
-        # XXX: Can introduce latency here
-        self.network.send_message(self.name, peer_id, message)
-
     def on_receive(self, sender, message):
         if random.random() < self.reliability:
             #print "*** {} received message from {}".format(self.name, sender.name)
@@ -159,6 +221,10 @@ class Node():
                 self.on_receive_message(sender, message)
             elif (message.header.type == 0):
                 self.on_receive_ack(sender, message)
+            elif (message.header.type == 2):
+                self.on_receive_offer(sender, message)
+            elif (message.header.type == 3):
+                self.on_receive_request(sender, message)
             else:
                 print "XXX: unknown message type"
         else:
@@ -183,6 +249,43 @@ class Node():
         for ack in message.payload.ack.id:
             log('    ACK ({} -> {}): {} received'.format(sender.name, self.name, ack[:4]))
             self.sync_state[ack][sender.name]["hold_flag"] = 1
+
+    def on_receive_offer(self, sender, message):
+        for message_id in message.payload.offer.id:
+            log('  OFFER ({} -> {}): {} received'.format(sender.name, self.name, message_id[:4]))
+            if (message_id in self.sync_state and
+                sender.name in self.sync_state[message_id] and
+                self.sync_state[message_id][sender.name]['ack_flag'] == 1):
+                print "Have message, not ACKED yet, add to list", sender.name, message_id
+                if sender.name not in self.offeredMessages:
+                    self.offeredMessages[sender.name] = []
+                self.offeredMessages[sender.name].append(message_id)
+            elif message_id not in self.sync_state:
+                #print "*** {} on_receive_offer from {} not holding {}".format(self.name, sender.name, message_id)
+                if sender.name not in self.offeredMessages:
+                    self.offeredMessages[sender.name] = []
+                self.offeredMessages[sender.name].append(message_id)
+            #else:
+            #    print "*** {} on_receive_offer have {} and ACKd OR peer {} unknown".format(self.name, message_id, sender.name)
+
+            # XXX: Init fn to wrap updates
+            if message_id not in self.sync_state:
+                self.sync_state[message_id] = {}
+            if sender.name not in self.sync_state[message_id]:
+                self.sync_state[message_id][sender.name] = {
+                    "hold_flag": 1,
+                    "ack_flag": 0,
+                    "request_flag": 0,
+                    "send_count": 0,
+                    "send_time": 0
+                }
+            self.sync_state[message_id][sender.name]['hold_flag'] = 1
+            #print "*** {} offeredMessages {}".format(self.name, self.offeredMessages)
+
+    def on_receive_request(self, sender, message):
+        for req in message.payload.request.id:
+            log('REQUEST ({} -> {}): {} received'.format(sender.name, self.name, req[:4]))
+            self.sync_state[req][sender.name]["request_flag"] = 1
 
     def print_sync_state(self):
         log("\n{} POV @{}".format(self.name, self.time))
@@ -233,6 +336,8 @@ def get_message_id(message_record):
     #print s
     return sha1(s)
 
+# TODO: Move these protobuf helpers somewhere better
+
 # XXX: where is the message id?
 def new_message_record(body):
     msg = sync_pb2.Record()
@@ -248,16 +353,39 @@ def new_message_record(body):
     msg.payload.message.body = body
     return msg
 
-# XXX: Only takes one id
-def new_ack_record(id):
+def new_ack_record(ids):
     msg = sync_pb2.Record()
     msg.header.version = 1
     # assert based on type and length
     msg.header.type = 0 # ACK type
     # XXX: Should be inferred
     msg.header.length = 10
-    msg.payload.ack.id.append(id)
+    for id in ids:
+        msg.payload.ack.id.append(id)
     return msg
+
+def new_offer_record(ids):
+    msg = sync_pb2.Record()
+    msg.header.version = 1
+    # assert based on type and length
+    msg.header.type = 2 # OFFER type
+    # XXX: Should be inferred
+    msg.header.length = 10
+    for id in ids:
+        msg.payload.offer.id.append(id)
+    return msg
+
+def new_req_record(ids):
+    msg = sync_pb2.Record()
+    msg.header.version = 1
+    # assert based on type and length
+    msg.header.type = 3 # REQUEST type
+    # XXX: Should be inferred
+    msg.header.length = 10
+    for id in ids:
+        msg.payload.request.id.append(id)
+    return msg
+
 
 # Mocking
 ################################################################################
@@ -265,9 +393,9 @@ def new_ack_record(id):
 def run(steps=10):
     n = networksim.NetworkSimulator()
 
-    a = Node("A", n, 'burstyMobile')
-    b = Node("B", n, 'burstyMobile')
-    c = Node("C", n, 'desktop')
+    a = Node("A", n, 'burstyMobile', 'interactive')
+    b = Node("B", n, 'burstyMobile', 'interactive')
+    c = Node("C", n, 'desktop', 'interactive')
 
     n.peers["A"] = a
     n.peers["B"] = b
@@ -380,4 +508,7 @@ def run(steps=10):
 # There needs to be some way for C to go for it, unless A is going to over-offer with bloom filter or so
 # Look into this a bit more, naive way is signal
 
-run(30)
+run(20)
+
+
+# XXX: What happens if ACK fails? Offer back? Lol. See no mention of re-send acks

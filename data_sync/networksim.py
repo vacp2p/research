@@ -34,6 +34,7 @@ class NetworkSimulator():
         return latency
 
     # NOTE: Direct message, no broadcast etc
+    # XXX: Better name like direct_send or just send? Less confusing wrt 'messages'
     def send_message(self, sender_id, receiver_id, message):
         #print "*** (network) send_message", sender_id, receiver_id
         # XXX: Assuming sender exists
