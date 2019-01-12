@@ -120,10 +120,6 @@ class Node():
 
     #  **Request** any messages **offered** by the peer that the device does not
     #   hold, and has not yet requested
-    # XXX: If you do this every tick, that's a problem no? "Not yet requested"
-    # No logic for backoff, and atm not a bounded list
-    # If A thinks C is req, wy not resend?
-    # TODO: Consider logic for request back-off - use send_time?
     # NOTE: (Overloaded?) use of send_time and send_count for reqs.
     # Seems OK since hold flag clarifies if you need to offer/send or ack.
     def req_offered_messages(self):
@@ -131,7 +127,10 @@ class Node():
         # (later: bounded) UNLESS ACK etc is received
         for peer_id, message_ids in self.offeredMessages.items():
             for message_id in message_ids:
-                if message_id not in self.messages:
+                if (message_id not in self.messages and
+                    # XXX: Not clear this is part of spec
+                    self.sync_state[message_id][peer_id]['send_time'] <= self.time
+                    ):
                     # XXX: Slurp up
                     req_rec = new_req_record([message_id])
                     self.network.send_message(self.name, peer_id, req_rec)
@@ -140,7 +139,7 @@ class Node():
                     self.update_sync_state(message_id, peer_id, {
                         'hold_flag': 1,
                         'send_count': n,
-                        'send_time': self.time + int(n**2)
+                        'send_time': self.time + int(n**2) + 1
                     })
 
                     log("REQUEST ({} -> {}): {}".format(self.name, peer_id, message_id[:4]))
@@ -188,6 +187,7 @@ class Node():
     def send_messages(self):
         for message_id, x in self.sync_state.items():
             for peer_id, flags in x.items():
+                # Should be case for B no?
                 if (peer_id in self.sharing[self.group_id] and
                     flags['hold_flag'] == 0 and
                     flags['send_time'] <= self.time):
@@ -224,14 +224,12 @@ class Node():
         self.sync_state[message_id][peer_id] = new
 
     def append_message(self, message):
-        #print "*** append_message", self.name
         message_id = get_message_id(message)
         self.log.append({"id": message_id,
                          "message": message})
         # XXX: Ugly but easier access while keeping log order
         self.messages[message_id] = message
         self.sync_state[message_id] = {}
-        # XXX: For each peer
         # Ensure added for each peer
         # If we add peer at different time, ensure state init
         # TODO: Only share with certain peers, e.g. clientPolicy
@@ -243,7 +241,7 @@ class Node():
                     "request_flag": 0,
                     "send_count": 0,
                     "send_time": self.time + 1
-                    }
+                }
 
     def on_receive(self, sender, message):
         if random.random() < self.reliability:
@@ -442,19 +440,27 @@ def run(steps=10):
 
     # XXX: Not clear to me what's best here
     # Interactive: less BW, Batch: less coordination
-    a = Node("A", n, 'burstyMobile', 'interactive')
-    b = Node("B", n, 'burstyMobile', 'interactive')
+    a = Node("A", n, 'burstyMobile', 'batch')
+    b = Node("B", n, 'burstyMobile', 'batch')
     c = Node("C", n, 'desktop', 'interactive')
+    d = Node("D", n, 'desktop', 'batch')
 
     n.peers["A"] = a
     n.peers["B"] = b
     n.peers["C"] = c
-    n.nodes = [a, b, c]
+    n.peers["D"] = d
+    n.nodes = [a, b, c, d]
 
     a.addPeer("B", b)
     a.addPeer("C", c)
     b.addPeer("A", a)
     c.addPeer("A", a)
+
+    #b.addPeer("C", c) # hm
+    #c.addPeer("B", b)
+
+    b.addPeer("D", d)
+    c.addPeer("D", d)
 
     # NOTE: Client should decide policy, implict group
     a.share("B")
@@ -462,11 +468,16 @@ def run(steps=10):
 
     # XXX: Hm, a lot of coordination here? Weird?
     a.share("C")
-    b.share("C")
+    #b.share("C")
     c.share("A")
-    c.share("B")
+    #c.share("B")
 
-    print "\nAssuming one group context (A-B-C share):"
+    c.share("D")
+    b.share("D")
+    d.share("B")
+    d.share("C")
+
+    print "\nAssuming one group context (A-B-C-D share):"
 
     # XXX: Conditional append to get message graph?
     # TODO: Actually need to encode graph, client concern
@@ -490,6 +501,7 @@ def run(steps=10):
     a.print_sync_state()
     b.print_sync_state()
     c.print_sync_state()
+    d.print_sync_state()
 
 ## TODO: Sync modes, interactive (+bw -latency) and batch (v.v.)
 
@@ -557,14 +569,11 @@ def run(steps=10):
 # There needs to be some way for C to go for it, unless A is going to over-offer with bloom filter or so
 # Look into this a bit more, naive way is signal
 
-run(40)
+run(30)
 
+# XXX: What happens if ACK fails? Offer back? Lol.
+# See no mention of re-send acks
 
-# XXX: What happens if ACK fails? Offer back? Lol. See no mention of re-send acks
-
-# Why are C and B not talking?
-# C should OFFEr to B
-
-
-# Bug: if long time Hold flag gets unset for C-B (?)
-# Bug: tick 40 with exponeitial bkac off still showing node A offline, no msg
+# Actually C should have other message right? Oh no can't, need 4th node
+# Voila, introduce 4th node only semi conected and awareness
+# Even if never online or never both connected to same super node!
