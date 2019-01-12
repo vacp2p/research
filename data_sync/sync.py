@@ -139,19 +139,12 @@ class Node():
                     message = self.messages[message_id]
                     self.sync_state[message_id][peer_id]["send_count"] += 1
                     self.sync_state[message_id][peer_id]["send_time"] += 2
-                    # Huh?
                     self.sync_state[message_id][peer_id]["request_flag"] = 0
-                    # XXX: Bug, says C req flag is set, shouldn't be
-                    print "XXX", self.sync_state[message_id][peer_id]
-
                     log('MESSAGE ({} -> {}): {} requested and sent'.format(self.name, peer_id, message_id [:4]))
                     # XXX: Can introduce latency here
                     self.network.send_message(self.name, peer_id, message)
 
     # When turn off request flag?
-
-    # Three above requires OFFER functionality
-    # Interactive mode
 
     #- **Offer** any messages that the device is **sharing** with the peer, and does
     #  not know whether the peer holds, and that have reached their send times
@@ -235,6 +228,9 @@ class Node():
         log('MESSAGE ({} -> {}): {} received'.format(sender.name, self.name, message_id[:4]))
         if message_id not in self.sync_state:
             self.sync_state[message_id] = {}
+
+        if sender.name in self.sync_state[message_id]:
+            print "XXX: Duplicate undesired message received?"
         self.sync_state[message_id][sender.name] = {
             "hold_flag": 1,
             "ack_flag": 1,
@@ -242,6 +238,17 @@ class Node():
             "send_count": 0,
             "send_time": 0
         }
+
+        # XXX: If multiple group id, dispatch per group id
+        for peer in self.sharing[self.group_id]:
+            if peer not in self.sync_state[message_id]:
+                self.sync_state[message_id][peer] = {
+                    "hold_flag": 0,
+                    "ack_flag": 0,
+                    "request_flag": 0,
+                    "send_count": 0,
+                    "send_time": 0
+                }
 
         self.messages[message_id] = message
 
@@ -512,3 +519,6 @@ run(20)
 
 
 # XXX: What happens if ACK fails? Offer back? Lol. See no mention of re-send acks
+
+# Why are C and B not talking?
+# C should OFFEr to B
