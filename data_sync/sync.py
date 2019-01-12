@@ -101,21 +101,24 @@ class Node():
 
     # - **Acknowledge** any messages **offered** by the peer that the device holds,
     #   and has not yet acknowledged
+    # ACK maybe once?!
     def ack_offered_messages(self):
         for peer, message_ids in self.offeredMessages.items():
             for message_id in message_ids:
-                if message_id in self.messages:
+                if (message_id in self.messages and
+                    # XXX: What if they didn't receive ACK?
+                    self.sync_state[message_id][peer]['ack_flag'] == 1):
                     # XXX: Slurp up
                     ack_rec = new_ack_record([message_id])
+                    self.sync_state[message_id][peer]['ack_flag'] = 0
                     self.network.send_message(self.name, peer, ack_rec)
-
 
     #  **Request** any messages **offered** by the peer that the device does not
     #   hold, and has not yet requested
     # XXX: If you do this every tick, that's a problem no? "Not yet requested"
     # No logic for backoff, and atm not a bounded list
     # If A thinks C is req, wy not resend?
-    # TODO: Consider logic for request back-off
+    # TODO: Consider logic for request back-off - use send_time?
     def req_offered_messages(self):
         # XXX: Not removing from cache, instead letting it grow indefinitely
         # (later: bounded) UNLESS ACK etc is received
@@ -137,8 +140,9 @@ class Node():
                     flags['request_flag'] == 1 and
                     flags['send_time'] <= self.time):
                     message = self.messages[message_id]
-                    self.sync_state[message_id][peer_id]["send_count"] += 1
-                    self.sync_state[message_id][peer_id]["send_time"] += 2
+                    send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
+                    self.sync_state[message_id][peer_id]["send_count"] = send_count
+                    self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
                     self.sync_state[message_id][peer_id]["request_flag"] = 0
                     log('MESSAGE ({} -> {}): {} requested and sent'.format(self.name, peer_id, message_id [:4]))
                     # XXX: Can introduce latency here
@@ -159,8 +163,9 @@ class Node():
                     # TODO: Extend to slurp up all, need index peer->message
                     offer_rec = new_offer_record([message_id])
                     self.network.send_message(self.name, peer_id, offer_rec)
-                    self.sync_state[message_id][peer_id]["send_count"] += 1
-                    self.sync_state[message_id][peer_id]["send_time"] += 2
+                    send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
+                    self.sync_state[message_id][peer_id]["send_count"] = send_count
+                    self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
                     log("  OFFER ({} -> {}): {}".format(self.name, peer_id, message_id[:4]))
 
     # - **Send** any messages that the device is **sharing** with the peer, and does
@@ -172,8 +177,9 @@ class Node():
                     flags['hold_flag'] == 0 and
                     flags['send_time'] <= self.time):
                     message = self.messages[message_id]
-                    self.sync_state[message_id][peer_id]["send_count"] += 1
-                    self.sync_state[message_id][peer_id]["send_time"] += 2
+                    send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
+                    self.sync_state[message_id][peer_id]["send_count"] = send_count
+                    self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
                     log('MESSAGE ({} -> {}): {} sent'.format(self.name, peer_id, message_id [:4]))
                     # XXX: Can introduce latency here
                     self.network.send_message(self.name, peer_id, message)
@@ -230,7 +236,9 @@ class Node():
             self.sync_state[message_id] = {}
 
         if sender.name in self.sync_state[message_id]:
-            print "XXX: Duplicate undesired message received?"
+            self.sync_state[message_id][sender.name]['hold_flag'] == 1
+            self.sync_state[message_id][sender.name]['ack_flag'] == 1
+            # XXX: ACK again here?
         self.sync_state[message_id][sender.name] = {
             "hold_flag": 1,
             "ack_flag": 1,
@@ -400,9 +408,11 @@ def new_req_record(ids):
 def run(steps=10):
     n = networksim.NetworkSimulator()
 
-    a = Node("A", n, 'burstyMobile', 'interactive')
-    b = Node("B", n, 'burstyMobile', 'interactive')
-    c = Node("C", n, 'desktop', 'interactive')
+    # XXX: Not clear to me what's best here
+    # Interactive: less BW, Batch: less coordination
+    a = Node("A", n, 'burstyMobile', 'batch')
+    b = Node("B", n, 'burstyMobile', 'batch')
+    c = Node("C", n, 'desktop', 'batch')
 
     n.peers["A"] = a
     n.peers["B"] = b
@@ -515,10 +525,14 @@ def run(steps=10):
 # There needs to be some way for C to go for it, unless A is going to over-offer with bloom filter or so
 # Look into this a bit more, naive way is signal
 
-run(20)
+run(40)
 
 
 # XXX: What happens if ACK fails? Offer back? Lol. See no mention of re-send acks
 
 # Why are C and B not talking?
 # C should OFFEr to B
+
+
+# Bug: if long time Hold flag gets unset for C-B (?)
+# Bug: tick 40 with exponeitial bkac off still showing node A offline, no msg
