@@ -467,18 +467,15 @@ def run(steps=10):
     a.share("B")
     b.share("A")
 
-    # XXX: Hm, a lot of coordination here? Weird?
+    # C and D participating
     a.share("C")
-    #b.share("C")
-    c.share("A")
-    #c.share("B")
-
-    c.share("D")
     b.share("D")
+    c.share("A")
+    c.share("D")
     d.share("B")
     d.share("C")
 
-    print "\nAssuming one group context (A-B-C-D share):"
+    print "\nAssuming one group context (A-B (C-D) share):"
 
     # XXX: Conditional append to get message graph?
     # TODO: Actually need to encode graph, client concern
@@ -504,4 +501,4 @@ def run(steps=10):
     c.print_sync_state()
     d.print_sync_state()
 
-run(20)
+run(30)
