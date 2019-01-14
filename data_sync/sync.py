@@ -45,8 +45,7 @@ class Node():
         if (self.name == 'A'):
             self.randomSeed = 0
         elif (self.name == 'B'):
-            # NOTE: if 5 then online never overlap, 4=some overlap, 1=a lot
-            self.randomSeed = 5
+            self.randomSeed = 1
         else:
             self.randomSeed = random.randint(1,10)
 
@@ -355,8 +354,9 @@ class Node():
         #log("-" * 60)
 
     def update_availability(self):
-        arr = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
-        idx = (self.time + self.randomSeed) % 10
+        #arr = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
+        arr = [1, 1, 0, 0, 1, 1, 0, 0]
+        idx = (self.time + self.randomSeed) % 8 # 10
         self.reliability = arr[idx]
         # XXX conflating these for now, depends on POV/agency
         self.availability = arr[idx]
@@ -468,7 +468,7 @@ def run(steps=10):
     b.share("A")
 
     # C and D participating
-    a.share("C")
+    # a.share("C")
     b.share("D")
     c.share("A")
     c.share("D")
