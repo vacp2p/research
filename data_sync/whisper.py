@@ -31,6 +31,8 @@ def newKeyPair():
 # privateKeyID - String: ID of private (asymmetric) key for message decryption.
 def pollFilter(topic, keyPair):
     kId = web3.shh.addPrivateKey(keyPair)
+    pubKey = web3.shh.getPublicKey(kId)
+    print("***PUBKEY", pubKey)
     myFilter = web3.shh.newMessageFilter({'topic': topic,
                                           'privateKeyID': kId})
     myFilter.poll_interval = 600;
@@ -68,7 +70,7 @@ class Daemon:
             #sendMessage(address_to, topic, "hello")
             getMessages(myFilter)
             #print("tick")
-            time.sleep(0.3)
+            time.sleep(1)
 
 # Args
 #---------------------------------------------------------------------
@@ -88,16 +90,20 @@ if(node == "a"):
     print("a")
     keyPair = a_keyPair
     # XXX: Seems weird, should be b_pubkey?
-    address_to = oskar
-    #address_to = a_pubKey # Works
+    #address_to = oskar
+    address_to = a_pubKey # Works
     #address_to = b_pubKey
     host = "http://localhost:8500"
 elif(node == "b"):
     print("b")
     keyPair = b_keyPair
-    address_to = oskar
+    #address_to = oskar
+    # XXX
     #address_to = a_pubKey
-    host = "http://localhost:8501"
+    address_to = b_pubKey
+    #address_to = a_pubKey
+    host = "http://localhost:8500"
+    #host = "http://localhost:8501"
 else:
     print("Unknown node")
     sys.exit(0)
@@ -169,12 +175,8 @@ def run():
 #daemon.start()
 #repl.start()
 
-b = Thread(name='background', target=Daemon().run)
-f = Thread(name='foreground', target=run)
-
-b.start()
-f.start()
-
+#b = Thread(name='background', target=Daemon().run)
+#f = Thread(name='foreground', target=run)
 
 # TODO
 # Usage:

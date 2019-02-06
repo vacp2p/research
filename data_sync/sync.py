@@ -2,6 +2,7 @@
 
 import hashlib
 import networksim
+import networkwhisper
 import random
 import sync_pb2
 import time
@@ -353,6 +354,28 @@ class Node():
             log(line)
         #log("-" * 60)
 
+    # Shorter names for pubkey
+    def print_sync_state2(self):
+        log("\n{} POV @{}".format(self.name[-4:], self.time))
+        log("-" * 60)
+        n = self.name[-4:]
+        for message_id, x in self.sync_state.items():
+            line = message_id[:4] + " | "
+            for peer, flags in x.items():
+                line += peer[-4:] + ": "
+                if flags['hold_flag']:
+                    line += "hold "
+                if flags['ack_flag']:
+                    line += "ack "
+                if flags['request_flag']:
+                    line += "req "
+                line += "@" + str(flags['send_time'])
+                line += "(" + str(flags['send_count']) + ")"
+                line += " | "
+
+            log(line)
+        #log("-" * 60)
+
     def update_availability(self):
         #arr = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
         arr = [1, 1, 0, 0, 1, 1, 0, 0]
@@ -437,6 +460,9 @@ def new_req_record(ids):
 # Mocking
 ################################################################################
 
+# TODO: For whisper nodes should be public keys
+# What about keypair to try to decrypt? should be in node
+
 def run(steps=10):
     n = networksim.NetworkSimulator()
 
@@ -502,4 +528,62 @@ def run(steps=10):
     c.print_sync_state()
     d.print_sync_state()
 
-run(30)
+def whisperRun(steps=10):
+    a_keyPair = "0x57083392b29bdf24512c93cfdf45d38c87d9d882da3918c59f4406445ea976a4"
+    b_keyPair= "0x7b5c5af9736d9f1773f2020dd0fef0bc3c8aeaf147d2bf41961e766588e086e7"
+
+    # TODO: should be node names
+    # Derived, used for addressing
+    a_pubKey = "0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5"
+    b_pubKey = "0x04ff921ddf78b5ed4537402f59a150caf9d96a83f2a345a1ddf9df12e99e7778f314c9ca72e8285eb213af84f5a7b01aabb62c67e46657976ded6658e1b9e83c73"
+
+    aNode = networkwhisper.WhisperNodeHelper(a_keyPair)
+    bNode = networkwhisper.WhisperNodeHelper(b_keyPair)
+
+    # XXX: Not clear to me what's best here
+    # Interactive: less BW, Batch: less coordination
+    a = Node(a_pubKey, aNode, 'burstyMobile', 'batch')
+    b = Node(b_pubKey, bNode, 'burstyMobile', 'batch')
+
+    # XXX: Not clear this is needed for Whisper, since all nodes should be part of network
+    # Possibly analog with topics?
+    #n.peers["A"] = a
+    #n.peers["B"] = b
+    aNode.nodes = [a]
+    bNode.nodes = [b]
+
+    a.addPeer(b_pubKey, b)
+    b.addPeer(a_pubKey, a)
+
+    # NOTE: Client should decide policy, implict group
+    a.share(b_pubKey)
+    b.share(a_pubKey)
+
+    print("\nAssuming one group context (A-B) share):")
+
+    # XXX: Conditional append to get message graph?
+    # TODO: Actually need to encode graph, client concern
+    local_appends = {
+        1: [[a, "A: hello world"]],
+        2: [[b, "B: hello!"]],
+    }
+
+    # XXX: what is this again? should be for both nodes
+    for i in range(steps):
+        # NOTE: include signature and parent message
+        if aNode.time in local_appends:
+            for peer, msg in local_appends[aNode.time]:
+                rec = new_message_record(msg)
+                peer.append_message(rec)
+
+        # XXX: Why discrete time model here?
+        aNode.tick()
+        bNode.tick()
+        #a.print_sync_state()
+        #b.print_sync_state()
+
+    a.print_sync_state2()
+    b.print_sync_state2()
+
+#run(30)
+whisperRun(30)

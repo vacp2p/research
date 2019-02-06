@@ -2,62 +2,72 @@ from web3 import Web3, HTTPProvider
 from web3.shh import Shh
 import random
 
-# XXX use these
-a_keyPair = "0x57083392b29bdf24512c93cfdf45d38c87d9d882da3918c59f4406445ea976a4"
-b_keyPair= "0x7b5c5af9736d9f1773f2020dd0fef0bc3c8aeaf147d2bf41961e766588e086e7"
-
-# Derived, used for addressing
-a_pubKey = "0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5"
-b_pubKey = "0x04ff921ddf78b5ed4537402f59a150caf9d96a83f2a345a1ddf9df12e99e7778f314c9ca72e8285eb213af84f5a7b01aabb62c67e46657976ded6658e1b9e83c73"
-
+# Temp
+import sync_pb2
 
 # XXX: This assumes a node is actually running - shell out to boot geth?
 # At least error if proc not running
 class WhisperNodeHelper():
-    def __init__(self):
+    def __init__(self, keypair):
         # XXX: Whisper specific, but this host should be unique per node
         self.host = "http://localhost:8500"
-        web3 = Web3(HTTPProvider(host))
-        Shh.attach(web3, "shh")
+        self.web3 = Web3(HTTPProvider(self.host))
+        Shh.attach(self.web3, "shh")
 
         self.topic="0xf8946aac" # discovery-topic
 
-        self.keyPair = "XXX"
-        self.myFilter = self.pollFilter(self.topic, self.keyPair)
+        self.keyPair = keypair
+        self.myFilter = self.poll_filter(self.topic, self.keyPair)
 
         # XXX: Prune this
         self.nodes = []
         self.time = 0
-        self.queue = {}
-        self.peers = {}
+        #self.queue = {}
+        #self.peers = {}
         # Global network reliability
         self.reliability = 1 # 0.95? Dunno.
 
     def poll_filter(self, topic, keyPair):
         # XXX: Doesn't belong here
-        kId = web3.shh.addPrivateKey(keyPair)
-        pubKey = web3.shh.getPublicKey(kId)
+        kId = self.web3.shh.addPrivateKey(keyPair)
+        pubKey = self.web3.shh.getPublicKey(kId)
         #print("***PUBKEY", pubKey)
-        myFilter = web3.shh.newMessageFilter({'topic': topic,
+        myFilter = self.web3.shh.newMessageFilter({'topic': topic,
                                               'privateKeyID': kId})
         # Purpose of this if we do getMessages?
         myFilter.poll_interval = 600;
         return myFilter
-
     def tick(self):
-        myFilter = "XXX"
-        filterID = myFilter.filter_id
-        retreived_messages = web3.shh.getMessages(filterID)
+        filterID = self.myFilter.filter_id
+        retreived_messages = self.web3.shh.getMessages(filterID)
 
         # TODO: Deal with these messages similar to simulation
         # receiver.on_receive(sender, msg)
         for i in range(0, len(retreived_messages)):
             #print(retreived_messages[i]['payload'])
-            print("\nRECV " + retreived_messages[i]['payload'].decode("utf-8"))
-            #print(retreived_messages[i])
+            #print("\nRECV TYPE", type(retreived_messages[i]['payload']))
+            #print("\nRECV payload", retreived_messages[i]['payload'])
+
+            # XXX: This parsing should probably happen elsewhere
+            msg = sync_pb2.Record()
+            payload = retreived_messages[i]['payload']
+            #print("\nRECV payload", payload)
+            msg.ParseFromString(payload)
+            # XXX correct way to refer to MESSAGE
+            if msg.header.type == 1:
+                print("\nRECV parse", msg.payload.message.body.decode())
+
+                # XXX: what do we actually do with this? on receive
+                # Hmmmm how should this work?
+                # HEREATM
+                receiver.on_receive(sender, msg)
+
         #print ""
         print("tick", self.time + 1)
         #print "-----------"
+
+        # XXX: This is ugly, why is this ticking nodes?
+        # NOTE: Only self is ticking
         for n in self.nodes:
             n.tick()
         self.time += 1
@@ -83,14 +93,18 @@ class WhisperNodeHelper():
     # topic assumed to be hardcoded
     def send_message(self, sender_id, address_to, msg):
         print("*** (whisper-network) send_message", address_to)
+        # XXX: Is this what we want to do?
+        payload = msg.SerializeToString()
+        print("*** (whisper-network) send_message payload", payload)
+        #print("*** (whisper-network) send_message hex", self.web3.toHex(payload))
         topic = self.topic
-        web3.shh.post({
+        self.web3.shh.post({
             'pubKey': address_to,
             'topic': topic,
             'powTarget': 2.01,
             'powTime': 2,
             'ttl': 10,
-            'payload': web3.toHex(text=msg)
+            'payload': self.web3.toHex(payload)
         });
 
     # NetworkSim stub
