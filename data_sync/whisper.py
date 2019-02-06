@@ -15,7 +15,9 @@ b_keyPair= "0x7b5c5af9736d9f1773f2020dd0fef0bc3c8aeaf147d2bf41961e766588e086e7"
 a_pubKey = "0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5"
 b_pubKey = "0x04ff921ddf78b5ed4537402f59a150caf9d96a83f2a345a1ddf9df12e99e7778f314c9ca72e8285eb213af84f5a7b01aabb62c67e46657976ded6658e1b9e83c73"
 
-topic = '0x00000000'
+#(def discovery-topic "0xf8946aac")
+topic="0xf8946aac"
+#topic = '0x00000000'
 
 # API
 #---------------------------------------------------------------------
@@ -35,7 +37,7 @@ def pollFilter(topic, keyPair):
     return myFilter
 
 def sendMessage(address_to, topic, msg):
-    print("address_to", address_to)
+    #print("address_to", address_to)
     web3.shh.post({
         'pubKey': address_to,
         'topic': topic,
@@ -50,8 +52,9 @@ def getMessages(myFilter):
     retreived_messages = web3.shh.getMessages(filterID)
 
     for i in range(0, len(retreived_messages)):
-        print(retreived_messages[i]['payload'].decode("utf-8"))
-        print(retreived_messages[i])
+        #print(retreived_messages[i]['payload'])
+        print("\nRECV " + retreived_messages[i]['payload'].decode("utf-8"))
+        #print(retreived_messages[i])
 
 # Run
 #---------------------------------------------------------------------
@@ -62,9 +65,9 @@ class Daemon:
 
     def run(self):
         while True:
-            sendMessage(address_to, topic, "hello")
+            #sendMessage(address_to, topic, "hello")
             getMessages(myFilter)
-            print("tick")
+            #print("tick")
             time.sleep(0.3)
 
 # Args
@@ -76,17 +79,24 @@ if len(sys.argv) < 2:
 
 node = sys.argv[1]
 
+# what
+oskar="0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5"
+# contact code
+#oskar="0x04cfc3a0f6c1cb824823164603959c639f99680485da2446dc316969faca00421b20dba3996bf99b8b5db7745eace60545a77e54784e91e440aa1af931161de3a6"
+
 if(node == "a"):
     print("a")
     keyPair = a_keyPair
     # XXX: Seems weird, should be b_pubkey?
-    address_to = a_pubKey
+    address_to = oskar
+    #address_to = a_pubKey # Works
     #address_to = b_pubKey
     host = "http://localhost:8500"
 elif(node == "b"):
     print("b")
     keyPair = b_keyPair
-    address_to = a_pubKey
+    address_to = oskar
+    #address_to = a_pubKey
     host = "http://localhost:8501"
 else:
     print("Unknown node")
@@ -122,13 +132,49 @@ sendMessage(address_to, topic, "hi also")
 #myFilter = pollFilter(topic, a_keyPair)
 #sendMessage(b_pubKey, topic, "hello b")
 #sendMessage(a_pubKey, topic, "hello a")
-#getMessages(myFilter)
+getMessages(myFilter)
+
+#lol="\[\"~#c4\",\[\"Helloaa\",\"text/plain\",\"~:user-message\",154938955408101,1549389554080,\[\"^ \",\"~:chat-id\",\"0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5\",\"~:text\",\"Hellbaro\"]]]"
+
+#raw = b'["~#c4",["Test","text/plain","~:user-message",154939130505401,1549391305053,["^ ","~:chat-id","0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5","~:text","Test"]]]'
+#raw = b'["~#c4",["Test2","text/plain","~:user-message",154939130605401,1549391306053,["^ ","~:chat-id","0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5","~:text","Test2"]]]'
+
+#json = ['~#c4', ['Test', 'text/plain', '~:user-message', 154939130505401, 1549391305053, ['^ ', '~:chat-id', '0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5', '~:text', 'Test']]]
+
+#import json
+#json_str = json.loads(raw.decode('utf-8'))
+#print(json_str)
+
+def run():
+    while True:
+        # lol
+        time.sleep(0.5)
+        text = input("> ")
+        #sendMessage(oskar, topic, lol)
+        #test = raw.decode('utf-8')
+        print("SEND " + text)
+        # Sending to A over discovery topic
+        # something wrong here
+        sendMessage(a_pubKey, topic, text)
+        #sendMessage(oskar, topic, test)
+        #sendMessage(a_pubKey, topic, "hello" + text)
+        #sendMessage(oskar, topic, "hello" + text)
 
 # Take address_to and filter as args?
-threads = []
-daemon = Thread(target=Daemon().run())
-threads.append(daemon)
-daemon.start()
+#threads = []
+#daemon = Thread(target=Daemon().run())
+#repl = Thread(target=run())
+#threads.append(daemon)
+#threads.append(repl)
+#daemon.start()
+#repl.start()
+
+b = Thread(name='background', target=Daemon().run)
+f = Thread(name='foreground', target=run)
+
+b.start()
+f.start()
+
 
 # TODO
 # Usage:
@@ -143,3 +189,10 @@ daemon.start()
 # - try to get end to end e.g. mobile phone
 # - hook up to sync
 # - consider subscribe instead?
+
+# Connect to nodes
+
+# listen to public channel all channels?
+
+
+# Can receive messages from mobile, just not send
