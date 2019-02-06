@@ -17,6 +17,8 @@ class WhisperNodeHelper():
         self.topic="0xf8946aac" # discovery-topic
 
         self.keyPair = keypair
+        # XXX: Doesn't belong here
+        self.kId = self.web3.shh.addPrivateKey(self.keyPair)
         self.myFilter = self.poll_filter(self.topic, self.keyPair)
 
         # XXX: Prune this
@@ -29,11 +31,11 @@ class WhisperNodeHelper():
 
     def poll_filter(self, topic, keyPair):
         # XXX: Doesn't belong here
-        kId = self.web3.shh.addPrivateKey(keyPair)
-        pubKey = self.web3.shh.getPublicKey(kId)
+        #kId = self.web3.shh.addPrivateKey(keyPair)
+        pubKey = self.web3.shh.getPublicKey(self.kId)
         #print("***PUBKEY", pubKey)
         myFilter = self.web3.shh.newMessageFilter({'topic': topic,
-                                              'privateKeyID': kId})
+                                                   'privateKeyID': self.kId})
         # Purpose of this if we do getMessages?
         myFilter.poll_interval = 600;
         return myFilter
@@ -46,21 +48,32 @@ class WhisperNodeHelper():
         for i in range(0, len(retreived_messages)):
             #print(retreived_messages[i]['payload'])
             #print("\nRECV TYPE", type(retreived_messages[i]['payload']))
-            #print("\nRECV payload", retreived_messages[i]['payload'])
 
             # XXX: This parsing should probably happen elsewhere
             msg = sync_pb2.Record()
+            #full = retreived_messages[i]
+            sig = retreived_messages[i]['sig']
+            print("***SIG", sig.hex())
             payload = retreived_messages[i]['payload']
             #print("\nRECV payload", payload)
             msg.ParseFromString(payload)
+            print("\nRECV parsed", msg)
             # XXX correct way to refer to MESSAGE
             if msg.header.type == 1:
                 print("\nRECV parse", msg.payload.message.body.decode())
 
-                # XXX: what do we actually do with this? on receive
-                # Hmmmm how should this work?
-                # HEREATM
-                receiver.on_receive(sender, msg)
+            # XXX Only one receiver, this is a node not network
+            receiver = self.nodes[0]
+            # HEREATM
+            # How sender?
+            # TODO: Figure out how we know sender, assumes signed message
+            # inside payload? but if it isn't your own message then how work
+            # How does this currently work? How do we know from who it is?
+            # chat-id seems to be pubkey and some stuff
+            # sohuld be in signature sig
+
+            sender = sig.hex()
+            receiver.on_receive(sender, msg)
 
         #print ""
         print("tick", self.time + 1)
@@ -104,6 +117,7 @@ class WhisperNodeHelper():
             'powTarget': 2.01,
             'powTime': 2,
             'ttl': 10,
+            'sig': self.kId,
             'payload': self.web3.toHex(payload)
         });
 

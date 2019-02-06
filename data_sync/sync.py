@@ -244,6 +244,8 @@ class Node():
                     "send_time": self.time + 1
                 }
 
+    # TODO: Probably something more here for message parsing
+    # TODO: Need to switch from object to pubkey here with name etc
     def on_receive(self, sender, message):
         if random.random() < self.reliability:
             #print "*** {} received message from {}".format(self.name, sender.name)
@@ -270,6 +272,7 @@ class Node():
             self.sync_state[message_id][sender.name]['hold_flag'] == 1
             self.sync_state[message_id][sender.name]['ack_flag'] == 1
             # XXX: ACK again here?
+        # XXX: This is bad, sender here with Whisper is only pbukey
         self.sync_state[message_id][sender.name] = {
             "hold_flag": 1,
             "ack_flag": 1,
