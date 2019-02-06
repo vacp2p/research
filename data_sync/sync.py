@@ -363,7 +363,8 @@ class Node():
 
 # XXX: Self-describing better in practice, format?
 def sha1(message):
-    sha = hashlib.sha1(message)
+    # XXX correct encoding?
+    sha = hashlib.sha1(message.encode('utf-8'))
     return sha.hexdigest()
 
 #- message\_id = HASH("MESSAGE\_ID", group\_id, timestamp, message\_body)
@@ -378,8 +379,8 @@ def create_message(body):
 # XXX: Is this hashing correctly?
 def get_message_id(message_record):
     msg = message_record.payload.message
-    s = "MESSAGE_ID" + msg.group_id + str(msg.timestamp) + msg.body
-    #print s
+    s = "MESSAGE_ID" + msg.group_id + str(msg.timestamp) + msg.body.decode()
+    #print("***", s)
     return sha1(s)
 
 # TODO: Move these protobuf helpers somewhere better
@@ -396,7 +397,7 @@ def new_message_record(body):
     msg.payload.message.group_id = "foo"
     # XXX: Should be 64 bit integer ms
     msg.payload.message.timestamp = int(time.time())
-    msg.payload.message.body = body
+    msg.payload.message.body = str.encode(body)
     return msg
 
 def new_ack_record(ids):
