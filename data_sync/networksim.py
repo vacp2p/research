@@ -20,7 +20,7 @@ class NetworkSimulator():
                 #else:
                     #print "*** message dropped", sender.name, "->", receiver.name
         #print ""
-        print "tick", self.time + 1
+        print("tick", self.time + 1)
         #print "-----------"
         for n in self.nodes:
             n.tick()

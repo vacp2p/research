@@ -15,7 +15,7 @@ GROUP_ID = "0xdeadbeef"
 
 # XXX: Add debug log level
 def log(message):
-    print message
+    print(message)
 
 def merge_two_dicts(x, y):
     z = x.copy()
@@ -255,7 +255,7 @@ class Node():
             elif (message.header.type == 3):
                 self.on_receive_request(sender, message)
             else:
-                print "XXX: unknown message type"
+                print("XXX: unknown message type")
         else:
             log("*** node {} offline, dropping message".format(self.name))
 
@@ -301,7 +301,7 @@ class Node():
             if (message_id in self.sync_state and
                 sender.name in self.sync_state[message_id] and
                 self.sync_state[message_id][sender.name]['ack_flag'] == 1):
-                print "Have message, not ACKED yet, add to list", sender.name, message_id
+                print("Have message, not ACKED yet, add to list", sender.name, message_id)
                 if sender.name not in self.offeredMessages:
                     self.offeredMessages[sender.name] = []
                 self.offeredMessages[sender.name].append(message_id)
@@ -475,7 +475,7 @@ def run(steps=10):
     d.share("B")
     d.share("C")
 
-    print "\nAssuming one group context (A-B (C-D) share):"
+    print("\nAssuming one group context (A-B (C-D) share):")
 
     # XXX: Conditional append to get message graph?
     # TODO: Actually need to encode graph, client concern
