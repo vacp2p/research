@@ -14,6 +14,8 @@ class WhisperNodeHelper():
         self.web3 = Web3(HTTPProvider(self.host))
         Shh.attach(self.web3, "shh")
 
+        assert self.web3.shh.web3.isConnected(), "Node not connected, are you running it?"
+
         self.topic="0xf8946aac" # discovery-topic
 
         self.keyPair = keypair
