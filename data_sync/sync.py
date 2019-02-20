@@ -262,18 +262,19 @@ class Node():
         else:
             log("*** node {} offline, dropping message".format(self.name))
 
-    def on_receive_message(self, sender, message):
+    # TODO: Problem: It assumes there's a name, as opposed to a pubkey
+    def on_receive_message(self, sender_pubkey, message):
         message_id = get_message_id(message)
-        log('MESSAGE ({} -> {}): {} received'.format(sender.name, self.name, message_id[:4]))
+        log('MESSAGE ({} -> {}): {} received'.format(sender_pubkey, self.name, message_id[:4]))
         if message_id not in self.sync_state:
             self.sync_state[message_id] = {}
 
-        if sender.name in self.sync_state[message_id]:
-            self.sync_state[message_id][sender.name]['hold_flag'] == 1
-            self.sync_state[message_id][sender.name]['ack_flag'] == 1
+        if sender_pubkey in self.sync_state[message_id]:
+            self.sync_state[message_id][sender_pubkey]['hold_flag'] == 1
+            self.sync_state[message_id][sender_pubkey]['ack_flag'] == 1
             # XXX: ACK again here?
         # XXX: This is bad, sender here with Whisper is only pbukey
-        self.sync_state[message_id][sender.name] = {
+        self.sync_state[message_id][sender_pubkey] = {
             "hold_flag": 1,
             "ack_flag": 1,
             "request_flag": 0,
@@ -294,47 +295,47 @@ class Node():
 
         self.messages[message_id] = message
 
-    def on_receive_ack(self, sender, message):
+    def on_receive_ack(self, sender_pubkey, message):
         for ack in message.payload.ack.id:
-            log('    ACK ({} -> {}): {} received'.format(sender.name, self.name, ack[:4]))
-            self.sync_state[ack][sender.name]["hold_flag"] = 1
+            log('    ACK ({} -> {}): {} received'.format(sender_pubkey, self.name, ack[:4]))
+            self.sync_state[ack][sender_pubkey]["hold_flag"] = 1
 
-    def on_receive_offer(self, sender, message):
+    def on_receive_offer(self, sender_pubkey, message):
         for message_id in message.payload.offer.id:
-            log('  OFFER ({} -> {}): {} received'.format(sender.name, self.name, message_id[:4]))
+            log('  OFFER ({} -> {}): {} received'.format(sender_pubkey, self.name, message_id[:4]))
             if (message_id in self.sync_state and
-                sender.name in self.sync_state[message_id] and
-                self.sync_state[message_id][sender.name]['ack_flag'] == 1):
-                print("Have message, not ACKED yet, add to list", sender.name, message_id)
-                if sender.name not in self.offeredMessages:
-                    self.offeredMessages[sender.name] = []
-                self.offeredMessages[sender.name].append(message_id)
+                sender_pubkey in self.sync_state[message_id] and
+                self.sync_state[message_id][sender_pubkey]['ack_flag'] == 1):
+                print("Have message, not ACKED yet, add to list", sender_pubkey, message_id)
+                if sender_pubkey not in self.offeredMessages:
+                    self.offeredMessages[sender_pubkey] = []
+                self.offeredMessages[sender_pubkey].append(message_id)
             elif message_id not in self.sync_state:
-                #print "*** {} on_receive_offer from {} not holding {}".format(self.name, sender.name, message_id)
-                if sender.name not in self.offeredMessages:
-                    self.offeredMessages[sender.name] = []
-                self.offeredMessages[sender.name].append(message_id)
+                #print "*** {} on_receive_offer from {} not holding {}".format(self.name, sender_pubkey, message_id)
+                if sender_pubkey not in self.offeredMessages:
+                    self.offeredMessages[sender_pubkey] = []
+                self.offeredMessages[sender_pubkey].append(message_id)
             #else:
-            #    print "*** {} on_receive_offer have {} and ACKd OR peer {} unknown".format(self.name, message_id, sender.name)
+            #    print "*** {} on_receive_offer have {} and ACKd OR peer {} unknown".format(self.name, message_id, sender_pubkey)
 
             # XXX: Init fn to wrap updates
             if message_id not in self.sync_state:
                 self.sync_state[message_id] = {}
-            if sender.name not in self.sync_state[message_id]:
-                self.sync_state[message_id][sender.name] = {
+            if sender_pubkey not in self.sync_state[message_id]:
+                self.sync_state[message_id][sender_pubkey] = {
                     "hold_flag": 1,
                     "ack_flag": 0,
                     "request_flag": 0,
                     "send_count": 0,
                     "send_time": 0
                 }
-            self.sync_state[message_id][sender.name]['hold_flag'] = 1
+            self.sync_state[message_id][sender_pubkey]['hold_flag'] = 1
             #print "*** {} offeredMessages {}".format(self.name, self.offeredMessages)
 
-    def on_receive_request(self, sender, message):
+    def on_receive_request(self, sender_pubkey, message):
         for req in message.payload.request.id:
-            log('REQUEST ({} -> {}): {} received'.format(sender.name, self.name, req[:4]))
-            self.sync_state[req][sender.name]["request_flag"] = 1
+            log('REQUEST ({} -> {}): {} received'.format(sender_pubkey, self.name, req[:4]))
+            self.sync_state[req][sender_pubkey]["request_flag"] = 1
 
     def print_sync_state(self):
         log("\n{} POV @{}".format(self.name, self.time))
@@ -588,5 +589,6 @@ def whisperRun(steps=10):
     a.print_sync_state2()
     b.print_sync_state2()
 
+# TODO: With Whisper branch this one breaks, probably due to sender{,.name} => sender_pubkey mismatch.
 #run(30)
 whisperRun(30)
