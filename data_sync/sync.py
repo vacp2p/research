@@ -591,4 +591,4 @@ def whisperRun(steps=10):
 
 # TODO: With Whisper branch this one breaks, probably due to sender{,.name} => sender_pubkey mismatch.
 #run(30)
-whisperRun(30)
+#whisperRun(30)
