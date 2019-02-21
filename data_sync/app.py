@@ -7,17 +7,9 @@ A_KEYPAIR = "0x57083392b29bdf24512c93cfdf45d38c87d9d882da3918c59f4406445ea976a4"
 A_PUBKEY = "0x04d94a1a01872b598c7cdc5aca2358d35eb91cd8a91eaea8da277451bb71d45c0d1eb87a31ea04e32f537e90165c870b3e115a12438c754d507ac75bddd6ecacd5"
 B_PUBKEY = "0x04ff921ddf78b5ed4537402f59a150caf9d96a83f2a345a1ddf9df12e99e7778f314c9ca72e8285eb213af84f5a7b01aabb62c67e46657976ded6658e1b9e83c73"
 
-def process():
-    while True:
-        print("Sleeping for one second")
-        time.sleep(1)
-
-# XXX: OK it's not the node that is probelm
 def tick_process(node):
-
-    print("START TICK PROCESS")
     while True:
-        print("tick")
+        #print("tick")
         node.tick()
         time.sleep(1)
 
@@ -42,11 +34,15 @@ def main():
     thread.start()
 
     while True:
-        text = input("Please write a message\n")
+        text = input("> ")
         print("You wrote", text)
-        print("TODO: Actually append to node")
+        rec = sync.new_message_record(text)
+        node.append_message(rec)
+
+        node.print_sync_state()
 
 main()
 
-# Now, we want to hook this up to whatever is going on in sync
-# Which is also node and stuff
+# Ok, can send message
+# Now share with these other
+# And allow b to run as a proc too

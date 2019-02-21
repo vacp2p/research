@@ -226,6 +226,7 @@ class Node():
 
     def append_message(self, message):
         message_id = get_message_id(message)
+        #print("*** append", message)
         self.log.append({"id": message_id,
                          "message": message})
         # XXX: Ugly but easier access while keeping log order
