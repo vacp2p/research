@@ -37,8 +37,8 @@ class WhisperNodeHelper():
         # XXX: Doesn't belong here
         #kId = self.web3.shh.addPrivateKey(keyPair)
         pubKey = self.web3.shh.getPublicKey(self.kId)
-        print("***KID", self.kId)
-        print("***PUBKEY", pubKey)
+        #print("***KID", self.kId)
+        #print("***PUBKEY", pubKey)
         myFilter = self.web3.shh.newMessageFilter({'topic': self.topic,
                                                    'privateKeyID': self.kId})
         # Purpose of this if we do getMessages?
@@ -64,14 +64,14 @@ class WhisperNodeHelper():
             msg = sync_pb2.Record()
             #full = retreived_messages[i]
             sig = retreived_messages[i]['sig']
-            print("***SIG", sig.hex())
+            #print("***SIG", sig.hex())
             payload = retreived_messages[i]['payload']
             #print("\nRECV payload", payload)
             msg.ParseFromString(payload)
-            print("\nRECV parsed", msg)
+            #print("\nRECV parsed", msg)
             # XXX correct way to refer to MESSAGE
-            if msg.header.type == 1:
-                print("\nRECV parse", msg.payload.message.body.decode())
+            # if msg.header.type == 1:
+            #     print("\nRECV parse", msg.payload.message.body.decode())
 
             # XXX Only one receiver, this is a node not network
             # XXX: Not populating? Why do we need this anyway?

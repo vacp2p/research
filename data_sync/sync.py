@@ -107,7 +107,7 @@ class Node():
                     ack_rec = new_ack_record([mid])
                     self.network.send_message(self.name, peer, ack_rec)
                     self.sync_state[mid][peer]['ack_flag'] = 0
-                    log("    ACK ({} -> {}): {}".format(self.name, peer, mid[:4]))
+                    log("    ACK ({} -> {}): {}".format(self.name[-4:], peer[-4:], mid[-4:]))
 
     # - **Acknowledge** any messages **offered** by the peer that the device holds,
     #   and has not yet acknowledged
@@ -147,7 +147,7 @@ class Node():
                         'send_time': self.time + int(n**2) + 1
                     })
 
-                    log("REQUEST ({} -> {}): {}".format(self.name, peer_id, message_id[:4]))
+                    log("REQUEST ({} -> {}): {}".format(self.name[-4:], peer_id[-4:], message_id[-4:]))
                     # XXX: It is double requesting, should be polite
 
     # - **Send** any messages that the device is **sharing** with the peer, that have
@@ -163,7 +163,7 @@ class Node():
                     self.sync_state[message_id][peer_id]["send_count"] = send_count
                     self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
                     self.sync_state[message_id][peer_id]["request_flag"] = 0
-                    log('MESSAGE ({} -> {}): {} requested and sent'.format(self.name, peer_id, message_id [:4]))
+                    log('MESSAGE ({} -> {}): {} requested and sent'.format(self.name[-4:], peer_id[-4:], message_id[-4:]))
                     # XXX: Can introduce latency here
                     self.network.send_message(self.name, peer_id, message)
 
@@ -187,7 +187,7 @@ class Node():
                     send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
                     self.sync_state[message_id][peer_id]["send_count"] = send_count
                     self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
-                    log("  OFFER ({} -> {}): {}".format(self.name, peer_id, message_id[:4]))
+                    log("  OFFER ({} -> {}): {}".format(self.name[-4:], peer_id[-4:], message_id[-4:]))
 
     # - **Send** any messages that the device is **sharing** with the peer, and does
     #   not know whether the peer holds, and that have reached their send times
@@ -202,7 +202,7 @@ class Node():
                     send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
                     self.sync_state[message_id][peer_id]["send_count"] = send_count
                     self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
-                    log('MESSAGE ({} -> {}): {} sent'.format(self.name, peer_id, message_id [:4]))
+                    log('MESSAGE ({} -> {}): {} sent'.format(self.name[-4:], peer_id[-4:], message_id[-4:]))
                     # XXX: Can introduce latency here
                     self.network.send_message(self.name, peer_id, message)
 
@@ -248,7 +248,7 @@ class Node():
         # Where does this come from?
         for peer in self.peers.keys():
             if peer in self.sharing[self.group_id]:
-                print("**SHARE2", peer)
+                #print("**SHARE2", peer)
                 # ok, then what?
                 self.sync_state[message_id][peer] = {
                     "hold_flag": 0,
@@ -279,7 +279,7 @@ class Node():
     # TODO: Problem: It assumes there's a name, as opposed to a pubkey
     def on_receive_message(self, sender_pubkey, message):
         message_id = get_message_id(message)
-        log('MESSAGE ({} -> {}): {} received'.format(sender_pubkey, self.name, message_id[:4]))
+        log('MESSAGE ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], message_id[-4:]))
         if message_id not in self.sync_state:
             self.sync_state[message_id] = {}
 
@@ -311,12 +311,12 @@ class Node():
 
     def on_receive_ack(self, sender_pubkey, message):
         for ack in message.payload.ack.id:
-            log('    ACK ({} -> {}): {} received'.format(sender_pubkey, self.name, ack[:4]))
+            log('    ACK ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], ack[-4:]))
             self.sync_state[ack][sender_pubkey]["hold_flag"] = 1
 
     def on_receive_offer(self, sender_pubkey, message):
         for message_id in message.payload.offer.id:
-            log('  OFFER ({} -> {}): {} received'.format(sender_pubkey, self.name, message_id[:4]))
+            log('  OFFER ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], message_id[-4:]))
             if (message_id in self.sync_state and
                 sender_pubkey in self.sync_state[message_id] and
                 self.sync_state[message_id][sender_pubkey]['ack_flag'] == 1):
@@ -348,17 +348,17 @@ class Node():
 
     def on_receive_request(self, sender_pubkey, message):
         for req in message.payload.request.id:
-            log('REQUEST ({} -> {}): {} received'.format(sender_pubkey, self.name, req[:4]))
+            log('REQUEST ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], req[-4:]))
             self.sync_state[req][sender_pubkey]["request_flag"] = 1
 
     def print_sync_state(self):
-        log("\n{} POV @{}".format(self.name, self.time))
+        log("\n{} POV @{}".format(self.name[-4:], self.time))
         log("-" * 60)
         n = self.name
         for message_id, x in self.sync_state.items():
-            line = message_id[:4] + " | "
+            line = message_id[-4:] + " | "
             for peer, flags in x.items():
-                line += peer + ": "
+                line += peer[-4:] + ": "
                 if flags['hold_flag']:
                     line += "hold "
                 if flags['ack_flag']:
@@ -378,7 +378,7 @@ class Node():
         log("-" * 60)
         n = self.name[-4:]
         for message_id, x in self.sync_state.items():
-            line = message_id[:4] + " | "
+            line = message_id[-4:] + " | "
             for peer, flags in x.items():
                 line += peer[-4:] + ": "
                 if flags['hold_flag']:
