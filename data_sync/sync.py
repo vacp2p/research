@@ -14,9 +14,18 @@ GROUP_ID = "0xdeadbeef"
 
 # TODO: Introduce exponential back-off for send_time based on send_count
 
+# XXX: Hardcoded for logging, cba
+#NODE = 'xxx'
+
 # XXX: Add debug log level
-def log(message):
-    print(message)
+#def log(message):
+    # XXX: Instead of this, how about printing this to a sync log?
+    #print(message)
+    # XXX: Don't know which node! Oops.
+ #   with open(NODE + 'sync.log', 'w') as f:
+  #      f.write(message + '\n')
+
+#    print(message)
 
 def merge_two_dicts(x, y):
     z = x.copy()
@@ -24,7 +33,7 @@ def merge_two_dicts(x, y):
     return z
 
 class Node():
-    def __init__(self, name, network, profile, mode='batch'):
+    def __init__(self, logfn, name, network, profile, mode='batch'):
         self.name = name
         self.log = []
         self.messages = {}
@@ -34,6 +43,7 @@ class Node():
         self.time = 0
         self.mode = mode
         self.offeredMessages = {} # XXX: Should be bounded
+        self.logger = logfn
 
         # XXX: Assumes only one group
         self.group_id = GROUP_ID
@@ -107,7 +117,7 @@ class Node():
                     ack_rec = new_ack_record([mid])
                     self.network.send_message(self.name, peer, ack_rec)
                     self.sync_state[mid][peer]['ack_flag'] = 0
-                    log("    ACK ({} -> {}): {}".format(self.name[-4:], peer[-4:], mid[-4:]))
+                    self.logger("    ACK ({} -> {}): {}".format(self.name[-4:], peer[-4:], mid[-4:]))
 
     # - **Acknowledge** any messages **offered** by the peer that the device holds,
     #   and has not yet acknowledged
@@ -147,7 +157,7 @@ class Node():
                         'send_time': self.time + int(n**2) + 1
                     })
 
-                    log("REQUEST ({} -> {}): {}".format(self.name[-4:], peer_id[-4:], message_id[-4:]))
+                    self.logger("REQUEST ({} -> {}): {}".format(self.name[-4:], peer_id[-4:], message_id[-4:]))
                     # XXX: It is double requesting, should be polite
 
     # - **Send** any messages that the device is **sharing** with the peer, that have
@@ -163,7 +173,7 @@ class Node():
                     self.sync_state[message_id][peer_id]["send_count"] = send_count
                     self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
                     self.sync_state[message_id][peer_id]["request_flag"] = 0
-                    log('MESSAGE ({} -> {}): {} requested and sent'.format(self.name[-4:], peer_id[-4:], message_id[-4:]))
+                    self.logger('MESSAGE ({} -> {}): {} requested and sent'.format(self.name[-4:], peer_id[-4:], message_id[-4:]))
                     # XXX: Can introduce latency here
                     self.network.send_message(self.name, peer_id, message)
 
@@ -187,7 +197,7 @@ class Node():
                     send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
                     self.sync_state[message_id][peer_id]["send_count"] = send_count
                     self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
-                    log("  OFFER ({} -> {}): {}".format(self.name[-4:], peer_id[-4:], message_id[-4:]))
+                    self.logger("  OFFER ({} -> {}): {}".format(self.name[-4:], peer_id[-4:], message_id[-4:]))
 
     # - **Send** any messages that the device is **sharing** with the peer, and does
     #   not know whether the peer holds, and that have reached their send times
@@ -202,7 +212,7 @@ class Node():
                     send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
                     self.sync_state[message_id][peer_id]["send_count"] = send_count
                     self.sync_state[message_id][peer_id]["send_time"] += self.time + send_count*2
-                    log('MESSAGE ({} -> {}): {} sent'.format(self.name[-4:], peer_id[-4:], message_id[-4:]))
+                    self.logger('MESSAGE ({} -> {}): {} sent'.format(self.name[-4:], peer_id[-4:], message_id[-4:]))
                     # XXX: Can introduce latency here
                     self.network.send_message(self.name, peer_id, message)
 
@@ -274,12 +284,12 @@ class Node():
             else:
                 print("XXX: unknown message type")
         else:
-            log("*** node {} offline, dropping message".format(self.name))
+            self.logger("*** node {} offline, dropping message".format(self.name))
 
     # TODO: Problem: It assumes there's a name, as opposed to a pubkey
     def on_receive_message(self, sender_pubkey, message):
         message_id = get_message_id(message)
-        log('MESSAGE ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], message_id[-4:]))
+        self.logger('MESSAGE ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], message_id[-4:]))
         if message_id not in self.sync_state:
             self.sync_state[message_id] = {}
 
@@ -311,12 +321,12 @@ class Node():
 
     def on_receive_ack(self, sender_pubkey, message):
         for ack in message.payload.ack.id:
-            log('    ACK ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], ack[-4:]))
+            self.logger('    ACK ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], ack[-4:]))
             self.sync_state[ack][sender_pubkey]["hold_flag"] = 1
 
     def on_receive_offer(self, sender_pubkey, message):
         for message_id in message.payload.offer.id:
-            log('  OFFER ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], message_id[-4:]))
+            self.logger('  OFFER ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], message_id[-4:]))
             if (message_id in self.sync_state and
                 sender_pubkey in self.sync_state[message_id] and
                 self.sync_state[message_id][sender_pubkey]['ack_flag'] == 1):
@@ -348,12 +358,12 @@ class Node():
 
     def on_receive_request(self, sender_pubkey, message):
         for req in message.payload.request.id:
-            log('REQUEST ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], req[-4:]))
+            self.logger('REQUEST ({} -> {}): {} received'.format(sender_pubkey[-4:], self.name[-4:], req[-4:]))
             self.sync_state[req][sender_pubkey]["request_flag"] = 1
 
     def print_sync_state(self):
-        log("\n{} POV @{}".format(self.name[-4:], self.time))
-        log("-" * 60)
+        self.logger("\n{} POV @{}".format(self.name[-4:], self.time))
+        self.logger("-" * 60)
         n = self.name
         for message_id, x in self.sync_state.items():
             line = message_id[-4:] + " | "
@@ -369,13 +379,13 @@ class Node():
                 line += "(" + str(flags['send_count']) + ")"
                 line += " | "
 
-            log(line)
+            self.logger(line)
         #log("-" * 60)
 
     # Shorter names for pubkey
     def print_sync_state2(self):
-        log("\n{} POV @{}".format(self.name[-4:], self.time))
-        log("-" * 60)
+        self.logger("\n{} POV @{}".format(self.name[-4:], self.time))
+        self.logger("-" * 60)
         n = self.name[-4:]
         for message_id, x in self.sync_state.items():
             line = message_id[-4:] + " | "
@@ -391,7 +401,7 @@ class Node():
                 line += "(" + str(flags['send_count']) + ")"
                 line += " | "
 
-            log(line)
+            self.logger(line)
         #log("-" * 60)
 
     def update_availability(self):

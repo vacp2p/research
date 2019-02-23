@@ -16,6 +16,23 @@ SETTINGS = {
     }
 }
 
+# XXX: Hardcoded for logging, hacky for now
+#NODE = 'xxx'
+
+def foo(x):
+    return lambda y: print("I just ", x, "the", y)
+
+# XXX: Add debug log level
+def log(node, message):
+    with open(node + 'sync.log', 'a') as f:
+        f.write(message + '\n')
+
+#    print("****NODE", node)
+#    print(message)
+
+def logger(node):
+    return lambda message: log(node, message)
+
 def tick_process(node, whisper_node):
     while True:
         #print("tick")
@@ -29,21 +46,24 @@ def main():
 
     assert len(sys.argv) > 1, "Missing node argument. Example: 'a' or 'b'"
     # Assume exists
-    settings = SETTINGS[sys.argv[1]]
+    node_name = sys.argv[1]
+    settings = SETTINGS[node_name]
     keypair = settings['keypair']
     identity_pk = settings['pubkey']
     host = settings['host']
     friend_pk = settings['friend']
+    logfn = logger(node_name)
 
     # Init node
     whisper_node = networkwhisper.WhisperNodeHelper(keypair, host)
     # XXX: interactive mode with offer might not work?
-    node = sync.Node(identity_pk, whisper_node, 'onlineDesktop', 'batch')
+    node = sync.Node(logfn, identity_pk, whisper_node, 'onlineDesktop', 'batch')
 
     #where?
     #whisper_node.tick()
 
     # XXX: A bit weird? Or very weird
+    # XXX Thought we got rid of this
     node.nodes = [node]
     # XXX: Doesn't make sense, a doesn't have b info
     # XXX
