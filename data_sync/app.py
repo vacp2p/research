@@ -3,6 +3,8 @@ import networkwhisper, sync, sys, threading, time
 # TODO: Consider moving sync state outside of log
 # XXX: Assume {a,b}sync.log exists
 
+# TODO: UX feedback, when recv it should show
+
 # XXX: Ugly constants, should be elsewhere
 SETTINGS = {
     'a': {
@@ -80,8 +82,8 @@ def main():
     thread.start()
 
     while True:
-        text = input("> ")
-        print("You wrote", text)
+        text = input("")
+        #print("You: " + text)
         rec = sync.new_message_record(text)
         node.append_message(rec)
 

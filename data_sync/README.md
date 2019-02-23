@@ -124,3 +124,11 @@ enode://421a707a09d9ff08028fd9e47df876bd4cfbd873ce12cfe00702b068acf077518c5c065f
 
 geth      7053 user   68u  IPv6 141618      0t0  TCP localhost:30000->localhost:44984 (ESTABLISHED)
 geth      7415 user   63u  IPv4 141044      0t0  TCP localhost:44984->localhost:30000 (ESTABLISHED)
+
+## Next steps
+
+- End to end add several notes
+
+- Sanity check wrt adding peers manually etc
+
+- Figure out latency smaller

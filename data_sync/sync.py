@@ -297,7 +297,6 @@ class Node():
             self.sync_state[message_id][sender_pubkey]['hold_flag'] == 1
             self.sync_state[message_id][sender_pubkey]['ack_flag'] == 1
             # XXX: ACK again here?
-        # XXX: This is bad, sender here with Whisper is only pbukey
         self.sync_state[message_id][sender_pubkey] = {
             "hold_flag": 1,
             "ack_flag": 1,
@@ -317,7 +316,14 @@ class Node():
                     "send_time": 0
                 }
 
+        # XXX: Huh, This is MESSAGE, shouldn't it be PAYLOAD inside it?
+        assert message.header.type == 1, "Type should be MESSAGE, possible faulty logic"
         self.messages[message_id] = message
+
+        # XXX: Shortcuts, lets take 'em
+        text = message.payload.message.body.decode('utf-8')
+        short_sender = sender_pubkey[-4:]
+        print(short_sender + ": " + text)
 
     def on_receive_ack(self, sender_pubkey, message):
         for ack in message.payload.ack.id:
