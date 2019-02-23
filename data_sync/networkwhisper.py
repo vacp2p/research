@@ -35,15 +35,22 @@ class WhisperNodeHelper():
         # XXX: Doesn't belong here
         #kId = self.web3.shh.addPrivateKey(keyPair)
         pubKey = self.web3.shh.getPublicKey(self.kId)
-        #print("***PUBKEY", pubKey)
-        myFilter = self.web3.shh.newMessageFilter({'topic': topic,
+        print("***KID", self.kId)
+        print("***PUBKEY", pubKey)
+        myFilter = self.web3.shh.newMessageFilter({'topic': self.topic,
                                                    'privateKeyID': self.kId})
         # Purpose of this if we do getMessages?
         myFilter.poll_interval = 600;
+        # XXX: Does this actually do anything?
         return myFilter
+
+    # XXX: BUG - this isn't ticking! I guess it should?!?!?!?!
+    # TODO HEREATM
     def tick(self):
         filterID = self.myFilter.filter_id
+        #print("*** tick whisper", filterID)
         retreived_messages = self.web3.shh.getMessages(filterID)
+        #print("*** tick whisper retrieved", retreived_messages)
 
         # TODO: Deal with these messages similar to simulation
         # receiver.on_receive(sender, msg)
@@ -78,7 +85,7 @@ class WhisperNodeHelper():
             receiver.on_receive(sender, msg)
 
         #print ""
-        print("tick", self.time + 1)
+        #print("tick", self.time + 1)
         #print "-----------"
 
         # XXX: This is ugly, why is this ticking nodes?
@@ -106,8 +113,11 @@ class WhisperNodeHelper():
 
     # sender id / pubkey not needed for now
     # topic assumed to be hardcoded
+    # HEREATM, not sure if it works or not
+    # ok it sends, but not being picked up
+    # static-nodes same?
     def send_message(self, sender_id, address_to, msg):
-        print("*** (whisper-network) send_message", address_to)
+        print("*** (whisper-network) send_message to", address_to)
         # XXX: Is this what we want to do?
         payload = msg.SerializeToString()
         print("*** (whisper-network) send_message payload", payload)

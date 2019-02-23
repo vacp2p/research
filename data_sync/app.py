@@ -14,11 +14,13 @@ SETTINGS = {
     }
 }
 
-def tick_process(node):
+def tick_process(node, whisper_node):
     while True:
         #print("tick")
+        # XXX: careful maybe
+        whisper_node.tick()
         node.tick()
-        time.sleep(1)
+        time.sleep(0.1)
 
 def main():
 
@@ -31,16 +33,21 @@ def main():
 
     # Init node
     whisper_node = networkwhisper.WhisperNodeHelper(keypair)
-    node = sync.Node(identity_pk, whisper_node, 'burstyMobile', 'batch')
+    node = sync.Node(identity_pk, whisper_node, 'onlineDesktop', 'interactive')
+
+    #where?
+    #whisper_node.tick()
+
     # XXX: A bit weird? Or very weird
     node.nodes = [node]
     # XXX: Doesn't make sense, a doesn't have b info
-    #node.addPeer(friend_pk, b)
+    # XXX
+    node.addPeer(friend_pk, friend_pk)
     # Clients should decide policy
     node.share(friend_pk)
 
     # Start background thread
-    thread = threading.Thread(target=tick_process, args=[node])
+    thread = threading.Thread(target=tick_process, args=[node, whisper_node])
     thread.daemon = True
     thread.start()
 
@@ -57,3 +64,14 @@ main()
 # Ok, can send message
 # Now share with these other
 # And allow b to run as a proc too
+
+# so it is sending but not recving. Why is this?
+# Is it resending? 2fce e.g. for b
+# Is it actually trying to receive? static peers etc
+# Does burstyMobile impact things? fs
+
+# Looking at naive print I DONT see it resending,sync state is updated! what does this mean?
+
+#hm maybe
+#ok, it IS resyncing, just abit slow. TICK? ok 100ms now
+# what does bursty mobile mean? lets do onlineDesktop

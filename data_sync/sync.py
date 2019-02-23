@@ -177,6 +177,8 @@ class Node():
                     flags['send_time'] <= self.time):
                     # TODO: Extend to slurp up all, need index peer->message
                     offer_rec = new_offer_record([message_id])
+                    # HERE we send
+                    # XXX: peer_id, should be pbukey
                     self.network.send_message(self.name, peer_id, offer_rec)
                     send_count = self.sync_state[message_id][peer_id]["send_count"] + 1
                     self.sync_state[message_id][peer_id]["send_count"] = send_count
@@ -201,6 +203,7 @@ class Node():
                     self.network.send_message(self.name, peer_id, message)
 
     # XXX: Why would node know about peer and not just name?
+    # TODO: Refactor this to illustrate that it is just a set of pubkeys
     def addPeer(self, peer_id, peer):
         self.peers[peer_id] = peer
 
@@ -235,8 +238,14 @@ class Node():
         # Ensure added for each peer
         # If we add peer at different time, ensure state init
         # TODO: Only share with certain peers, e.g. clientPolicy
+        # XXX here we go, probably
+        #print("**SHARE1 SHDNOTBEEMPTY", self.peers)
+        # TODO: Problem - this shouldn't be empty
+        # Where does this come from?
         for peer in self.peers.keys():
             if peer in self.sharing[self.group_id]:
+                print("**SHARE2", peer)
+                # ok, then what?
                 self.sync_state[message_id][peer] = {
                     "hold_flag": 0,
                     "ack_flag": 0,
