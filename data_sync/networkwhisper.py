@@ -21,8 +21,12 @@ class WhisperNodeHelper():
         self.kId = self.web3.shh.addPrivateKey(self.keyPair)
         self.myFilter = self.poll_filter(self.topic, self.keyPair)
 
+        # XXX: Race, since before this is set it isn't ready to receive
+        # Later sync node - setup in Node init fn
+        self.sync_node = None
+
         # XXX: Prune this
-        self.nodes = []
+        #self.nodes = []
         self.time = 0
         #self.queue = {}
         #self.peers = {}
@@ -70,7 +74,11 @@ class WhisperNodeHelper():
                 print("\nRECV parse", msg.payload.message.body.decode())
 
             # XXX Only one receiver, this is a node not network
-            receiver = self.nodes[0]
+            # XXX: Not populating? Why do we need this anyway?
+            # Well this is the sync node, so how self? node
+            # IF I recv something it is myself!
+            #receiver = self.nodes[0]
+            receiver = self.sync_node
             # HEREATM
             # How sender?
             # TODO: Figure out how we know sender, assumes signed message
@@ -87,9 +95,8 @@ class WhisperNodeHelper():
         #print "-----------"
 
         # XXX: This is ugly, why is this ticking nodes?
-        # NOTE: Only self is ticking
-        for n in self.nodes:
-            n.tick()
+        # Also then don't tick
+        self.sync_node.tick()
         self.time += 1
 
     # NetworkSim stub
@@ -115,10 +122,10 @@ class WhisperNodeHelper():
     # ok it sends, but not being picked up
     # static-nodes same?
     def send_message(self, sender_id, address_to, msg):
-        print("*** (whisper-network) send_message to", address_to)
+        #print("*** (whisper-network) send_message to", address_to)
         # XXX: Is this what we want to do?
         payload = msg.SerializeToString()
-        print("*** (whisper-network) send_message payload", payload)
+        #print("*** (whisper-network) send_message payload", payload)
         #print("*** (whisper-network) send_message hex", self.web3.toHex(payload))
         topic = self.topic
         self.web3.shh.post({

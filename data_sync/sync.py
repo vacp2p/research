@@ -39,6 +39,10 @@ class Node():
         self.group_id = GROUP_ID
         self.sharing = {GROUP_ID: set()}
 
+
+        # Network should be aware of sync node so it can call it
+        network.sync_node = self
+
         self.profile = profile
         # for index in pulsating reseries if mobile node
 

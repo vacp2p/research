@@ -21,7 +21,8 @@ def tick_process(node, whisper_node):
         #print("tick")
         # XXX: careful maybe
         whisper_node.tick()
-        node.tick()
+        # This should be done in the sync
+        #node.tick()
         time.sleep(0.1)
 
 def main():
@@ -36,7 +37,8 @@ def main():
 
     # Init node
     whisper_node = networkwhisper.WhisperNodeHelper(keypair, host)
-    node = sync.Node(identity_pk, whisper_node, 'onlineDesktop', 'interactive')
+    # XXX: interactive mode with offer might not work?
+    node = sync.Node(identity_pk, whisper_node, 'onlineDesktop', 'batch')
 
     #where?
     #whisper_node.tick()

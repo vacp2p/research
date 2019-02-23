@@ -78,6 +78,7 @@ for (var p=0; p < admin.peers.length; p++) { console.log(admin.peers[p].enode); 
 
 admin.addPeer("enode://531e252ec966b7e83f5538c19bf1cde7381cc7949026a6e499b6e998e695751aadf26d4c98d5a4eabfb7cefd31c3c88d600a775f14ed5781520a88ecd25da3c6@35.225.227.79:30504")
 
+
 ok, so this works.
 
 Problem: even with detailed logs very little feedback
