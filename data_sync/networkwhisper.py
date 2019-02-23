@@ -6,11 +6,9 @@ import random
 import sync_pb2
 
 # XXX: This assumes a node is actually running - shell out to boot geth?
-# At least error if proc not running
 class WhisperNodeHelper():
-    def __init__(self, keypair):
-        # XXX: Whisper specific, but this host should be unique per node
-        self.host = "http://localhost:8500"
+    def __init__(self, keypair, host):
+        self.host = host
         self.web3 = Web3(HTTPProvider(self.host))
         Shh.attach(self.web3, "shh")
 
