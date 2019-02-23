@@ -1,5 +1,8 @@
 import networkwhisper, sync, sys, threading, time
 
+# TODO: Consider moving sync state outside of log
+# XXX: Assume {a,b}sync.log exists
+
 # XXX: Ugly constants, should be elsewhere
 SETTINGS = {
     'a': {
@@ -82,7 +85,8 @@ def main():
         rec = sync.new_message_record(text)
         node.append_message(rec)
 
-        node.print_sync_state()
+        # XXX: Dunno best way to showcase this
+        #node.print_sync_state()
 
 main()
 

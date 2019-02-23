@@ -362,8 +362,8 @@ class Node():
             self.sync_state[req][sender_pubkey]["request_flag"] = 1
 
     def print_sync_state(self):
-        self.logger("\n{} POV @{}".format(self.name[-4:], self.time))
-        self.logger("-" * 60)
+        print("\n{} POV @{}".format(self.name[-4:], self.time))
+        print("-" * 60)
         n = self.name
         for message_id, x in self.sync_state.items():
             line = message_id[-4:] + " | "
@@ -379,13 +379,13 @@ class Node():
                 line += "(" + str(flags['send_count']) + ")"
                 line += " | "
 
-            self.logger(line)
+            print(line)
         #log("-" * 60)
 
     # Shorter names for pubkey
     def print_sync_state2(self):
-        self.logger("\n{} POV @{}".format(self.name[-4:], self.time))
-        self.logger("-" * 60)
+        print("\n{} POV @{}".format(self.name[-4:], self.time))
+        print("-" * 60)
         n = self.name[-4:]
         for message_id, x in self.sync_state.items():
             line = message_id[-4:] + " | "
@@ -401,7 +401,7 @@ class Node():
                 line += "(" + str(flags['send_count']) + ")"
                 line += " | "
 
-            self.logger(line)
+            print(line)
         #log("-" * 60)
 
     def update_availability(self):
@@ -551,10 +551,10 @@ def run(steps=10):
         #b.print_sync_state()
         #c.print_sync_state()
 
-    a.print_sync_state()
-    b.print_sync_state()
-    c.print_sync_state()
-    d.print_sync_state()
+    # a.print_sync_state()
+    # b.print_sync_state()
+    # c.print_sync_state()
+    # d.print_sync_state()
 
 def whisperRun(steps=10):
     a_keyPair = "0x57083392b29bdf24512c93cfdf45d38c87d9d882da3918c59f4406445ea976a4"
@@ -610,8 +610,8 @@ def whisperRun(steps=10):
         #a.print_sync_state()
         #b.print_sync_state()
 
-    a.print_sync_state2()
-    b.print_sync_state2()
+    # a.print_sync_state2()
+    # b.print_sync_state2()
 
 # TODO: With Whisper branch this one breaks, probably due to sender{,.name} => sender_pubkey mismatch.
 #run(30)
