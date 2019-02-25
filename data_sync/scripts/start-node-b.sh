@@ -8,6 +8,7 @@
 echo "[Starting node-b...]"
 
 echo "[Copying static-nodes...]"
+mkdir -p ~/.ethereum/node-b/
 cp static-nodes.json ~/.ethereum/node-b/
 #geth --testnet --syncmode=light --rpc --maxpeers=25 --shh --shh.pow=0.002 --rpcport=8501 --datadir=~/.ethereum/node-b --port=30001 --verbosity=4
 
