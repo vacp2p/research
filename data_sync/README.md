@@ -6,9 +6,21 @@ As well as some PoC around it.
 
 Initial PoC report: https://notes.status.im/THYDMxSmSSiM5ASdl-syZg
 
+## Setup
+
 ```
+# ensure you have protobuf-compiler, python3, pip installed
+# Using virtualenv
+python3 -m pip install --user virtualenv
+python3 -m virtualenv env
+source env/bin/activate
+pip install web3 protobuf
+
 make
-make run # see sync.py
+
+#make run # see sync.py
+# or:
+python3 app.py <a|b>
 ```
 
 ## Whisper

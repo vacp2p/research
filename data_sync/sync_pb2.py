@@ -21,7 +21,6 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_pb=_b('\n\nsync.proto\x12\x04sync\"\x82\x04\n\x06Record\x12#\n\x06header\x18\x01 \x01(\x0b\x32\x13.sync.Record.Header\x12%\n\x07payload\x18\x02 \x01(\x0b\x32\x14.sync.Record.Payload\x1aJ\n\x06Header\x12\x0f\n\x07version\x18\x01 \x01(\x05\x12\x1f\n\x04type\x18\x02 \x01(\x0e\x32\x11.sync.Record.Type\x12\x0e\n\x06length\x18\x03 \x01(\x05\x1a\xac\x01\n\x07Payload\x12\x1f\n\x03\x61\x63k\x18\x01 \x01(\x0b\x32\x10.sync.Record.AckH\x00\x12\'\n\x07message\x18\x02 \x01(\x0b\x32\x14.sync.Record.MessageH\x00\x12#\n\x05offer\x18\x03 \x01(\x0b\x32\x12.sync.Record.OfferH\x00\x12\'\n\x07request\x18\x04 \x01(\x0b\x32\x14.sync.Record.RequestH\x00\x42\t\n\x07payload\x1a\x11\n\x03\x41\x63k\x12\n\n\x02id\x18\x01 \x03(\t\x1a<\n\x07Message\x12\x10\n\x08group_id\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0c\n\x04\x62ody\x18\x03 \x01(\x0c\x1a\x13\n\x05Offer\x12\n\n\x02id\x18\x01 \x03(\t\x1a\x15\n\x07Request\x12\n\n\x02id\x18\x01 \x03(\t\"4\n\x04Type\x12\x07\n\x03\x41\x43K\x10\x00\x12\x0b\n\x07MESSAGE\x10\x01\x12\t\n\x05OFFER\x10\x02\x12\x0b\n\x07REQUEST\x10\x03\x62\x06proto3')
 )
-_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
 
@@ -69,21 +68,21 @@ _RECORD_HEADER = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='type', full_name='sync.Record.Header.type', index=1,
       number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='length', full_name='sync.Record.Header.length', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -113,28 +112,28 @@ _RECORD_PAYLOAD = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='message', full_name='sync.Record.Payload.message', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='offer', full_name='sync.Record.Payload.offer', index=2,
       number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='request', full_name='sync.Record.Payload.request', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -167,7 +166,7 @@ _RECORD_ACK = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -197,21 +196,21 @@ _RECORD_MESSAGE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='timestamp', full_name='sync.Record.Message.timestamp', index=1,
       number=2, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='body', full_name='sync.Record.Message.body', index=2,
       number=3, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -241,7 +240,7 @@ _RECORD_OFFER = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -271,7 +270,7 @@ _RECORD_REQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -301,14 +300,14 @@ _RECORD = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='payload', full_name='sync.Record.payload', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -353,6 +352,7 @@ _RECORD.fields_by_name['header'].message_type = _RECORD_HEADER
 _RECORD.fields_by_name['payload'].message_type = _RECORD_PAYLOAD
 _RECORD_TYPE.containing_type = _RECORD
 DESCRIPTOR.message_types_by_name['Record'] = _RECORD
+_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Record = _reflection.GeneratedProtocolMessageType('Record', (_message.Message,), dict(
 
