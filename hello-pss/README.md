@@ -58,6 +58,8 @@ We can use `--user` to refer to another person as opposed to `bzzaccount` by def
 
 ## PSS
 
+First, standalone with ethereum-samples. Second, in Go script send and receive (WIP).
+
 ## Later
 
 Simple Go CLI
