@@ -12,7 +12,8 @@ import (
 	"log"
 	"strconv"
 	"github.com/ethereum/go-ethereum/common/hexutil"
- 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/p2p/nat"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
 //import "github.com/ethereum/go-ethereum/log"
@@ -80,10 +81,30 @@ func getPrivateKeyFromFile(keyfile string) *ecdsa.PrivateKey {
 	return privateKey
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+func getp2pConfig(listenaddr string) p2p.Config {
+	return p2p.Config{
+			ListenAddr: listenaddr,
+			MaxPeers:   25,
+			NAT:        nat.Any(),
+	}
+}
+
 // Create a node
 func newNode(port int) (*node.Node, error) {
 	cfg := &node.DefaultConfig
 	cfg.DataDir = fmt.Sprintf("%s%d", ".data_", port)
+
+	// XXX: Lol
+	if port == 9600 {
+		cfg.P2P = getp2pConfig(":30400")
+	} else if port == 9601 {
+		cfg.P2P = getp2pConfig(":30401")
+	} else {
+		log.Fatal("Ports be fucked up")
+	}
+
 	cfg.HTTPPort = port
 	fmt.Printf("Current data directory is %s\n", cfg.DataDir)
 
