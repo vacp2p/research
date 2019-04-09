@@ -171,15 +171,47 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	}
 
 	// TODO: Add other peer?
+	// XXX: Weird because you are adding yourself
+	// XXX: How to detect/derive this? Right now just grepping enode
+	// XXX wrong, need enode data structure or use admin
+	// XXX: Shouldn't this be external IP?
+	
+	//node.Server().AddPeer("enode://395a074c059143a68473bcf7edb3bae72bc930cfef5c92399401cedd76c493014d29e75ed1833fe45a2c0e04f0e9f9c64bf029c9c0fb646aa23690e945d70193@127.0.0.1:30400")
+	//node.Server().AddPeer("enode://f716c8cc7cc6674d8332ae1a3fb7f4776285095dc372c20a508e22e7d0a9c006b1626aab7b45802d99957b86bf1c0c14d9ba91df87528c735751e92dd96fa88f@127.0.0.1:30401")
+
 
 	// Get RPC Client
+	// ipcEndpoint
 	client, err := node.Attach()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to attach to client: %v\n", err)
 	}
 	// XXX: Not readable
 	fmt.Printf("RPC Client %v\v", client)
-	
+
+	enodeA := "enode://395a074c059143a68473bcf7edb3bae72bc930cfef5c92399401cedd76c493014d29e75ed1833fe45a2c0e04f0e9f9c64bf029c9c0fb646aa23690e945d70193@127.0.0.1:30400"
+	enodeB := "enode://f716c8cc7cc6674d8332ae1a3fb7f4776285095dc372c20a508e22e7d0a9c006b1626aab7b45802d99957b86bf1c0c14d9ba91df87528c735751e92dd96fa88f@127.0.0.1:30401"
+
+	// Oops, wasn't running other node...
+	//enodeA := "enode://395a074c059143a68473bcf7edb3bae72bc930cfef5c92399401cedd76c493014d29e75ed1833fe45a2c0e04f0e9f9c64bf029c9c0fb646aa23690e945d70193@192.168.122.1:30400"
+	//enodeB := "enode://f716c8cc7cc6674d8332ae1a3fb7f4776285095dc372c20a508e22e7d0a9c006b1626aab7b45802d99957b86bf1c0c14d9ba91df87528c735751e92dd96fa88f@192.168.122.1:30401"
+
+	// XXX broken af
+	var res1 bool
+	err = client.Call(&res1, "admin_addPeer", enodeA)
+	if err != nil {
+		log.Crit("Unable to add peer", err)
+	}
+
+	var res2 bool
+	err = client.Call(&res2, "admin_addPeer", enodeB)
+	if err != nil {
+		log.Crit("Unable to add peer", err)
+	}
+	fmt.Println("**** broke af, added some peers mby ", res1, res2)
+
+	// TODO admin get peers here?
+
 	// Simpler, there should be a stdlib fn for waitHealthy anyway
 	time.Sleep(time.Second * 3)
 
@@ -189,6 +221,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get node info: %v\n", err)
 	}
+//	fmt.Println("*********nodeinfo %s", nodeinfo)
 
 	var baseaddr string
 	err = client.Call(&baseaddr, "pss_baseAddr")
@@ -233,14 +266,28 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	// XXX: Shouldn't it at least send a message to itself?
 	// XXX: Add log stuff to see swarm state
 
-	err = client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte("Hello world")))
-
-	msgC := make(chan pss.APIMsg)
-	sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)
 
 	// XXX: Blocking, etc? Yeah, so run in bg or so
-	in := <-msgC
-	fmt.Println("Received message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
+
+	// XXX top level for sub declaration teardown
+	msgC := make(chan pss.APIMsg)
+	sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)	
+
+	time.Sleep(time.Second * 3)
+
+	// XXX Lol
+	if port == 9600 {
+		fmt.Println("**** I AM ALICE, SENDING")
+		err = client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte("Hello world")))
+	} else if port == 9601 {
+		fmt.Println("**** I AM BOB, RECEIVING")
+		in := <-msgC
+		fmt.Println("Received message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
+
+	} else {
+		fmt.Println("**** I don't know who you are")
+		os.Exit(1)
+	}
 
 	fmt.Printf("All operations successfully completed.\n")
 
@@ -260,7 +307,7 @@ func init() {
 	// }
 	// XXX Trace for now
 	// XXX: unable to forward to any peers volume is crazy
-	//loglevel = log.LvlTrace
+	loglevel = log.LvlDebug //trace
 	hf := log.LvlFilterHandler(loglevel, hs)
 	h := log.CallerFileHandler(hf)
 	log.Root().SetHandler(h)
@@ -316,3 +363,16 @@ func main() {
 // Not sure how to enable it from Go code, can do with CLI and then connect?
 // Boom
 // geth attach .data_9600/bzz.ipc --exec 'admin.peers'  # []
+
+// Ok, progress
+// TRACE[04-09|14:40:21.249] Dial error                               task="staticdial 5dac9f05c8b4e3a2 127.0.0.1:30401" err="dial tcp 127.0.0.1:30401: connect: connection refused"   caller=dial.go:299
+// No idea why this is trace, but it makes sense. locally. So let's change.
+
+// XXX: Seems like it resolves fine
+// [oskarth@localhost hello-pss]$ ifconfig|grep netmask|awk '{print $2}'
+// 127.0.0.1
+// 192.168.122.1
+// 192.168.10.186
+
+// TODO: I didn't setup networkid, do I need to for swarm?
+// Cool we both connected
