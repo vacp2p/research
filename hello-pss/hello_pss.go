@@ -91,12 +91,14 @@ func newNode(port int) (*node.Node, error) {
 }
 
 // XXX: This is so sloppy, passing privatekey around
-func newService(privKey *ecdsa.PrivateKey) func(ctx *node.ServiceContext) (node.Service, error) {
+func newService(bzzdir string, bzzport int, privKey *ecdsa.PrivateKey) func(ctx *node.ServiceContext) (node.Service, error) {
 	return func(ctx *node.ServiceContext) (node.Service, error) {
 		// Create bzzconfig
 		// TODO: Setup swarm port
 		// XXX: What's difference between Privkey and EnodeKey in Init?
 		bzzconfig := bzzapi.NewConfig()
+		bzzconfig.Path = bzzdir
+		bzzconfig.Port = fmt.Sprintf("%d", bzzport)
 		bzzconfig.Init(privKey, privKey)
 
 		return swarm.NewSwarm(bzzconfig, nil)
@@ -116,7 +118,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 
 	// New Swarm service
 	// XXX: Yuck privateKey
-	service := newService(privateKey)
+	service := newService(node.InstanceDir(), port, privateKey)
 	// if err != nil {
 	// 	fmt.Fprint(os.Stderr, "Unable to start swarm service: %v\n", err)
 	// 	os.Exit(1)
