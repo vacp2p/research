@@ -160,18 +160,20 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 		os.Exit(1)
 	}
 
-	// TODO: Add other peer
+	// TODO: Add other peer?
 
 	// Get RPC Client
 	client, err := node.Attach()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to attach to client: %v\n", err)
 	}
+	// XXX: Not readable
 	fmt.Printf("RPC Client %v\v", client)
 	
 	// Simpler, there should be a stdlib fn for waitHealthy anyway
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 3)
 
+	// XXX: Not readable
 	var nodeinfo p2p.NodeInfo
 	err = client.Call(&nodeinfo, "admin_nodeInfo")
 	if err != nil {
@@ -192,11 +194,35 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	}
 	fmt.Println("PublicKey", pubkey)
 
+	// XXX: Same with baseaddr
+	// 0xd5ac92dd8f593ea7aabf5cfdb35d4d29d87316ffe3ae081750054168e147eb42
+	bobBaseAddr := "0xb208b76c916d5eb84c118c0076b35828f0728a416537786f4515dd6608c4874d"
+	fmt.Println("BobbaseAddr PSS", bobBaseAddr)
+
+	// XXX: This is separate from node generated key, so want to save this contacts or so
+	// f(alice/bob.key, 9600/9601), not confirmed if it is stable if port changes
+	// alice: 0x04c56131d8ded90e79b76b97f26e8fc032597886ff68ab6557f91c4bf1ae46eab94415c6df30bb6479cf40f811977bb2b237787f5b807d97191f7a994a558633e0
+	// bob: 0x04cbd6b75038f2d1e4e8e2754ffadecaaa8d2fdbbb29311dc82a8e1880fce4576f86e3d87ab360bcdde1aaf9a01a2cf232be95684a1152a735ccb4200495e4145c
+
 	var topic string
 	err = client.Call(&topic, "pss_stringToTopic", "foo")
 
+	// Ok, now what?
+	// XX: Also who is pubkey here
+
 	// XXX: Wrong pubkey
-	receiver := pubkey
+	//receiver := pubkey
+	bobPubKey := "0x04cbd6b75038f2d1e4e8e2754ffadecaaa8d2fdbbb29311dc82a8e1880fce4576f86e3d87ab360bcdde1aaf9a01a2cf232be95684a1152a735ccb4200495e4145c"
+	receiver := bobPubKey
+	fmt.Println("BobPublicKey PSS", bobPubKey)
+
+	// XXX: I don't understand how baseAddr and public key interact
+	// XXX: I also don't understand why you need to register public key
+	err = client.Call(nil, "pss_setPeerPublicKey", bobPubKey, topic, bobBaseAddr)
+
+	// XXX: Shouldn't it at least send a message to itself?
+	// XXX: Add log stuff to see swarm state
+
 	err = client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte("Hello world")))
 
 	msgC := make(chan pss.APIMsg)
@@ -205,7 +231,6 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	// XXX: Blocking, etc? Yeah, so run in bg or so
 	in := <-msgC
 	fmt.Println("Received message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
-
 
 	fmt.Printf("All operations successfully completed.\n")
 
