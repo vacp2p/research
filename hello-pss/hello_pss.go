@@ -9,7 +9,8 @@ import (
 	"os"
 	"time"
 	"io/ioutil"
-	"log"
+	//"log"
+	"github.com/ethereum/go-ethereum/log"
 	"strconv"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/p2p/nat"
@@ -29,11 +30,16 @@ import (
 // So A sends to B, and B receives it
 // Later also use Feeds to post to own so B can check/pull
 
+var (
+	// logger
+	Log = log.New("hello-pss", "*")
+)
+
 // XXX: Warning, this is bad design. Should use keystore for this.
 func getHexPrivateKey() string {
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
-		log.Fatal(err)
+		Log.Crit("can't generate private key", err)
 	}
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
@@ -43,7 +49,7 @@ func getHexPrivateKey() string {
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		log.Fatal("error casting public key to ECDSA")
+		log.Crit("error casting public key to ECDSA", err)
 	}
 	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
 	fmt.Println("Public Key: ", hexutil.Encode(publicKeyBytes[4:]))
@@ -56,21 +62,21 @@ func getHexPrivateKey() string {
 func getPrivateKeyFromFile(keyfile string) *ecdsa.PrivateKey {
 	contents, err := ioutil.ReadFile(keyfile)
 	if err != nil {
-		log.Fatal("Unable to read keyfile", keyfile)
+		log.Crit("Unable to read keyfile", keyfile)
 	}
 	println(string(contents))
 	privateKeyBytes, err := hexutil.Decode(string(contents))
 	if err != nil {
-		log.Fatal("Unable to get private key bytes")
+		log.Crit("Unable to get private key bytes", err)
 	}
 	privateKey, err := crypto.ToECDSA(privateKeyBytes)
 	if err != nil {
-		log.Fatal("Unable to get private key")
+		log.Crit("Unable to get private key", err)
 	}
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		log.Fatal("error casting public key to ECDSA")
+		log.Crit("error casting public key to ECDSA", err)
 	}
 	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
 	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
@@ -83,6 +89,7 @@ func getPrivateKeyFromFile(keyfile string) *ecdsa.PrivateKey {
 
 /////////////////////////////////////////////////////////////////////////////
 
+//
 func getp2pConfig(listenaddr string) p2p.Config {
 	return p2p.Config{
 			ListenAddr: listenaddr,
@@ -97,12 +104,13 @@ func newNode(port int) (*node.Node, error) {
 	cfg.DataDir = fmt.Sprintf("%s%d", ".data_", port)
 
 	// XXX: Lol
+	// XXX: 	cfg.P2P.ListenAddr = fmt.Sprintf(":%d", port), should work
 	if port == 9600 {
 		cfg.P2P = getp2pConfig(":30400")
 	} else if port == 9601 {
 		cfg.P2P = getp2pConfig(":30401")
 	} else {
-		log.Fatal("Ports be fucked up")
+		log.Crit("Ports be fucked up", "yeah")
 	}
 
 	cfg.HTTPPort = port
@@ -240,6 +248,21 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	node.Stop()
 }
 
+func init() {
+	// NOTE: taken from ethereum-samples
+	hs := log.StreamHandler(os.Stderr, log.TerminalFormat(true))
+	loglevel := log.LvlInfo
+	// TODO: Setup flag and -v option
+	// if *verbose {
+	// 	loglevel = log.LvlTrace
+	// }
+	// XXX Trace for now
+	loglevel = log.LvlTrace
+	hf := log.LvlFilterHandler(loglevel, hs)
+	h := log.CallerFileHandler(hf)
+	log.Root().SetHandler(h)
+}
+ 
 func main() {
 	fmt.Printf("Hello PSS\n")
 
@@ -247,6 +270,7 @@ func main() {
 	// If 2 args, first is keyfile second port
 
 	/// XXX: Bad CLI design
+	// TODO: Use golang flags
 	// TODO: Pull this out to separate parseArgs function
 	args := os.Args[1:]
 	if len(args) == 1 {
@@ -254,9 +278,9 @@ func main() {
 			// TODO: Use keystore or something
 			privateKey := getHexPrivateKey()
 			ioutil.WriteFile("new.key", []byte(privateKey), 0644)
-			log.Fatal("Thanks for the fish, your private key is now insecurely stored in new.key")
+			log.Crit("Thanks for the fish, your private key is now insecurely stored in new.key", args)
 		} else {
-			log.Fatal("Unknown argument, please use 'new' or two arguments (keyfile and port)")
+			log.Crit("Unknown argument, please use 'new' or two arguments (keyfile and port)", args)
 		}
 	} else if len(args) == 2 {
 		keyfile := args[0]
@@ -265,17 +289,21 @@ func main() {
 		privateKey := getPrivateKeyFromFile(keyfile)
 		port, err := strconv.Atoi(portArg)
 		if err != nil {
-			log.Fatal("Unable to parse port argument", portArg)
+			log.Crit("Unable to parse port argument", portArg)
 		}
 		// Start engines
 		run(port, privateKey)
 	} else {
-		log.Fatal("Wrong number of arguments, should be one (new) or two (keyfile and port)")
+		log.Crit("Wrong number of arguments, should be one (new) or two (keyfile and port)", args)
 	}
 }
 
-// TODO: Here at the moment. Need to make sure it reads nodekey wrt right data dir
-// And then adjust ports. Then we should be able to run
+// TODO: Here at the moment. Need to make sure it reads nodekey wrt right data dir DONE
+// And then adjust ports DONE. Then we should be able to run
 // go run hello_pss.go alice and hello_pss.go bob, and then it should be able to send and recv
 //
 // Then also integrate feeds
+
+
+// XXX Ok the problem is https://github.com/ethereum/go-ethereum/blob/master/swarm/pss/pss.go#L766
+// Which happens due to not being connected, so manually and possibly some local network stuff here
