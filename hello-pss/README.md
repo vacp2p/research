@@ -62,6 +62,22 @@ First, standalone with ethereum-samples. Second, in Go script send and receive (
 
 Testing only: private keys galore
 
+Ok we have two (hardcoded) independent, locally running Geth nodes with swarm service messaging over PSS:
+
+```
+Received message Hello world from 307830346335363133316438646564393065373962373662393766323665386663303332353937383836666636386162363535376639316334626631616534366561623934343135633664663330626236343739636634306638313139373762623262323337373837663562383037643937313931663761393934613535383633336530
+```
+
+Next steps?
+- Put logs elsewhere
+- Allow send and receive from both (bg subscribe)?
+- Allow interactive message send?
+- When sending, also update to feeds
+- For feeds, move from curl cli to go/jsonrpc api
+- When going online, allow querying of feeds
+- In message, also includes message dependencies
+
+
 ## Later
 
 Simple Go CLI
