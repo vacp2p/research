@@ -114,6 +114,8 @@ func newNode(port int) (*node.Node, error) {
 	}
 
 	cfg.HTTPPort = port
+	// XXX
+	cfg.IPCPath = "bzz.ipc"
 	fmt.Printf("Current data directory is %s\n", cfg.DataDir)
 
 	return node.New(cfg)
@@ -257,7 +259,8 @@ func init() {
 	// 	loglevel = log.LvlTrace
 	// }
 	// XXX Trace for now
-	loglevel = log.LvlTrace
+	// XXX: unable to forward to any peers volume is crazy
+	//loglevel = log.LvlTrace
 	hf := log.LvlFilterHandler(loglevel, hs)
 	h := log.CallerFileHandler(hf)
 	log.Root().SetHandler(h)
@@ -307,3 +310,9 @@ func main() {
 
 // XXX Ok the problem is https://github.com/ethereum/go-ethereum/blob/master/swarm/pss/pss.go#L766
 // Which happens due to not being connected, so manually and possibly some local network stuff here
+
+// Can't do this because IPC isn't running:
+//  geth attach <path to bzzd.ipc> --exec 'admin.peers'
+// Not sure how to enable it from Go code, can do with CLI and then connect?
+// Boom
+// geth attach .data_9600/bzz.ipc --exec 'admin.peers'  # []
