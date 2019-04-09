@@ -1,2 +1,3 @@
 sync_pb2.pyc
 *.tmp
+.data*
