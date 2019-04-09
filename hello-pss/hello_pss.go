@@ -5,8 +5,13 @@ import (
 	"github.com/ethereum/go-ethereum/swarm/pss"
 	"context"
 	"fmt"
+	"crypto/ecdsa"
 	"os"
 	"time"
+	"io/ioutil"
+	"log"
+	"strconv"
+	"github.com/ethereum/go-ethereum/common/hexutil"
  	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
@@ -19,35 +24,75 @@ import (
 	bzzapi "github.com/ethereum/go-ethereum/swarm/api"
 )
 
-// Lets do here
-// Create two nodes, then what
-// Or just one node with some port
-// Then other node in separate process
-// Can do node hosting separately as well
-// Then just use that API
-
+// Two different node processes
 // So A sends to B, and B receives it
 // Later also use Feeds to post to own so B can check/pull
-// Coffee first brb
 
-func newNode() (*node.Node, error) {
-	// Create a node
-	// TODO: Specify port and possibly data-dir
-	// XXX: When do I use this?
+// XXX: Warning, this is bad design. Should use keystore for this.
+func getHexPrivateKey() string {
+	privateKey, err := crypto.GenerateKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+
+	// Debugging, etc
+	fmt.Println("Private Key: ", hexutil.Encode(privateKeyBytes))
+	fmt.Println("Private Key alt: ", hexutil.Encode(privateKeyBytes)[2:])
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	fmt.Println("Public Key: ", hexutil.Encode(publicKeyBytes[4:]))
+	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+	fmt.Println("Address: ", address)
+
+	return hexutil.Encode(privateKeyBytes)
+}
+
+func getPrivateKeyFromFile(keyfile string) *ecdsa.PrivateKey {
+	contents, err := ioutil.ReadFile(keyfile)
+	if err != nil {
+		log.Fatal("Unable to read keyfile", keyfile)
+	}
+	println(string(contents))
+	privateKeyBytes, err := hexutil.Decode(string(contents))
+	if err != nil {
+		log.Fatal("Unable to get private key bytes")
+	}
+	privateKey, err := crypto.ToECDSA(privateKeyBytes)
+	if err != nil {
+		log.Fatal("Unable to get private key")
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+	fmt.Println("Private Key: ", hexutil.Encode(privateKeyBytes))
+	fmt.Println("Public Key: ", hexutil.Encode(publicKeyBytes[4:]))
+	fmt.Println("Address: ", address)
+
+	return privateKey
+}
+
+// Create a node
+func newNode(port int) (*node.Node, error) {
 	cfg := &node.DefaultConfig
+	cfg.DataDir = fmt.Sprintf("%s%d", ".data_", port)
+	cfg.HTTPPort = port
+	fmt.Printf("Current data directory is %s\n", cfg.DataDir)
+
 	return node.New(cfg)
 }
 
-func newService() func(ctx *node.ServiceContext) (node.Service, error) {
+// XXX: This is so sloppy, passing privatekey around
+func newService(privKey *ecdsa.PrivateKey) func(ctx *node.ServiceContext) (node.Service, error) {
 	return func(ctx *node.ServiceContext) (node.Service, error) {
-		// Generate keys
-		// TODO: Load existing keys from file
-		privKey, err := crypto.GenerateKey()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to generate keys: %v\n", err)
-			os.Exit(1)
-		}
-
 		// Create bzzconfig
 		// TODO: Setup swarm port
 		// XXX: What's difference between Privkey and EnodeKey in Init?
@@ -58,18 +103,11 @@ func newService() func(ctx *node.ServiceContext) (node.Service, error) {
 	}
 }
 
-func main() {
-	fmt.Printf("Hello PSS\n")
+// TODO: Ensure node starts in light node so it doesn't eat up a lot of disk space
 
-	args := os.Args[1:]
-	// if len(args) != 2 {
-	// 	fmt.Fprintf(os.Stderr, "Wrong number of arguments: %s, need two\n", args)
-	// 	os.Exit(1)
-	// }
-	fmt.Println("args", args[0], args[1])
-
+func run(port int, privateKey *ecdsa.PrivateKey) {
 	// New node
-	node, err := newNode()
+	node, err := newNode(port)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Node failure: %v\n", err)
 		os.Exit(1)
@@ -77,7 +115,8 @@ func main() {
 	fmt.Printf("Node: %v\n", node)
 
 	// New Swarm service
-	service := newService()
+	// XXX: Yuck privateKey
+	service := newService(privateKey)
 	// if err != nil {
 	// 	fmt.Fprint(os.Stderr, "Unable to start swarm service: %v\n", err)
 	// 	os.Exit(1)
@@ -151,6 +190,40 @@ func main() {
 	sub.Unsubscribe()
 	client.Close()
 	node.Stop()
+}
+
+func main() {
+	fmt.Printf("Hello PSS\n")
+
+	// If 1 arg and it is new then generate new
+	// If 2 args, first is keyfile second port
+
+	/// XXX: Bad CLI design
+	// TODO: Pull this out to separate parseArgs function
+	args := os.Args[1:]
+	if len(args) == 1 {
+		if args[0] == "new" {
+			// TODO: Use keystore or something
+			privateKey := getHexPrivateKey()
+			ioutil.WriteFile("new.key", []byte(privateKey), 0644)
+			log.Fatal("Thanks for the fish, your private key is now insecurely stored in new.key")
+		} else {
+			log.Fatal("Unknown argument, please use 'new' or two arguments (keyfile and port)")
+		}
+	} else if len(args) == 2 {
+		keyfile := args[0]
+		portArg := args[1]
+		// XXX error handling
+		privateKey := getPrivateKeyFromFile(keyfile)
+		port, err := strconv.Atoi(portArg)
+		if err != nil {
+			log.Fatal("Unable to parse port argument", portArg)
+		}
+		// Start engines
+		run(port, privateKey)
+	} else {
+		log.Fatal("Wrong number of arguments, should be one (new) or two (keyfile and port)")
+	}
 }
 
 // TODO: Here at the moment. Need to make sure it reads nodekey wrt right data dir

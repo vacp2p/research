@@ -60,6 +60,8 @@ We can use `--user` to refer to another person as opposed to `bzzaccount` by def
 
 First, standalone with ethereum-samples. Second, in Go script send and receive (WIP).
 
+Testing only: private keys galore
+
 ## Later
 
 Simple Go CLI
