@@ -94,6 +94,8 @@ func newNode(port int) (*node.Node, error) {
 		cfg.P2P = getp2pConfig(":30400")
 	} else if port == 9601 {
 		cfg.P2P = getp2pConfig(":30401")
+	} else if port == 9602 {
+		cfg.P2P = getp2pConfig(":30402")
 	} else {
 		log.Crit("Ports be fucked up", "yeah")
 	}
@@ -124,7 +126,12 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 	f.User = signer.Address()
 	f.Topic, _ = feed.NewTopic("bob", nil)
 	query := feed.NewQueryLatest(f, lookup.NoClue)
-	httpClient := feedsapi.NewClient("http://localhost:9600")
+
+	// XXX: Ok feeds seems fairly broken
+	//httpClient := feedsapi.NewClient("https://swarm-gateways.net")
+	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9600
+
+	// XXX: Post to multiple feeds?
 
 	//fmt.Println("signer Address: ", f.User.Hex())
 
@@ -153,6 +160,8 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 
 	// XXX: Why do we need the second argument manifestAddressOrDomain?
 	// It's already baked into httpClient and query.
+	// Indeed:
+	// > You only need to provide either manifestAddressOrDomain or Query to QueryFeed(). Set to "" or nil respectively.
 	response, err := httpClient.QueryFeed(query, "")
 	if err != nil {
 		fmt.Println("QueryFeed error", err)
@@ -192,7 +201,24 @@ func mockPassiveREPL() {
 	// Until one day...when he snaps and quits with ctrl-D
 	// Bob first shows loyalty, he never speaks, and then he exits
 	// Allowing Bob to speak means he'll be less likely to exit
-	for { }
+//	for { }
+//	fmt.Println("I am Bob or Charlie, and I can't speak right now.")
+
+	fmt.Printf("> ")
+	// Basic REPL functionality
+	scanner := bufio.NewScanner(os.Stdin)	
+	for scanner.Scan() {
+		input := scanner.Text()
+		fmt.Println("Echo", input)
+		//sendMessage(input)
+		//sendMessage(client, signer, receiver, topic, input)
+		fmt.Printf("> ")
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Unable to read input", err)
+		os.Exit(1)
+	}
+	// Ok maybe this is a bad idea?
 }
 
 // Get messages from feed
@@ -202,7 +228,11 @@ func pullMessages() {
 	//  curl 'http://localhost:9600/bzz-feed:/?user=0xBCa21d9c6031b1965a9e0233D9B905d2f10CA259&name=bob'
 
 	// Querying with local node
-	httpClient := feedsapi.NewClient("http://localhost:9601")
+	// XXX Maybe this is a bad idea, what about gateway?
+	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9601 
+
+	// XXX: Probably not a great idea, but we need to make sure it is healthy etc
+	//httpClient := feedsapi.NewClient("https://swarm-gateways.net")
 
 	// Create a new feed with user and topic.
 	f := new(feed.Feed)
@@ -241,14 +271,14 @@ func newService(bzzdir string, bzzport int, privKey *ecdsa.PrivateKey) func(ctx 
 }
 
 func addPeer(client *rpc.Client, enode string) {
-	fmt.Println("addPeer", enode)
+//	fmt.Println("addPeer", enode)
  	var res bool
 	err := client.Call(&res, "admin_addPeer", enode)
 	if err != nil {
 		fmt.Println("Lets also print unable to add peer here", err)
 		log.Crit("Unable to add peer", err)
 	}
-	fmt.Println("addPeer res", res)
+//	fmt.Println("addPeer res", res)
 }
 
 
@@ -298,12 +328,36 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 
 	// XXX: Broke discovery or something so not connected to many peers, adding some manually as a hack
 	// All have caps: ["bzz/8", "hive/8", "pss/2", "stream/8"] and came from standard swarm setup
-	// static1 := "enode://058f55a4bfe3ef7c3718ac035cd0bc5ce7646d8acc95930036145a0bcb337eb7769b015cb404201e63e48b261962728554e03c2ffca0a80e857f2c8ad1df02f4@52.232.7.187:30400?discport=0"
+	//static1 := "enode://058f55a4bfe3ef7c3718ac035cd0bc5ce7646d8acc95930036145a0bcb337eb7769b015cb404201e63e48b261962728554e03c2ffca0a80e857f2c8ad1df02f4@52.232.7.187:30400?discport=0"
 	// static2 := "enode://a5d7168024c9992769cf380ffa559a64b4f39a29d468f579559863814eb0ae0ed689ac0871a3a2b4c78b03297485ec322d578281131ef5d5c09a4beb6200a97a@52.232.7.187:30442?discport=0"
 	// static3 := "enode://1ffa7651094867d6486ce3ef46d27a052c2cb968b618346c6df7040322c7efc3337547ba85d4cbba32e8b31c42c867202554735c06d4c664b9afada2ed0c4b3c@52.232.7.187:30412?discport=0"
 
+	// Ok, seems like there's an issue with hopCount being exceeded
+	// Additionally, unable to geth attach to b receiver specifically
+	// Let's try adding intermediate node
+	// All it does is...run? Hm.
+
+	// local third node - this has too much stuff in it
+	//enodeC := "enode://a87e2c53089904ec916e5b0c06524fa5dbfd69dc31f5446e7937cd1cdbcc61ed6173d17474814a778129ea0ce8b0fdfc4d4b4e9845a82f00358aa548975f6eae@127.0.0.1:30399"
+
+	enodeC := "enode://99c926eaa4276b79b255baaa8562ba124d7b7ecc81fc05e40679d4219ccbf01ec64f9068314cf20372e76d6dca4f02adf5db6570bc6774263fb1a2f7fc890bb6@127.0.0.1:30402"
+	
+	// open internet
+	enodeD := "enode://99c926eaa4276b79b255baaa8562ba124d7b7ecc81fc05e40679d4219ccbf01ec64f9068314cf20372e76d6dca4f02adf5db6570bc6774263fb1a2f7fc890bb6@127.0.0.1:30402"
+
+	// // Consider conditionally adding peers, get who is self.
+	// if port == 9600 {
+	// 	addPeer(client, enodeB)
+	// 	} else if port == 9601 {
+	// 		addPeer(client, enodeA)
+	// 	}
+	// addPeer(client, enodeC)
+
 	addPeer(client, enodeA)
 	addPeer(client, enodeB)
+	addPeer(client, enodeC)
+	addPeer(client, enodeD)
+
 	// addPeer(client, static1)
 	// addPeer(client, static2)
 	// addPeer(client, static3)
@@ -372,7 +426,14 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	err = client.Call(nil, "pss_setPeerPublicKey", bobPubKey, topic, bobBaseAddr)
 
 	msgC := make(chan pss.APIMsg)
-	sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)	
+	// Only Bob gets to listen
+	if port == 9601 {
+		sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)
+		if err != nil {
+			fmt.Println("Error subscribing to topic", err)
+		}
+		defer sub.Unsubscribe()
+	}
 
 	// XXX: Hack to make sure ready state
 	time.Sleep(time.Second * 3)
@@ -394,6 +455,9 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 		fmt.Println("Alright, up to speed, let's listen in background")
 		go listenForMessages(msgC)
 		mockPassiveREPL()
+	} else if port == 9602 {
+		fmt.Println("I am Charlie, I'm just chilling here")
+		mockPassiveREPL()
 	} else {
 		fmt.Println("*** I don't know who you are")
 		os.Exit(1)
@@ -402,7 +466,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	fmt.Printf("All operations successfully completed.\n")
 
 	// Teardown
-	sub.Unsubscribe()
+
 	client.Close()
 	node.Stop()
 }

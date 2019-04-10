@@ -88,6 +88,14 @@ For som reason I can attach to 9600 but not 9601 after adding peers:
 Fatal: Failed to start the JavaScript console: api modules: context deadline exceeded
 ```
 
+```
+DEBUG[04-10|16:45:08.428] Resolving node failed                    id=0x869830         newdelay=2m0s caller=dial.go:333
+DEBUG[04-10|16:45:08.630] fetcher request hop count limit reached  hops=20 caller=fetcher.go:162
+DEBUG[04-10|16:45:09.004] ChunkStore.Get can not retrieve chunk    peer=b4425dfb4fed04248b4a2ef1eb9a9253b8685a6d4775e2d6264762d8cc8b1a60 addr=c5e800bb76ca919e601440a1192fd94bfbd6e461b9921460272e258aaabb53ab                                                                                                                                                                            hopcount=16 err="context deadline exceeded"            caller=delivery.go:177
+DEBUG[04-10|16:45:09.038] ChunkStore.Get can not retrieve chunk    peer=b4425dfb4fed04248b4a2ef1eb9a9253b8685a6d4775e2d6264762d8cc8b1a60 addr=bfb19b17e25ec9981ba740dffc965635099c4306b9d0d6d19a738bdd5c1a2b68                                                                                                                                                                            hopcount=18 err="context deadline exceeded"            caller=delivery.go:177
+INFO [04-10|16:45:09.177] unable to request                        request addr=ae61264cc22c960b62abfcefac8059c6f6ef481dfd972381024967915cfebdea err="no peer found"                        caller=fetcher.go:238
+```
+
 ### Next steps?
 - Put logs elsewhere
 - Allow send and receive from both (bg subscribe)?
