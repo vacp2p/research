@@ -34,6 +34,9 @@ import (
 var (
 	// logger
 	Log = log.New("hello-pss", "*")
+	
+	// XXX: Should be multiple, but cheating and only taking parent0
+	lastParent = ""
 )
 
 // TODO: Ensure node starts in light node so it doesn't eat up a lot of disk space
@@ -545,27 +548,39 @@ func init() {
 // How does this impact design?
 
 // XXX: Ensure signature, also probably better with client as context but meh
+// TODO: Message should include its parents
 func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string, input string) {
-	//fmt.Println("Input:", input)
 
-	// From input and parents, construct message
-	// TODO: Hardcode parents now, later need to upload and keep track of
-	msg := message{Text: input, Parents: []string{"foo", "bar"}}
-	// XXX: Direct to byte and toHex?
+	// Keeping track of last parent, only one
+	msg := message{Text: input, Parents: []string{lastParent}}
 	payload := serialize(msg)
 
-//	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(payload)))
+	// 1. Send via PSS
 	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex(payload))
 	if err != nil {
 		fmt.Println("Error sending message through RPC client", err)
 		os.Exit(1)
 	}
 
-	// Also post to feed
+	// 2. Upload to swarm to get hash for message dependency
+	// XXX: Might be more elegant way of doing this with manifests etc
+
+	// XXX: In so many places...
+	// TODO: Replace with 9600 once end to end
+	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9600
+
+	hash, err := httpClient.UploadRaw(bytes.NewReader(payload), int64(len(payload)), false)
+	if err != nil {
+		fmt.Println("Unable to upload raw", err)
+		os.Exit(1)
+	}
+	// Now that we have hash, save this as lastParent
+	lastParent = hash
+	//fmt.Println("***last Parent", lastParent)
+	
+	// 3. Also post to feed
 	// XXX: Currently hardcoded to plaintext name, could be hash of two pubkeys e.g.
 	// TODO: If any errors with this, show this
-
-	// XXX payload fine?
 	postToFeed(client, signer, receiver, topic, payload)
 }
 
