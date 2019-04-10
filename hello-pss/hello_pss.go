@@ -1,6 +1,5 @@
 package main
 
-//import "context"
 import (
 	"github.com/ethereum/go-ethereum/swarm/pss"
 	"context"
@@ -9,7 +8,6 @@ import (
 	"os"
 	"time"
 	"io/ioutil"
-	//"log"
 	"github.com/ethereum/go-ethereum/log"
 	"strconv"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -17,23 +15,17 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
-//import "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
-//import "github.com/ethereum/go-ethereum/p2p/enode"
-//import "github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/swarm"
-//import "github.com/ethereum/go-ethereum/swarm/network"
 	bzzapi "github.com/ethereum/go-ethereum/swarm/api"
 )
-
-// Two different node processes
-// So A sends to B, and B receives it
-// Later also use Feeds to post to own so B can check/pull
 
 var (
 	// logger
 	Log = log.New("hello-pss", "*")
 )
+
+// TODO: Ensure node starts in light node so it doesn't eat up a lot of disk space
 
 // XXX: Warning, this is bad design. Should use keystore for this.
 func getHexPrivateKey() string {
@@ -43,18 +35,17 @@ func getHexPrivateKey() string {
 	}
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
-	// Debugging, etc
-	fmt.Println("Private Key: ", hexutil.Encode(privateKeyBytes))
-	fmt.Println("Private Key alt: ", hexutil.Encode(privateKeyBytes)[2:])
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		log.Crit("error casting public key to ECDSA", err)
-	}
-	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
-	fmt.Println("Public Key: ", hexutil.Encode(publicKeyBytes[4:]))
-	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
-	fmt.Println("Address: ", address)
+	// Debugging and basic key operations
+	//publicKey := privateKey.Public()
+	//publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	//if !ok {
+	//	log.Crit("error casting public key to ECDSA", err)
+	//}
+	//publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	//address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+	//fmt.Println("Private Key: ", hexutil.Encode(privateKeyBytes))
+	//fmt.Println("Public Key: ", hexutil.Encode(publicKeyBytes[4:]))
+	//fmt.Println("Address: ", address)
 
 	return hexutil.Encode(privateKeyBytes)
 }
@@ -73,23 +64,11 @@ func getPrivateKeyFromFile(keyfile string) *ecdsa.PrivateKey {
 	if err != nil {
 		log.Crit("Unable to get private key", err)
 	}
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		log.Crit("error casting public key to ECDSA", err)
-	}
-	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
-	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
-	fmt.Println("Private Key: ", hexutil.Encode(privateKeyBytes))
-	fmt.Println("Public Key: ", hexutil.Encode(publicKeyBytes[4:]))
-	fmt.Println("Address: ", address)
 
 	return privateKey
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
-//
+// XXX: This shouldn't be needed
 func getp2pConfig(listenaddr string) p2p.Config {
 	return p2p.Config{
 			ListenAddr: listenaddr,
@@ -103,7 +82,6 @@ func newNode(port int) (*node.Node, error) {
 	cfg := &node.DefaultConfig
 	cfg.DataDir = fmt.Sprintf("%s%d", ".data_", port)
 
-	// XXX: Lol
 	// XXX: 	cfg.P2P.ListenAddr = fmt.Sprintf(":%d", port), should work
 	if port == 9600 {
 		cfg.P2P = getp2pConfig(":30400")
@@ -114,9 +92,8 @@ func newNode(port int) (*node.Node, error) {
 	}
 
 	cfg.HTTPPort = port
-	// XXX
 	cfg.IPCPath = "bzz.ipc"
-	fmt.Printf("Current data directory is %s\n", cfg.DataDir)
+	//fmt.Printf("Current data directory is %s\n", cfg.DataDir)
 
 	return node.New(cfg)
 }
@@ -136,7 +113,6 @@ func newService(bzzdir string, bzzport int, privKey *ecdsa.PrivateKey) func(ctx 
 	}
 }
 
-// TODO: Ensure node starts in light node so it doesn't eat up a lot of disk space
 
 func run(port int, privateKey *ecdsa.PrivateKey) {
 	// New node
@@ -145,7 +121,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 		fmt.Fprintf(os.Stderr, "Node failure: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Node: %v\n", node)
+	//fmt.Printf("Node: %v\n", node)
 
 	// New Swarm service
 	// XXX: Yuck privateKey
@@ -170,33 +146,19 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 		os.Exit(1)
 	}
 
-	// TODO: Add other peer?
-	// XXX: Weird because you are adding yourself
-	// XXX: How to detect/derive this? Right now just grepping enode
-	// XXX wrong, need enode data structure or use admin
-	// XXX: Shouldn't this be external IP?
-	
-	//node.Server().AddPeer("enode://395a074c059143a68473bcf7edb3bae72bc930cfef5c92399401cedd76c493014d29e75ed1833fe45a2c0e04f0e9f9c64bf029c9c0fb646aa23690e945d70193@127.0.0.1:30400")
-	//node.Server().AddPeer("enode://f716c8cc7cc6674d8332ae1a3fb7f4776285095dc372c20a508e22e7d0a9c006b1626aab7b45802d99957b86bf1c0c14d9ba91df87528c735751e92dd96fa88f@127.0.0.1:30401")
-
-
 	// Get RPC Client
 	// ipcEndpoint
 	client, err := node.Attach()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to attach to client: %v\n", err)
 	}
-	// XXX: Not readable
-	fmt.Printf("RPC Client %v\v", client)
 
+	// TODO: Refactor to have this addpeer workaround in separate function
+	// XXX: How to detect/derive this? Right now just grepping enode
 	enodeA := "enode://395a074c059143a68473bcf7edb3bae72bc930cfef5c92399401cedd76c493014d29e75ed1833fe45a2c0e04f0e9f9c64bf029c9c0fb646aa23690e945d70193@127.0.0.1:30400"
 	enodeB := "enode://f716c8cc7cc6674d8332ae1a3fb7f4776285095dc372c20a508e22e7d0a9c006b1626aab7b45802d99957b86bf1c0c14d9ba91df87528c735751e92dd96fa88f@127.0.0.1:30401"
 
-	// Oops, wasn't running other node...
-	//enodeA := "enode://395a074c059143a68473bcf7edb3bae72bc930cfef5c92399401cedd76c493014d29e75ed1833fe45a2c0e04f0e9f9c64bf029c9c0fb646aa23690e945d70193@192.168.122.1:30400"
-	//enodeB := "enode://f716c8cc7cc6674d8332ae1a3fb7f4776285095dc372c20a508e22e7d0a9c006b1626aab7b45802d99957b86bf1c0c14d9ba91df87528c735751e92dd96fa88f@192.168.122.1:30401"
-
-	// XXX broken af
+	// XXX: Eh
 	var res1 bool
 	err = client.Call(&res1, "admin_addPeer", enodeA)
 	if err != nil {
@@ -208,10 +170,10 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	if err != nil {
 		log.Crit("Unable to add peer", err)
 	}
-	fmt.Println("**** broke af, added some peers mby ", res1, res2)
+	//fmt.Println("*** added some peers probably ", res1, res2)
+	// TODO: admin get peers here?
 
-	// TODO admin get peers here?
-
+	// XXX: More robust health check here
 	// Simpler, there should be a stdlib fn for waitHealthy anyway
 	time.Sleep(time.Second * 3)
 
@@ -221,26 +183,25 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get node info: %v\n", err)
 	}
-//	fmt.Println("*********nodeinfo %s", nodeinfo)
 
 	var baseaddr string
 	err = client.Call(&baseaddr, "pss_baseAddr")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get base addr: %v\n", err)
 	}
-	fmt.Println("baseAddr", baseaddr)
+	//fmt.Println("baseAddr", baseaddr)
 
 	var pubkey string
 	err = client.Call(&pubkey, "pss_getPublicKey")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to get pss public key: %v\n", err)
 	}
-	fmt.Println("PublicKey", pubkey)
+	//fmt.Println("PublicKey", pubkey)
 
 	// XXX: Same with baseaddr
 	// 0xd5ac92dd8f593ea7aabf5cfdb35d4d29d87316ffe3ae081750054168e147eb42
 	bobBaseAddr := "0xb208b76c916d5eb84c118c0076b35828f0728a416537786f4515dd6608c4874d"
-	fmt.Println("BobbaseAddr PSS", bobBaseAddr)
+	//fmt.Println("BobbaseAddr PSS", bobBaseAddr)
 
 	// XXX: This is separate from node generated key, so want to save this contacts or so
 	// f(alice/bob.key, 9600/9601), not confirmed if it is stable if port changes
@@ -250,42 +211,32 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	var topic string
 	err = client.Call(&topic, "pss_stringToTopic", "foo")
 
-	// Ok, now what?
-	// XX: Also who is pubkey here
-
-	// XXX: Wrong pubkey
-	//receiver := pubkey
 	bobPubKey := "0x04cbd6b75038f2d1e4e8e2754ffadecaaa8d2fdbbb29311dc82a8e1880fce4576f86e3d87ab360bcdde1aaf9a01a2cf232be95684a1152a735ccb4200495e4145c"
 	receiver := bobPubKey
-	fmt.Println("BobPublicKey PSS", bobPubKey)
+	//fmt.Println("BobPublicKey PSS", bobPubKey)
 
 	// XXX: I don't understand how baseAddr and public key interact
 	// XXX: I also don't understand why you need to register public key
 	err = client.Call(nil, "pss_setPeerPublicKey", bobPubKey, topic, bobBaseAddr)
 
-	// XXX: Shouldn't it at least send a message to itself?
-	// XXX: Add log stuff to see swarm state
-
-
-	// XXX: Blocking, etc? Yeah, so run in bg or so
-
-	// XXX top level for sub declaration teardown
 	msgC := make(chan pss.APIMsg)
 	sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)	
 
+	// XXX: Hack to make sure ready state
 	time.Sleep(time.Second * 3)
 
 	// XXX Lol
+	// TODO: Replace with REPL-like functionality
 	if port == 9600 {
-		fmt.Println("**** I AM ALICE, SENDING")
+		fmt.Println("*** I AM ALICE, SENDING")
 		err = client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte("Hello world")))
 	} else if port == 9601 {
-		fmt.Println("**** I AM BOB, RECEIVING")
+		fmt.Println("*** I AM BOB, RECEIVING")
 		in := <-msgC
 		fmt.Println("Received message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
 
 	} else {
-		fmt.Println("**** I don't know who you are")
+		fmt.Println("*** I don't know who you are")
 		os.Exit(1)
 	}
 
@@ -305,8 +256,6 @@ func init() {
 	// if *verbose {
 	// 	loglevel = log.LvlTrace
 	// }
-	// XXX Trace for now
-	// XXX: unable to forward to any peers volume is crazy
 	loglevel = log.LvlDebug //trace
 	hf := log.LvlFilterHandler(loglevel, hs)
 	h := log.CallerFileHandler(hf)
@@ -316,16 +265,12 @@ func init() {
 func main() {
 	fmt.Printf("Hello PSS\n")
 
-	// If 1 arg and it is new then generate new
-	// If 2 args, first is keyfile second port
-
-	/// XXX: Bad CLI design
-	// TODO: Use golang flags
+	// TODO: Bad CLI design, use golang flags
 	// TODO: Pull this out to separate parseArgs function
 	args := os.Args[1:]
 	if len(args) == 1 {
 		if args[0] == "new" {
-			// TODO: Use keystore or something
+			// TODO: Use keystore or something more sane
 			privateKey := getHexPrivateKey()
 			ioutil.WriteFile("new.key", []byte(privateKey), 0644)
 			log.Crit("Thanks for the fish, your private key is now insecurely stored in new.key", args)
@@ -347,32 +292,3 @@ func main() {
 		log.Crit("Wrong number of arguments, should be one (new) or two (keyfile and port)", args)
 	}
 }
-
-// TODO: Here at the moment. Need to make sure it reads nodekey wrt right data dir DONE
-// And then adjust ports DONE. Then we should be able to run
-// go run hello_pss.go alice and hello_pss.go bob, and then it should be able to send and recv
-//
-// Then also integrate feeds
-
-
-// XXX Ok the problem is https://github.com/ethereum/go-ethereum/blob/master/swarm/pss/pss.go#L766
-// Which happens due to not being connected, so manually and possibly some local network stuff here
-
-// Can't do this because IPC isn't running:
-//  geth attach <path to bzzd.ipc> --exec 'admin.peers'
-// Not sure how to enable it from Go code, can do with CLI and then connect?
-// Boom
-// geth attach .data_9600/bzz.ipc --exec 'admin.peers'  # []
-
-// Ok, progress
-// TRACE[04-09|14:40:21.249] Dial error                               task="staticdial 5dac9f05c8b4e3a2 127.0.0.1:30401" err="dial tcp 127.0.0.1:30401: connect: connection refused"   caller=dial.go:299
-// No idea why this is trace, but it makes sense. locally. So let's change.
-
-// XXX: Seems like it resolves fine
-// [oskarth@localhost hello-pss]$ ifconfig|grep netmask|awk '{print $2}'
-// 127.0.0.1
-// 192.168.122.1
-// 192.168.10.186
-
-// TODO: I didn't setup networkid, do I need to for swarm?
-// Cool we both connected
