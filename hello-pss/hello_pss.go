@@ -151,7 +151,7 @@ func fetchMessage(hash string) {
 func handleMessage(msg message) {
 	// Cheating
 	// XXX so much duplication eh
-	//httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9601
+	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9601
 
 	// How many cases are there?
 	// We have all the dependencies
@@ -160,10 +160,24 @@ func handleMessage(msg message) {
 	// We have not seen it before
 
 
+	// XXX: Edge case, incoming message don't have hash stored already
+	// XXX: Hack work around, upload message and check if hash is same
+	// Should be possible to figure out hash locally but yeah
+	// XXX: Assuming hash is same, which it should be 
+	payload := serialize(msg)
+	hash, err := httpClient.UploadRaw(bytes.NewReader(payload), int64(len(payload)), false)
+	if err != nil {
+		fmt.Println("Unable to upload raw", err)
+		os.Exit(1)
+	}
+	//fmt.Println("** Adding hash of message to SeenSet", hash)
+	SeenSet[hash] = true
+
 	// Interesting, this seems to unroll and deal with order automatically
 	// XXX: Edge cases here because it doesn't save messages, just happy path stack
 	parent0 := msg.Parents[0]
 	if (parent0 != "") && !seen(parent0) {
+
 		fmt.Printf("[Unmet dependency, downloading: %s]\n", parent0)
 		fetchMessage(parent0)
 
@@ -299,15 +313,16 @@ func mockPassiveREPL() {
 //	for { }
 //	fmt.Println("I am Bob or Charlie, and I can't speak right now.")
 
-	fmt.Printf("> ")
+	fmt.Printf("")
 	// Basic REPL functionality
 	scanner := bufio.NewScanner(os.Stdin)	
 	for scanner.Scan() {
 		input := scanner.Text()
-		fmt.Println("Echo", input)
+		log.Debug("Ignoring input", input)
+		//fmt.Println("Echo", input)
 		//sendMessage(input)
 		//sendMessage(client, signer, receiver, topic, input)
-		fmt.Printf("> ")
+		//fmt.Printf("> ")
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Unable to read input", err)
