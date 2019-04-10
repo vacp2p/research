@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"crypto/ecdsa"
 	"os"
+	"bytes"
 	"time"
 	"io/ioutil"
 	"github.com/ethereum/go-ethereum/log"
@@ -115,7 +116,7 @@ func listenForMessages(msgC chan pss.APIMsg) {
 }
 
 // TODO: Error handling if fail
-func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string) {
+func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string, input string) {
 	// For creating manifest, then posting, then finally getting
 
 	// Create a new feed with user and topic.
@@ -125,14 +126,14 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 	query := feed.NewQueryLatest(f, lookup.NoClue)
 	httpClient := feedsapi.NewClient("http://localhost:9600")
 
-	fmt.Println("signer Address: ", f.User.Hex())
+	//fmt.Println("signer Address: ", f.User.Hex())
 
 	request, err := httpClient.GetFeedRequest(query, "")
 	if err != nil {
 		fmt.Printf("Error retrieving feed status: %s", err.Error())
 	}
 
-	request.SetData([]byte("Hello there feed"))
+	request.SetData([]byte(input))
 	if err = request.Sign(signer); err != nil {
 		fmt.Printf("Error signing feed update: %s", err.Error())
 	}
@@ -142,18 +143,29 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 	if err != nil {
 		fmt.Printf("Error getting manifest: %s", manifest)
 	}
-	fmt.Println("MANIFEST", manifest)
+	//fmt.Println("MANIFEST", manifest)
 	
 	// XXX: What do I want to do with feeds manifest?
 	// 567f611190b2758fa625b3be14b2b9becf6f0e8887015b7c40d6cbe0e5fa14aa
 
-	// Success: this works, also from 9601 Bob
+	// Success: this works, also from 9601 Bob:
 	//  curl 'http://localhost:9600/bzz-feed:/?user=0xBCa21d9c6031b1965a9e0233D9B905d2f10CA259&name=bob'
+
+	// XXX: Why do we need the second argument manifestAddressOrDomain?
+	// It's already baked into httpClient and query.
+	response, err := httpClient.QueryFeed(query, "")
+	if err != nil {
+		fmt.Println("QueryFeed error", err)
+	}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(response)
+	feedStr := buf.String()
+	fmt.Println("Feed result: ", feedStr)
 
 	err = httpClient.UpdateFeed(request)
 	if err != nil {
 		fmt.Printf("Error updating feed: %s", err.Error())
-	}	
+	}
 }
 
 // XXX: Lame signature, should be may more compact
@@ -181,6 +193,36 @@ func mockPassiveREPL() {
 	// Bob first shows loyalty, he never speaks, and then he exits
 	// Allowing Bob to speak means he'll be less likely to exit
 	for { }
+}
+
+// Get messages from feed
+func pullMessages() {
+
+	// Success: this works, also from 9601 Bob. Replicate with Go API
+	//  curl 'http://localhost:9600/bzz-feed:/?user=0xBCa21d9c6031b1965a9e0233D9B905d2f10CA259&name=bob'
+
+	// Querying with local node
+	httpClient := feedsapi.NewClient("http://localhost:9601")
+
+	// Create a new feed with user and topic.
+	f := new(feed.Feed)
+
+	// Alice's dadress
+	f.User = common.HexToAddress("0xBCa21d9c6031b1965a9e0233D9B905d2f10CA259")
+	f.Topic, _ = feed.NewTopic("bob", nil)
+	query := feed.NewQueryLatest(f, lookup.NoClue)
+
+	// Look up feed results
+	// XXX: Why do we need the second argument manifestAddressOrDomain?
+	// It's already baked into httpClient and query.
+	response, err := httpClient.QueryFeed(query, "")
+	if err != nil {
+		fmt.Println("QueryFeed error", err)
+	}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(response)
+	feedStr := buf.String()
+	fmt.Println("Feed result: ", feedStr)
 }
 
 // XXX: This is so sloppy, passing privatekey around
@@ -321,6 +363,10 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 		runREPL(client, signer, receiver, topic)
 	} else if port == 9601 {
 		fmt.Println("I am Bob, and I am ready to receive messages")
+
+		fmt.Println("First, let's see if we missed something while gone")
+		pullMessages()
+		fmt.Println("Alright, up to speed, let's listen in background")
 		go listenForMessages(msgC)
 		mockPassiveREPL()
 	} else {
@@ -362,7 +408,7 @@ func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string
 	// Also post to feed
 	// XXX: Currently hardcoded to plaintext name, could be hash of two pubkeys e.g.
 	// TODO: If any errors with this, show this
-	postToFeed(client, signer, receiver, topic)
+	postToFeed(client, signer, receiver, topic, input)
 }
 
 func main() {
