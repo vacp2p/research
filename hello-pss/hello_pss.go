@@ -293,6 +293,25 @@ func pullMessages() {
 	feedStr := buf.String()
 
 	parsed := deserialize(feedStr)
+	parent0 := parsed.Parents[0]
+	
+	if parent0 != "" {
+		// TODO: Keep track of seen message ids and do basic if
+		// Need unmetdep(hash) bool
+		fmt.Println("Message dependency! We might need to download", parent0)
+
+		response, _, err := httpClient.DownloadRaw(parent0)
+		if err != nil {
+			fmt.Println("Unable to download raw", err)
+			os.Exit(1)
+		}
+		// TODO: This should loop, so if there are more unmetdeps keep downloading
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(response)
+		str := buf.String()
+		fmt.Println("***Download raw", str)
+	
+	}
 
 	//fmt.Println("Feed result old: ", feedStr)
 	fmt.Println("Feed result: ", parsed.Text, "- parent0:", parsed.Parents[0])
@@ -620,27 +639,8 @@ func main() {
 
 	// XXX Lets use already running node because why not
 	// TODO: Replace with 9600 once end to end
-	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9600
-
-	msg := message{Text: "testing", Parents: []string{"hi", "uncle bob"}}
-	data := serialize(msg)
-	hash, err := httpClient.UploadRaw(bytes.NewReader(data), int64(len(data)), false)
-	if err != nil {
-		fmt.Println("Unable to upload raw", err)
-		os.Exit(1)
-	}
-	fmt.Println("***raw hash: ", hash)
-
-	response, _, err := httpClient.DownloadRaw(hash)
-	if err != nil {
-		fmt.Println("Unable to download raw", err)
-		os.Exit(1)
-	}
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(response)
-	str := buf.String()
-	fmt.Println("***Download raw", str)
-
+	// XXX: Forgot did we use this somewhere?
+	//httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9600
 
 	// Ok, now we need to populate parent and fetch it
 	// To do this, we need a chunk that we upload
