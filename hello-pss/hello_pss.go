@@ -103,7 +103,10 @@ func newNode(port int) (*node.Node, error) {
 func listenForMessages(msgC chan pss.APIMsg) {
 	for {
 		in := <-msgC
-		fmt.Println("Received message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
+		// XXX: Who is in.key really? want readable public key here
+		// XXX: The UX is an illusion
+		fmt.Println("Alice:", string(in.Msg))
+		//fmt.Println("\nReceived message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
 	}
 }
 
@@ -123,6 +126,14 @@ func runREPL(client *rpc.Client, receiver string, topic string) {
 		fmt.Println("Unable to read input", err)
 		os.Exit(1)
 	}
+}
+
+func mockPassiveREPL() {
+	// Poor Bob can only listen to messages, forever and ever
+	// Until one day...when he snaps and quits with ctrl-D
+	// Bob first shows loyalty, he never speaks, and then he exits
+	// Allowing Bob to speak means he'll be less likely to exit
+	for { }
 }
 
 // XXX: This is so sloppy, passing privatekey around
@@ -252,25 +263,23 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	// XXX: Hack to make sure ready state
 	time.Sleep(time.Second * 3)
 
+
+
 	// XXX: Hacky
 	// TODO: Replace with REPL-like functionality
 	if port == 9600 {
+
 		// NOTE: We assume here we are ready to actually send messages, so we REPL here
 		// XXX: Only running REPL for Alice Sender for now
 		runREPL(client, receiver, topic)
 	} else if port == 9601 {
 		fmt.Println("I am Bob, and I am ready to receive messages")
-		// Listen for messages i n the background
 		go listenForMessages(msgC)
-
+		mockPassiveREPL()
 	} else {
 		fmt.Println("*** I don't know who you are")
 		os.Exit(1)
 	}
-
-	// TODO: Shouldn't stop here, should REPL and listen in bg
-	fmt.Println("**I don't want to quit just yet but soon will")
-	time.Sleep(time.Second*20)
 
 	fmt.Printf("All operations successfully completed.\n")
 
@@ -296,7 +305,7 @@ func init() {
 
 // XXX: Ensure signature, also probably better with client as context but meh
 func sendMessage(client *rpc.Client, receiver string, topic string, input string) {
-	fmt.Println("Input:", input)
+	//fmt.Println("Input:", input)
 	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(input)))
 	if err != nil {
 		fmt.Println("Error sending message through RPC client", err)
