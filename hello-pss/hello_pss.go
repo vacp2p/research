@@ -100,9 +100,16 @@ func newNode(port int) (*node.Node, error) {
 	return node.New(cfg)
 }
 
+func listenForMessages(msgC chan pss.APIMsg) {
+	for {
+		in := <-msgC
+		fmt.Println("Received message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
+	}
+}
+
 // XXX: Lame signature, should be may more compact
 func runREPL(client *rpc.Client, receiver string, topic string) {
-	fmt.Println("*** I AM ALICE, Ready to send")
+	fmt.Println("I am Alice, and I am ready to send messages.")
 	fmt.Printf("> ")
 	// Basic REPL functionality
 	scanner := bufio.NewScanner(os.Stdin)	
@@ -251,18 +258,19 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 		// NOTE: We assume here we are ready to actually send messages, so we REPL here
 		// XXX: Only running REPL for Alice Sender for now
 		runREPL(client, receiver, topic)
-		// send fn
-		// fmt.Println("*** I AM ALICE, SENDING")
-		// err = client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte("Hello world")))
 	} else if port == 9601 {
-		fmt.Println("*** I AM BOB, RECEIVING")
-		in := <-msgC
-		fmt.Println("Received message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
+		fmt.Println("I am Bob, and I am ready to receive messages")
+		// Listen for messages i n the background
+		go listenForMessages(msgC)
 
 	} else {
 		fmt.Println("*** I don't know who you are")
 		os.Exit(1)
 	}
+
+	// TODO: Shouldn't stop here, should REPL and listen in bg
+	fmt.Println("**I don't want to quit just yet but soon will")
+	time.Sleep(time.Second*20)
 
 	fmt.Printf("All operations successfully completed.\n")
 
