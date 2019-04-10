@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/ethereum/go-ethereum/swarm/pss"
 	"context"
+	"bufio"
 	"fmt"
 	"crypto/ecdsa"
 	"os"
@@ -264,6 +265,23 @@ func init() {
  
 func main() {
 	fmt.Printf("Hello PSS\n")
+	fmt.Printf("> ")
+
+	// Basic REPL functionality
+	scanner := bufio.NewScanner(os.Stdin)	
+	for scanner.Scan() {
+		input := scanner.Text()
+		fmt.Println("Input:", input)
+		fmt.Printf("> ")
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Unable to read input", err)
+		os.Exit(1)
+	}
+
+	os.Exit(1)
+
+	// TODO: Then, integrate feed and update there too
 
 	// TODO: Bad CLI design, use golang flags
 	// TODO: Pull this out to separate parseArgs function
