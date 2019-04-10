@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/swarm/storage/feed"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/swarm"
+//	"github.com/ethereum/go-ethereum/swarm/network"
 	bzzapi "github.com/ethereum/go-ethereum/swarm/api"
 	feedsapi "github.com/ethereum/go-ethereum/swarm/api/client"
 
@@ -129,7 +130,15 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 
 	// XXX: Ok feeds seems fairly broken
 	//httpClient := feedsapi.NewClient("https://swarm-gateways.net")
+
+	// Cheating
 	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9600
+
+	// local sender alice
+	//httpClient := feedsapi.NewClient("http://localhost:9600")
+
+	//XXX doesnt even work
+	//httpClient := feedsapi.NewClient("https://swarm-gateways.net")
 
 	// XXX: Post to multiple feeds?
 
@@ -146,11 +155,11 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 	}
 	//fmt.Println("*** signed request", request)
 
-	manifest, err := httpClient.CreateFeedWithManifest(request)
-	if err != nil {
-		fmt.Printf("Error getting manifest: %s", manifest)
-	}
-	//fmt.Println("MANIFEST", manifest)
+	// manifest, err := httpClient.CreateFeedWithManifest(request)
+	// if err != nil {
+	// 	fmt.Printf("Error getting manifest: %s", manifest)
+	// }
+	// fmt.Println("MANIFEST:", manifest)
 	
 	// XXX: What do I want to do with feeds manifest?
 	// 567f611190b2758fa625b3be14b2b9becf6f0e8887015b7c40d6cbe0e5fa14aa
@@ -162,20 +171,26 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 	// It's already baked into httpClient and query.
 	// Indeed:
 	// > You only need to provide either manifestAddressOrDomain or Query to QueryFeed(). Set to "" or nil respectively.
-	response, err := httpClient.QueryFeed(query, "")
-	if err != nil {
-		fmt.Println("QueryFeed error", err)
-	}
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(response)
-	feedStr := buf.String()
-	fmt.Println("Feed result: ", feedStr)
+	// response, err := httpClient.QueryFeed(query, "")
+	// if err != nil {
+	// 	fmt.Println("QueryFeed error", err)
+	// }
+	// buf := new(bytes.Buffer)
+	// buf.ReadFrom(response)
+	// feedStr := buf.String()
+	// fmt.Println("Feed result: ", feedStr)
 
+
+	// XXX Want to set level and time?
+	// POST /bzz-feed:/?topic=<TOPIC>&user=<USER>&level=<LEVEL>&time=<TIME>&signature=<SIGNATURE>
+ 
 	err = httpClient.UpdateFeed(request)
 	if err != nil {
 		fmt.Printf("Error updating feed: %s", err.Error())
 	}
 }
+
+// check sign logic bits version etc
 
 // XXX: Lame signature, should be may more compact
 func runREPL(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string) {
@@ -229,7 +244,12 @@ func pullMessages() {
 
 	// Querying with local node
 	// XXX Maybe this is a bad idea, what about gateway?
+
+	/// Cheating
 	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9601 
+	
+	// local receiver bob
+	//httpClient := feedsapi.NewClient("http://localhost:9601")
 
 	// XXX: Probably not a great idea, but we need to make sure it is healthy etc
 	//httpClient := feedsapi.NewClient("https://swarm-gateways.net")
@@ -383,6 +403,14 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	// Simpler, there should be a stdlib fn for waitHealthy anyway
 	time.Sleep(time.Second * 3)
 
+	// Hypothesis for why feed updates aren't spread - kademlia connectivity is bad
+	// Test it by measuring it
+	// HEALTH CHECK
+	//func (k *Kademlia) GetHealthInfo(pp *PeerPot) *Health {
+	//network.Kademlia
+	// TODO check how do
+
+
 	// XXX: Not readable
 	var nodeinfo p2p.NodeInfo
 	err = client.Call(&nodeinfo, "admin_nodeInfo")
@@ -485,6 +513,8 @@ func init() {
 	// 	loglevel = log.LvlTrace
 	// }
 	loglevel = log.LvlDebug //trace
+	//loglevel = log.LvlTrace //trace
+
 	hf := log.LvlFilterHandler(loglevel, hs)
 	h := log.CallerFileHandler(hf)
 	log.Root().SetHandler(h)

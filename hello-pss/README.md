@@ -96,6 +96,20 @@ DEBUG[04-10|16:45:09.038] ChunkStore.Get can not retrieve chunk    peer=b4425dfb
 INFO [04-10|16:45:09.177] unable to request                        request addr=ae61264cc22c960b62abfcefac8059c6f6ef481dfd972381024967915cfebdea err="no peer found"                        caller=fetcher.go:238
 ```
 
+```
+   ruid=d0ecbecb code=200 time=4.903668ms   caller=middleware.go:83
+TRACE[04-10|18:15:29.000] search timed out: requesting             request addr=7e05ce20f890f52f793a9fdb438aeef93b96cbc04e21ebb4e5ea3c6f811c957a doRequest=true  caller=fetcher.go:224
+TRACE[04-10|18:15:29.000] Delivery.RequestFromPeers: skip peer     peer id=258ab5a8630d8d9d caller=delivery.go:278
+TRACE[04-10|18:15:29.000] Delivery.RequestFromPeers: skip peer     peer id=443030fd43226716 caller=delivery.go:278
+INFO [04-10|18:15:29.000] unable to request                        request addr=7e05ce20f890f52f793a9fdb438aeef93b96cbc04e21ebb4e5ea3c6f811c957a err="no peer found"
+```
+
+Why is it rskipping peer
+
+Two hypothesis of what's wrong:
+- Bad kademlia connectivity, implement health check to inspect
+- Local network shenanighans that only shows up for some flows, need to use external ip or so
+
 ### Next steps?
 - Put logs elsewhere
 - Allow send and receive from both (bg subscribe)?
