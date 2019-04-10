@@ -114,7 +114,15 @@ func listenForMessages(msgC chan pss.APIMsg) {
 		in := <-msgC
 		// XXX: Who is in.key really? want readable public key here
 		// XXX: The UX is an illusion
-		fmt.Println("Alice:", string(in.Msg))
+
+		// XXX: parsing logic should be same for pull from feed
+		parsed := deserialize(string(in.Msg))
+
+		//fmt.Println("Alice old:", string(in.Msg))
+		// XXX Only one parent
+		// TODO: Get all the parents here
+		fmt.Println("Alice:", string(parsed.Text), "- parent0:", string(parsed.Parents[0]))
+
 		//fmt.Println("\nReceived message", string(in.Msg), "from", fmt.Sprintf("%x", in.Key))
 	}
 }
@@ -278,7 +286,12 @@ func pullMessages() {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(response)
 	feedStr := buf.String()
-	fmt.Println("Feed result: ", feedStr)
+
+	parsed := deserialize(feedStr)
+
+	//fmt.Println("Feed result old: ", feedStr)
+	fmt.Println("Feed result: ", parsed.Text, "- parent0:", parsed.Parents[0])
+
 }
 
 // XXX: This is so sloppy, passing privatekey around
@@ -526,10 +539,20 @@ func init() {
 	log.Root().SetHandler(h)
 }
 
+// TODO: The swarm hash should match up with message ID
+// How does this impact design?
+
 // XXX: Ensure signature, also probably better with client as context but meh
 func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string, input string) {
 	//fmt.Println("Input:", input)
-	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(input)))
+
+	// From input and parents, construct message
+	// TODO: Hardcode parents now, later need to upload and keep track of
+	msg := message{Text: input, Parents: []string{"foo", "bar"}}
+	// XXX: Direct to byte and toHex?
+	payload := serialize(msg)
+
+	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(payload)))
 	if err != nil {
 		fmt.Println("Error sending message through RPC client", err)
 		os.Exit(1)
@@ -538,7 +561,9 @@ func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string
 	// Also post to feed
 	// XXX: Currently hardcoded to plaintext name, could be hash of two pubkeys e.g.
 	// TODO: If any errors with this, show this
-	postToFeed(client, signer, receiver, topic, input)
+
+	// XXX payload fine?
+	postToFeed(client, signer, receiver, topic, payload)
 }
 
 func serialize(msg message) string {
@@ -565,10 +590,10 @@ func main() {
 	fmt.Printf("Setting up node and connecting to the network...\n")
 
 	// Example
-	msg := message{Text: "hi", Parents: []string{"foo", "bar"}}
-	payload := serialize(msg)
-	parsed := deserialize(payload)
-	fmt.Println(parsed.Parents[0])
+	// msg := message{Text: "hi", Parents: []string{"foo", "bar"}}
+	// payload := serialize(msg)
+	// parsed := deserialize(payload)
+	// fmt.Println(parsed.Parents[0])
 
 	// TODO: Then, integrate feed and update there too
 	// Cool, here ATM.
