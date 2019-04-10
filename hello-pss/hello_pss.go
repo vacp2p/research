@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"time"
 	"io/ioutil"
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/log"
 	"strconv"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -188,6 +189,11 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 	if err != nil {
 		fmt.Printf("Error updating feed: %s", err.Error())
 	}
+}
+
+type message struct {
+	Text string `json:"text"`
+	Parents []string `json:"parents"`
 }
 
 // check sign logic bits version etc
@@ -535,9 +541,67 @@ func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string
 	postToFeed(client, signer, receiver, topic, input)
 }
 
+// XXX Signature should probably be mirror but meh
+func serialize(text string, parents []string) string {
+	msg := &message{Text: "hi", Parents: []string{"foo", "bar"}}
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		fmt.Println("Unable to marshal into JSON", err)
+		os.Exit(1)
+	}
+	strJSON := string(payload) 
+	fmt.Println("json payload", strJSON)
+	return strJSON
+}
+
+// func deserialize(strJSON string) message {
+// 	byt := []byte(strJSON)
+
+// 	msg := message{}
+// 	var dat map[string]interface{}
+// 	if err := json.Unmarshal(byt, &dat); err != nil {
+// 		panic(err)
+// 	}
+// 	text := dat["text"]
+// 	parents := dat["parents"].([]interface{})
+// 	fmt.Println(text, parents[0], parents[1])
+
+// 	msg := &message(Text: "dat.")
+// 	// XXX: can you just assign parents here?
+// 	//msg := &message{Text: "hi", Parents: []string{"foo", "bar"}}
+
+// 	return msg
+// }
+
+
 func main() {
 	fmt.Printf("Hello PSS\n")
 	fmt.Printf("Setting up node and connecting to the network...\n")
+
+	// Basic JSON serialize and deserialize test
+	msg := &message{Text: "hi", Parents: []string{"foo", "bar"}}
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		fmt.Println("Unable to marshal into JSON", err)
+		os.Exit(1)
+	}
+	strJSON := string(payload) 
+	fmt.Println("json payload", strJSON)
+
+	msg2 := message{}
+	json.Unmarshal([]byte(strJSON), &msg2)
+	fmt.Println(msg2)
+	fmt.Println(msg2.Parents[0])
+	// byt := []byte(strJSON)
+	// var dat map[string]interface{}
+	// if err := json.Unmarshal(byt, &dat); err != nil {
+	// 	panic(err)
+	// }
+	// text := dat["text"]
+	// parents := dat["parents"].([]interface{})
+	// fmt.Println(text, parents[0], parents[1])
+
+//	os.Exit(1)
 
 	// TODO: Then, integrate feed and update there too
 	// Cool, here ATM.
