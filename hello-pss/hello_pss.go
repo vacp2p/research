@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/ethereum/go-ethereum/swarm/storage/feed/lookup"
 	"github.com/ethereum/go-ethereum/swarm/pss"
 	"context"
 	"bufio"
@@ -17,9 +18,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/swarm/storage/feed"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/swarm"
 	bzzapi "github.com/ethereum/go-ethereum/swarm/api"
+	feedsapi "github.com/ethereum/go-ethereum/swarm/api/client"
+
 )
 
 var (
@@ -111,8 +115,52 @@ func listenForMessages(msgC chan pss.APIMsg) {
 }
 
 // XXX: Lame signature, should be may more compact
-func runREPL(client *rpc.Client, receiver string, topic string) {
+func runREPL(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string) {
 	fmt.Println("I am Alice, and I am ready to send messages.")
+
+	// TODO: Move this to separate function
+	// For creating manifest, then posting, then finally getting
+
+	// Create a new feed with user and topic.
+	f := new(feed.Feed)
+	f.User = signer.Address()
+	f.Topic, _ = feed.NewTopic("bob", nil)
+	query := feed.NewQueryLatest(f, lookup.NoClue)
+	httpClient := feedsapi.NewClient("http://localhost:9600")
+
+	fmt.Println("signer Address: ", f.User.Hex())
+
+	request, err := httpClient.GetFeedRequest(query, "")
+	if err != nil {
+		fmt.Printf("Error retrieving feed status: %s", err.Error())
+	}
+
+	request.SetData([]byte("Hello there feed"))
+	if err = request.Sign(signer); err != nil {
+		fmt.Printf("Error signing feed update: %s", err.Error())
+	}
+	//fmt.Println("*** signed request", request)
+
+	manifest, err := httpClient.CreateFeedWithManifest(request)
+	if err != nil {
+		fmt.Printf("Error getting manifest: %s", manifest)
+	}
+	fmt.Println("MANIFEST", manifest)
+	
+	// XXX: What do I want to do with feeds manifest?
+	// 567f611190b2758fa625b3be14b2b9becf6f0e8887015b7c40d6cbe0e5fa14aa
+
+	// Success: this works, also from 9601 Bob
+	//  curl 'http://localhost:9600/bzz-feed:/?user=0xBCa21d9c6031b1965a9e0233D9B905d2f10CA259&name=bob'
+
+	err = httpClient.UpdateFeed(request)
+	if err != nil {
+		fmt.Printf("Error updating feed: %s", err.Error())
+	}
+	
+
+	// REPL resume
+
 	fmt.Printf("> ")
 	// Basic REPL functionality
 	scanner := bufio.NewScanner(os.Stdin)	
@@ -263,7 +311,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	// XXX: Hack to make sure ready state
 	time.Sleep(time.Second * 3)
 
-
+	signer := feed.NewGenericSigner(privateKey)
 
 	// XXX: Hacky
 	// TODO: Replace with REPL-like functionality
@@ -271,7 +319,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 
 		// NOTE: We assume here we are ready to actually send messages, so we REPL here
 		// XXX: Only running REPL for Alice Sender for now
-		runREPL(client, receiver, topic)
+		runREPL(client, signer, receiver, topic)
 	} else if port == 9601 {
 		fmt.Println("I am Bob, and I am ready to receive messages")
 		go listenForMessages(msgC)
@@ -318,6 +366,13 @@ func main() {
 	fmt.Printf("Setting up node and connecting to the network...\n")
 
 	// TODO: Then, integrate feed and update there too
+	// Cool, here ATM.
+	// Then we probably need some message deps
+	// TODO: As Alice we want to do a basic Feed post
+	// TODO: Then As Bob we want to do a basic Feed get pull, at startup or so
+	// Possibly ability to toggle this
+	// XXX: Actually how connected is this to the rest of the network? Who will store it?
+	// Create feed first
 
 	// TODO: Bad CLI design, use golang flags
 	// TODO: Pull this out to separate parseArgs function
