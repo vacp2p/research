@@ -415,7 +415,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	// bob: 0x04cbd6b75038f2d1e4e8e2754ffadecaaa8d2fdbbb29311dc82a8e1880fce4576f86e3d87ab360bcdde1aaf9a01a2cf232be95684a1152a735ccb4200495e4145c
 
 	var topic string
-	err = client.Call(&topic, "pss_stringToTopic", "foo")
+	err = client.Call(&topic, "pss_stringToTopic", "bob")
 
 	bobPubKey := "0x04cbd6b75038f2d1e4e8e2754ffadecaaa8d2fdbbb29311dc82a8e1880fce4576f86e3d87ab360bcdde1aaf9a01a2cf232be95684a1152a735ccb4200495e4145c"
 	receiver := bobPubKey
@@ -426,14 +426,19 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	err = client.Call(nil, "pss_setPeerPublicKey", bobPubKey, topic, bobBaseAddr)
 
 	msgC := make(chan pss.APIMsg)
+	// Nope, everyone gets to listen on that topic, also maybe it should be same?
+	// Does it matter for feeds?
+	// XXX: Let'ss try
+	sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)
+
 	// Only Bob gets to listen
-	if port == 9601 {
-		sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)
-		if err != nil {
-			fmt.Println("Error subscribing to topic", err)
-		}
-		defer sub.Unsubscribe()
-	}
+	// if port == 9601 {
+	// 	sub, err := client.Subscribe(context.Background(), "pss", msgC, "receive", topic, false, false)
+	// 	if err != nil {
+	// 		fmt.Println("Error subscribing to topic", err)
+	// 	}
+	// 	defer sub.Unsubscribe()
+	// }
 
 	// XXX: Hack to make sure ready state
 	time.Sleep(time.Second * 3)
@@ -466,7 +471,7 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	fmt.Printf("All operations successfully completed.\n")
 
 	// Teardown
-
+	sub.Unsubscribe()
 	client.Close()
 	node.Stop()
 }
