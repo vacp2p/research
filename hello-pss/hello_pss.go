@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/swarm"
 	bzzapi "github.com/ethereum/go-ethereum/swarm/api"
 )
@@ -97,6 +98,24 @@ func newNode(port int) (*node.Node, error) {
 	//fmt.Printf("Current data directory is %s\n", cfg.DataDir)
 
 	return node.New(cfg)
+}
+
+// XXX: Lame signature, should be may more compact
+func runREPL(client *rpc.Client, receiver string, topic string) {
+	fmt.Println("*** I AM ALICE, Ready to send")
+	fmt.Printf("> ")
+	// Basic REPL functionality
+	scanner := bufio.NewScanner(os.Stdin)	
+	for scanner.Scan() {
+		input := scanner.Text()
+		//sendMessage(input)
+		sendMessage(client, receiver, topic, input)
+		fmt.Printf("> ")
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Unable to read input", err)
+		os.Exit(1)
+	}
 }
 
 // XXX: This is so sloppy, passing privatekey around
@@ -226,11 +245,15 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	// XXX: Hack to make sure ready state
 	time.Sleep(time.Second * 3)
 
-	// XXX Lol
+	// XXX: Hacky
 	// TODO: Replace with REPL-like functionality
 	if port == 9600 {
-		fmt.Println("*** I AM ALICE, SENDING")
-		err = client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte("Hello world")))
+		// NOTE: We assume here we are ready to actually send messages, so we REPL here
+		// XXX: Only running REPL for Alice Sender for now
+		runREPL(client, receiver, topic)
+		// send fn
+		// fmt.Println("*** I AM ALICE, SENDING")
+		// err = client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte("Hello world")))
 	} else if port == 9601 {
 		fmt.Println("*** I AM BOB, RECEIVING")
 		in := <-msgC
@@ -262,24 +285,20 @@ func init() {
 	h := log.CallerFileHandler(hf)
 	log.Root().SetHandler(h)
 }
- 
-func main() {
-	fmt.Printf("Hello PSS\n")
-	fmt.Printf("> ")
 
-	// Basic REPL functionality
-	scanner := bufio.NewScanner(os.Stdin)	
-	for scanner.Scan() {
-		input := scanner.Text()
-		fmt.Println("Input:", input)
-		fmt.Printf("> ")
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Unable to read input", err)
+// XXX: Ensure signature, also probably better with client as context but meh
+func sendMessage(client *rpc.Client, receiver string, topic string, input string) {
+	fmt.Println("Input:", input)
+	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(input)))
+	if err != nil {
+		fmt.Println("Error sending message through RPC client", err)
 		os.Exit(1)
 	}
+}
 
-	os.Exit(1)
+func main() {
+	fmt.Printf("Hello PSS\n")
+	fmt.Printf("Setting up node and connecting to the network...\n")
 
 	// TODO: Then, integrate feed and update there too
 
