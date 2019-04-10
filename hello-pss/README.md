@@ -77,6 +77,17 @@ Received message Hello world from 3078303463353631333164386465643930653739623736
  ./scripts/run-alice
 ```
 
+### Troubleshooting
+
+To see connected peers:
+`geth attach .data_9600/bzz.ipc --exec 'admin.peers'`
+
+
+For som reason I can attach to 9600 but not 9601 after adding peers:
+```
+Fatal: Failed to start the JavaScript console: api modules: context deadline exceeded
+```
+
 ### Next steps?
 - Put logs elsewhere
 - Allow send and receive from both (bg subscribe)?
@@ -85,6 +96,7 @@ Received message Hello world from 3078303463353631333164386465643930653739623736
 - For feeds, move from curl cli to go/jsonrpc api
 - When going online, allow querying of feeds
 - In message, also includes message dependencies
+
 
 
 ## Later

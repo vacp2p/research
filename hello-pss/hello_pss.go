@@ -240,6 +240,17 @@ func newService(bzzdir string, bzzport int, privKey *ecdsa.PrivateKey) func(ctx 
 	}
 }
 
+func addPeer(client *rpc.Client, enode string) {
+	fmt.Println("addPeer", enode)
+ 	var res bool
+	err := client.Call(&res, "admin_addPeer", enode)
+	if err != nil {
+		fmt.Println("Lets also print unable to add peer here", err)
+		log.Crit("Unable to add peer", err)
+	}
+	fmt.Println("addPeer res", res)
+}
+
 
 func run(port int, privateKey *ecdsa.PrivateKey) {
 	// New node
@@ -285,20 +296,34 @@ func run(port int, privateKey *ecdsa.PrivateKey) {
 	enodeA := "enode://395a074c059143a68473bcf7edb3bae72bc930cfef5c92399401cedd76c493014d29e75ed1833fe45a2c0e04f0e9f9c64bf029c9c0fb646aa23690e945d70193@127.0.0.1:30400"
 	enodeB := "enode://f716c8cc7cc6674d8332ae1a3fb7f4776285095dc372c20a508e22e7d0a9c006b1626aab7b45802d99957b86bf1c0c14d9ba91df87528c735751e92dd96fa88f@127.0.0.1:30401"
 
-	// XXX: Eh
-	var res1 bool
-	err = client.Call(&res1, "admin_addPeer", enodeA)
-	if err != nil {
-		log.Crit("Unable to add peer", err)
-	}
+	// XXX: Broke discovery or something so not connected to many peers, adding some manually as a hack
+	// All have caps: ["bzz/8", "hive/8", "pss/2", "stream/8"] and came from standard swarm setup
+	// static1 := "enode://058f55a4bfe3ef7c3718ac035cd0bc5ce7646d8acc95930036145a0bcb337eb7769b015cb404201e63e48b261962728554e03c2ffca0a80e857f2c8ad1df02f4@52.232.7.187:30400?discport=0"
+	// static2 := "enode://a5d7168024c9992769cf380ffa559a64b4f39a29d468f579559863814eb0ae0ed689ac0871a3a2b4c78b03297485ec322d578281131ef5d5c09a4beb6200a97a@52.232.7.187:30442?discport=0"
+	// static3 := "enode://1ffa7651094867d6486ce3ef46d27a052c2cb968b618346c6df7040322c7efc3337547ba85d4cbba32e8b31c42c867202554735c06d4c664b9afada2ed0c4b3c@52.232.7.187:30412?discport=0"
 
-	var res2 bool
-	err = client.Call(&res2, "admin_addPeer", enodeB)
-	if err != nil {
-		log.Crit("Unable to add peer", err)
-	}
+	addPeer(client, enodeA)
+	addPeer(client, enodeB)
+	// addPeer(client, static1)
+	// addPeer(client, static2)
+	// addPeer(client, static3)
+
+	// // XXX: Eh
+	// var res1 bool
+	// err = client.Call(&res1, "admin_addPeer", enodeA)
+	// if err != nil {
+	// 	log.Crit("Unable to add peer", err)
+	// }
+
+	// var res2 bool
+	// err = client.Call(&res2, "admin_addPeer", enodeB)
+	// if err != nil {
+	// 	log.Crit("Unable to add peer", err)
+	// }
 	//fmt.Println("*** added some peers probably ", res1, res2)
 	// TODO: admin get peers here?
+
+	// TODO: admin get peers ensure?
 
 	// XXX: More robust health check here
 	// Simpler, there should be a stdlib fn for waitHealthy anyway
