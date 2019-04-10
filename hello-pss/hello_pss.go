@@ -114,11 +114,8 @@ func listenForMessages(msgC chan pss.APIMsg) {
 	}
 }
 
-// XXX: Lame signature, should be may more compact
-func runREPL(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string) {
-	fmt.Println("I am Alice, and I am ready to send messages.")
-
-	// TODO: Move this to separate function
+// TODO: Error handling if fail
+func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string) {
 	// For creating manifest, then posting, then finally getting
 
 	// Create a new feed with user and topic.
@@ -156,10 +153,12 @@ func runREPL(client *rpc.Client, signer *feed.GenericSigner, receiver string, to
 	err = httpClient.UpdateFeed(request)
 	if err != nil {
 		fmt.Printf("Error updating feed: %s", err.Error())
-	}
-	
+	}	
+}
 
-	// REPL resume
+// XXX: Lame signature, should be may more compact
+func runREPL(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string) {
+	fmt.Println("I am Alice, and I am ready to send messages.")
 
 	fmt.Printf("> ")
 	// Basic REPL functionality
@@ -167,7 +166,7 @@ func runREPL(client *rpc.Client, signer *feed.GenericSigner, receiver string, to
 	for scanner.Scan() {
 		input := scanner.Text()
 		//sendMessage(input)
-		sendMessage(client, receiver, topic, input)
+		sendMessage(client, signer, receiver, topic, input)
 		fmt.Printf("> ")
 	}
 	if err := scanner.Err(); err != nil {
@@ -352,13 +351,18 @@ func init() {
 }
 
 // XXX: Ensure signature, also probably better with client as context but meh
-func sendMessage(client *rpc.Client, receiver string, topic string, input string) {
+func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string, input string) {
 	//fmt.Println("Input:", input)
 	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(input)))
 	if err != nil {
 		fmt.Println("Error sending message through RPC client", err)
 		os.Exit(1)
 	}
+
+	// Also post to feed
+	// XXX: Currently hardcoded to plaintext name, could be hash of two pubkeys e.g.
+	// TODO: If any errors with this, show this
+	postToFeed(client, signer, receiver, topic)
 }
 
 func main() {
