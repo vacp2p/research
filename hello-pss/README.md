@@ -108,6 +108,8 @@ Why is it rskipping peer
 
 Two hypothesis of what's wrong:
 - Bad kademlia connectivity, implement health check to inspect
+   - can attach swarm and hello pss nodes and diff options, since swarm default seems to propagate basic
+      e.g. swarmup ends up on swarm gateway
 - Local network shenanighans that only shows up for some flows, need to use external ip or so
 
 ### Next steps?

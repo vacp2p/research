@@ -25,6 +25,8 @@ import (
 	"github.com/ethereum/go-ethereum/swarm"
 //	"github.com/ethereum/go-ethereum/swarm/network"
 	bzzapi "github.com/ethereum/go-ethereum/swarm/api"
+
+	// XXX: Shouldn't this be bzzclient?
 	feedsapi "github.com/ethereum/go-ethereum/swarm/api/client"
 
 )
@@ -128,7 +130,7 @@ func listenForMessages(msgC chan pss.APIMsg) {
 }
 
 // TODO: Error handling if fail
-func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string, input string) {
+func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string, topic string, data []byte) {
 	// For creating manifest, then posting, then finally getting
 
 	// Create a new feed with user and topic.
@@ -158,7 +160,7 @@ func postToFeed(client *rpc.Client, signer *feed.GenericSigner, receiver string,
 		fmt.Printf("Error retrieving feed status: %s", err.Error())
 	}
 
-	request.SetData([]byte(input))
+	request.SetData(data)
 	if err = request.Sign(signer); err != nil {
 		fmt.Printf("Error signing feed update: %s", err.Error())
 	}
@@ -552,7 +554,8 @@ func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string
 	// XXX: Direct to byte and toHex?
 	payload := serialize(msg)
 
-	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(payload)))
+//	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex([]byte(payload)))
+	err := client.Call(nil, "pss_sendAsym", receiver, topic, common.ToHex(payload))
 	if err != nil {
 		fmt.Println("Error sending message through RPC client", err)
 		os.Exit(1)
@@ -566,17 +569,28 @@ func sendMessage(client *rpc.Client, signer *feed.GenericSigner, receiver string
 	postToFeed(client, signer, receiver, topic, payload)
 }
 
-func serialize(msg message) string {
+func serialize(msg message) []byte {
 	//msg := &message{Text: "hi", Parents: []string{"foo", "bar"}}
-	payload, err := json.Marshal(msg)
+	data, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("Unable to marshal into JSON", err)
 		os.Exit(1)
 	}
-	strJSON := string(payload) 
-	//fmt.Println("json payload", strJSON)
-	return strJSON
+	return data
 }
+
+// func serialize2(msg message) string {
+// 	//msg := &message{Text: "hi", Parents: []string{"foo", "bar"}}
+// 	payload, err := json.Marshal(msg)
+// 	if err != nil {
+// 		fmt.Println("Unable to marshal into JSON", err)
+// 		os.Exit(1)
+// 	}
+// 	//XXX shouldnt this be byte ?!
+// 	strJSON := string(payload) 
+// 	//fmt.Println("json payload", strJSON)
+// 	return strJSON
+// }
 
 func deserialize(strJSON string) message {
 	msg := message{}
@@ -589,11 +603,33 @@ func main() {
 	fmt.Printf("Hello PSS\n")
 	fmt.Printf("Setting up node and connecting to the network...\n")
 
-	// Example
-	// msg := message{Text: "hi", Parents: []string{"foo", "bar"}}
-	// payload := serialize(msg)
-	// parsed := deserialize(payload)
-	// fmt.Println(parsed.Parents[0])
+	// XXX Lets use already running node because why not
+	// TODO: Replace with 9600 once end to end
+	httpClient := feedsapi.NewClient("http://localhost:9602") // XXX 9600
+
+	msg := message{Text: "testing", Parents: []string{"hi", "uncle bob"}}
+	data := serialize(msg)
+	hash, err := httpClient.UploadRaw(bytes.NewReader(data), int64(len(data)), false)
+	if err != nil {
+		fmt.Println("Unable to upload raw", err)
+		os.Exit(1)
+	}
+	fmt.Println("***raw hash: ", hash)
+
+	response, _, err := httpClient.DownloadRaw(hash)
+	if err != nil {
+		fmt.Println("Unable to download raw", err)
+		os.Exit(1)
+	}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(response)
+	str := buf.String()
+	fmt.Println("***Download raw", str)
+
+
+	// Ok, now we need to populate parent and fetch it
+	// To do this, we need a chunk that we upload
+	// Lets try basic swarm up and include that
 
 	// TODO: Then, integrate feed and update there too
 	// Cool, here ATM.
