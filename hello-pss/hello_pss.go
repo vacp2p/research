@@ -37,6 +37,9 @@ var (
 	
 	// XXX: Should be multiple, but cheating and only taking parent0
 	lastParent = ""
+
+	// Set of seen parent0 swarm hash messages
+	SeenSet = make(map[string]bool)
 )
 
 // TODO: Ensure node starts in light node so it doesn't eat up a lot of disk space
@@ -114,12 +117,10 @@ func newNode(port int) (*node.Node, error) {
 	return node.New(cfg)
 }
 
-// Have in-memory, but these only have json, not hash
-
 // TODO: How do we know this
 // XXX: We can probably cheat with in-memory only by downloading all messages and A is restarting
 func seen(hash string) bool {
-	return false
+	return SeenSet[hash]
 }
 
 func fetchMessage(hash string) {
@@ -130,6 +131,10 @@ func fetchMessage(hash string) {
 		fmt.Println("Unable to download raw", err)
 		os.Exit(1)
 	}
+	// Assuming no error, save hash to SeenSet so we don't download again
+	// XXX: Edge case because message id of pss message not seen, so calculate again?
+	SeenSet[hash] = true
+
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(response)
 	str := buf.String()
@@ -139,6 +144,8 @@ func fetchMessage(hash string) {
 	handleMessage(msg)
 
 }
+
+
 
 // XXX: Assumes no duplicates
 func handleMessage(msg message) {
@@ -154,6 +161,7 @@ func handleMessage(msg message) {
 
 
 	// Interesting, this seems to unroll and deal with order automatically
+	// XXX: Edge cases here because it doesn't save messages, just happy path stack
 	parent0 := msg.Parents[0]
 	if (parent0 != "") && !seen(parent0) {
 		fmt.Printf("[Unmet dependency, downloading: %s]\n", parent0)
