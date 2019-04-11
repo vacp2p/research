@@ -2,6 +2,8 @@
 
 ![](staples.jpg)
 
+*Replicated chunks made out of robust zinc-stained steel in an ordered log.*
+
 For messaging, we need to store and pass things around between people. Swarm is a place to store and spread thing. PSS is a way to do messaging on top of Swarm. Sometimes people are away, and when they come back they need a way to find out what they missed. Feeds is a place we can look to find thing that have changed. Staples is a proof of concept for messaging using Swarm, PSS and Feeds.
 
 ![](staples_in_action.png)
