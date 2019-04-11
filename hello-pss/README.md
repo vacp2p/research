@@ -1,8 +1,10 @@
 # Staples
 
+![](staples.jpg)
+
 For messaging, we need to store and pass things around between people. Swarm is a place to store and spread thing. PSS is a way to do messaging on top of Swarm. Sometimes people are away, and when they come back they need a way to find out what they missed. Feeds is a place we can look to find thing that have changed. Staples is a proof of concept for messaging using Swarm, PSS and Feeds.
 
-![](staples.jpg)
+![](staples_in_action.png)
 
 You can see a demo of it [here](https://www.youtube.com/watch?v=HwiR0_KCQuI).
 
@@ -54,6 +56,8 @@ Things that can be improved:
    - => Should be fairly straightforward to generalize this for 1:1 chat at least
 - Mapping of concepts to group chat and public chat not obvious.
    - => Different structure with a local log that requires different patterns, but it's doable.
+- Only CLI interface.
+   - Integrate as API console-client, or make UI, or add to Status app.
 - Bad code with hardcoded endpoints, poor structure, exposed private keys, etc.
    - => Refactor and use best practices; integrate into existing code bases.
 - Due to issue with stale/non-existant Feed reads, cheats a bit using local helper node.
