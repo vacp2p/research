@@ -1,128 +1,77 @@
-# Hello PSS
+# Staples
 
-## Swarm hello world
+For messaging, we need to store and pass things around between people. Swarm is a place to store and spread thing. PSS is a way to do messaging on top of Swarm. Sometimes people are away, and when they come back they need a way to find out what they missed. Feeds is a place we can look to find thing that have changed. Staples is a proof of concept for messaging using Swarm, PSS and Feeds.
 
-```
-# Geth new account
-geth account new
-echo "0ab9f275308307188de76f82cbc08a5258b03110" >> alice.tmp
+![](staples.jpg)
 
-# Get rid of password prompt later
-echo "" >> password.tmp
+You can see a demo of it [here](https://www.youtube.com/watch?v=HwiR0_KCQuI).
 
-# Start swarm node
-swarm --bzzaccount `cat alice.tmp`
-
-# Test up and down
-swarm up README.md > readme-ref.tmp
-swarm down bzz:/`cat readme-ref.tmp` test.tmp
-```
-
-## Feeds
+## Instructions
 
 ```
-# Using human readable topic, can equally well use --topic
-swarm --bzzaccount `cat alice.tmp` feed create --name "bob"
-# Returns feed manifest
-# 2a0ddb7d63cc4926d168697da1ad76bdad3782611c8f75bd1ce2f8b5e096b6e0
+# Install Swarm locally:
+# https://swarm-guide.readthedocs.io/en/latest/installation.html
 
-# XXX: What's the difference? Doesn't it use bzzapi and use local instance by default?
-swarm --bzzaccount `cat alice.tmp` --bzzapi http://localhost:8500 feed create --name "bob"
-# 2a0ddb7d63cc4926d168697da1ad76bdad3782611c8f75bd1ce2f8b5e096b6e0
+# In three separate terminals, run the following:
+./scripts/run-alice
+./scripts/run-bob
+./scripts/run-charlie
 
-# XXX: What to do with feed manifest? How get it?
-
-# Posting to a feed using name/topic/manifest, need hex, example here
-swarm --bzzaccount `cat alice.tmp` feed update --name bob 0x68656c6c6f2031
-
-# Reading feed info 
-swarm --bzzaccount `cat alice.tmp` feed info --name "bob"
-# {"feed":{"topic":"0x626f620000000000000000000000000000000000000000000000000000000000","user":"0x0ab9f275308307188de76f82cbc08a5258b03110"},"epoch":{"time":1554695168,"level":24},"protocolVersion":0}
-
-# Reading feed updates, can't with CLI but
-curl 'http://localhost:8500/bzz-feed:/?user=0x0ab9f275308307188de76f82cbc08a510&name=bob'
-# `hello 1` = hex above? +1
-
-# Posting message to feed 
-echo "Hello world" > message
-# Need right format for hex
-cat message | hexdump -v -e '/1 "%02x"' > hex-message
-
-swarm --bzzaccount `cat alice.tmp` --password password.tmp feed update --name bob 0x`cat hex-message`
-
-curl 'http://localhost:8500/bzz-feed:/?user=0x0ab9f275308307188de76f82cbc08a5258b03110&name=bob'
-# Hello world
+# Send mesages from Alice and notice how it appears in Bob's window.
+# If Bob disconnects and then reconnects, it fetches messages it missed since last time.
 ```
 
-We can use `--user` to refer to another person as opposed to `bzzaccount` by default.
+## Rationale
 
-## PSS
+**Context**: Status currently uses Whisper as a messaging protocol. For offline inboxing, and it uses Whisper mailservers in a cluster for offline inboxing. To get the latest messages, it currently assumes a given mailserver has received all latest messages and queries it upon startup. To do message ordering, it uses Lamport timestamps with real-time clock for hints., but largely relies on Whisper mailservers being highly available to provide this consistency.
 
-First, standalone with ethereum-samples. Second, in Go script send and receive (WIP).
+1. **PSS** is in some ways the spiritual successor to Whisper, and it has a very similar API. It provides better scalability due to its superior routing strategy, while maintaining the ability to be privacy-preserving. The proof of work used in Whisper is also a poor fit for heterogenerous devices. While Swap incentives, the DoS protection mechanism in PSS, isn't implemented yet, it is arguably a more sound design. Whisper is also not actively developed, and several developers have moved on to working on Swarm/PSS. For a more detailed comparison, see [here](https://our.status.im/whisper-pss-comparison/).
 
-Testing only: private keys galore
+2. **Swarm** is a distributed storage platform and content distribution network, which deals with things such as replication and fault tolerance in a rigorous way. This is unlike Whisper mailservers, which have high uptime requirements, and fails to enable reliable offline inboxing during events such as [Chaos Unicorn Day](https://chaos-unicorn-day.org/). In Swarm content is spread out and replication across the network, it doesn't require high uptime for any individual node. Research and prototyping of things such as SWAP accounting system, light nodes, erasure coding, proof of custody and storage insurance is also at an avanced stage. To read more about Swarm and how it works, see the documentation for [Swarm POC3](https://swarm-guide.readthedocs.io/en/latest/).
 
-Ok we have two (hardcoded) independent, locally running Geth nodes with swarm service messaging over PSS:
+3. **Feeds** provide a way to get mutable state in an immutable world. Since Feeds use Swarm, fault tolerance and availability is baked in. Conceptually, it is similar to ENS or DNS. For more on Feeds, see [here](https://swarm-guide.readthedocs.io/en/latest/usage.html#feeds).
 
-```
-Received message Hello world from 307830346335363133316438646564393065373962373662393766323665386663303332353937383836666636386162363535376639316334626631616534366561623934343135633664663330626236343739636634306638313139373762623262323337373837663562383037643937313931663761393934613535383633336530
-```
+4. **Message dependencies**. By including hashes of previous message dependencies, we can build up a Distributed Acylic Graph (DAG) of messages. Messages that haven't had its dependencies met are not delivered to the upper layer. This ensures high availaility while maintaining casual consistency (topologically ordered conversations). For more on rationale of this, see this post on [Discuss](https://discuss.status.im/t/introducing-a-data-sync-layer/864) and this [data sync research thread](https://discuss.status.im/t/mostly-data-sync-research-log/1100/15).
 
-### How to run
-```
-# Run receiver
-./scripts/run-bob 
+## How it works
 
-# Run sender
- ./scripts/run-alice
-```
+- Alice, Bob and Charlie are three local Swarm nodes. It uses the Go API (RPC and HTTP client).
+- A message consists of some text and parent message ids.
+- Alice sends messages to Bob via PSS, including parent messages hashes (if they exist). 
+- When Alice sends a message, it also updates its feed with topic `bob` (and uploads chunk to Swarm).
+- When Bob comes online, it first checks Alice's feed under topic `bob`.
+- Alice does not have to be online for Bob to receive messages from her.
+- If Bob sees a parent message it hasn't seen before, it first fetches that chunk on Swarm.
+- Bob only sees the message once all messages dependencies have been delivered.
+- When Bob has synced up to the present state, it also receives live messages via PSS.
+- Charlie is a helper node to deal with some Kademlia/local network connectivity issues.
 
-### Troubleshooting
+## Shortcomings & Enhancements
 
-To see connected peers:
-`geth attach .data_9600/bzz.ipc --exec 'admin.peers'`
+Things that can be improved:
 
-
-For som reason I can attach to 9600 but not 9601 after adding peers:
-```
-Fatal: Failed to start the JavaScript console: api modules: context deadline exceeded
-```
-
-```
-DEBUG[04-10|16:45:08.428] Resolving node failed                    id=0x869830         newdelay=2m0s caller=dial.go:333
-DEBUG[04-10|16:45:08.630] fetcher request hop count limit reached  hops=20 caller=fetcher.go:162
-DEBUG[04-10|16:45:09.004] ChunkStore.Get can not retrieve chunk    peer=b4425dfb4fed04248b4a2ef1eb9a9253b8685a6d4775e2d6264762d8cc8b1a60 addr=c5e800bb76ca919e601440a1192fd94bfbd6e461b9921460272e258aaabb53ab                                                                                                                                                                            hopcount=16 err="context deadline exceeded"            caller=delivery.go:177
-DEBUG[04-10|16:45:09.038] ChunkStore.Get can not retrieve chunk    peer=b4425dfb4fed04248b4a2ef1eb9a9253b8685a6d4775e2d6264762d8cc8b1a60 addr=bfb19b17e25ec9981ba740dffc965635099c4306b9d0d6d19a738bdd5c1a2b68                                                                                                                                                                            hopcount=18 err="context deadline exceeded"            caller=delivery.go:177
-INFO [04-10|16:45:09.177] unable to request                        request addr=ae61264cc22c960b62abfcefac8059c6f6ef481dfd972381024967915cfebdea err="no peer found"                        caller=fetcher.go:238
-```
-
-```
-   ruid=d0ecbecb code=200 time=4.903668ms   caller=middleware.go:83
-TRACE[04-10|18:15:29.000] search timed out: requesting             request addr=7e05ce20f890f52f793a9fdb438aeef93b96cbc04e21ebb4e5ea3c6f811c957a doRequest=true  caller=fetcher.go:224
-TRACE[04-10|18:15:29.000] Delivery.RequestFromPeers: skip peer     peer id=258ab5a8630d8d9d caller=delivery.go:278
-TRACE[04-10|18:15:29.000] Delivery.RequestFromPeers: skip peer     peer id=443030fd43226716 caller=delivery.go:278
-INFO [04-10|18:15:29.000] unable to request                        request addr=7e05ce20f890f52f793a9fdb438aeef93b96cbc04e21ebb4e5ea3c6f811c957a err="no peer found"
-```
-
-Why is it rskipping peer
-
-Two hypothesis of what's wrong:
-- Bad kademlia connectivity, implement health check to inspect
-   - can attach swarm and hello pss nodes and diff options, since swarm default seems to propagate basic
-      e.g. swarmup ends up on swarm gateway
-- Local network shenanighans that only shows up for some flows, need to use external ip or so
-
-### Next steps?
-- Put logs elsewhere
-- Allow send and receive from both (bg subscribe)?
-- Allow interactive message send?
-- When sending, also update to feeds
-- For feeds, move from curl cli to go/jsonrpc api
-- When going online, allow querying of feeds
-- In message, also includes message dependencies
-
-
-
-## Later
-
-Simple Go CLI
+- Only supports Alice talking to Bob right now.
+   - => Should be fairly straightforward to generalize this for 1:1 chat at least
+- Mapping of concepts to group chat and public chat not obvious.
+   - => Different structure with a local log that requires different patterns, but it's doable.
+- Bad code with hardcoded endpoints, poor structure, exposed private keys, etc.
+   - => Refactor and use best practices; integrate into existing code bases.
+- Due to issue with stale/non-existant Feed reads, cheats a bit using local helper node.
+   - likely cause: local network connectivity issues or poor Kademlia connectivity
+   - => Kademlia connectivty can be checked by using health checks
+   - => local network connectivity just requires a bit more debugging/log checking
+- Lack of Swarm light client mode for mobile.
+   - This is under active development
+   - => Just try running it and see what happens, desktop should be fine, can fork with hacks
+- Swarm is still under active development.
+   - This means things like incentives, fault tolerance, connectivity etc are still issues
+   - => Don't make strong assumptions but use it optimistically
+   - => Try it and file issues / help fix them
+- Not integrated with current Status code bases (status-go/console-client) and protocol.
+   - Additionally, some small differences when it comes to what keys/identities etc are.
+   - => Do it, fairly straightforward code-wise for basic infrastructure
+   - => Write up upgrade path for Whisper->PSS and how to use e.g. feeds in parallel
+   - => For protocol, write proposal to specs repo on what upgrade would look like
+   - => Consider parallel support via feature flag for gradual move
+   - => More research/thinking on properties and trade-offs
+- Probably more.
