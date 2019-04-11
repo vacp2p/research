@@ -1,4 +1,4 @@
-# MOVED REPOSITORY TO (status-im/staples)[https://github.com/status-im/staples].
+# MOVED REPOSITORY TO https://github.com/status-im/staples
 
 ---
 
