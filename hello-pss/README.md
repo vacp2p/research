@@ -1,10 +1,18 @@
-# Staples
+# MOVED REPOSITORY TO (status-im/staples)[https://github.com/status-im/staples].
+
+---
+
+# Hello Staples
+
+*Staples was made during Status #buidleweek.*
 
 ![](staples.jpg)
 
 *Replicated chunks made out of robust zinc-stained steel in an ordered log.*
 
 For messaging, we need to store and pass things around between people. Swarm is a place to store and spread thing. PSS is a way to do messaging on top of Swarm. Sometimes people are away, and when they come back they need a way to find out what they missed. Feeds is a place we can look to find thing that have changed. Staples is a proof of concept for messaging using Swarm, PSS and Feeds.
+
+## What it looks like
 
 ![](staples_in_action.png)
 
@@ -81,3 +89,9 @@ Things that can be improved:
    - => Consider parallel support via feature flag for gradual move
    - => More research/thinking on properties and trade-offs
 - Probably more.
+
+## Takeaways
+
+- It was easier than expected to get a basic PoC up and running, and swarm is really cool and underutilized
+- That said, there are a bunch of rough edges (API docs, connectivity) and missing features
+- We should spend more time seriously trying it out (both in terms of building light client, and using pss/feeds for app and in protocol work).
