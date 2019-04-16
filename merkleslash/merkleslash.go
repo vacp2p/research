@@ -19,6 +19,13 @@ import "github.com/cbergoon/merkletree"
 //slash
 //court
 
+// TODO: There should be a simple way to go from trustedMR and some partial content, and say whether
+// (a) content is in MR with that trusted root (b) say if tree is complete
+
+// Partial verification - illustration:
+// C->A, C->B. B->h(3), B->h(4). C is trusted root hash that I have.
+// From untrusted peer, I get data 4, h(3) and A, and can thus prove integrity, with partial fetch (4)
+
 // define how untrusted nodes get in first place
 
 // TestContent implements the Content interface provided by merkletree,
