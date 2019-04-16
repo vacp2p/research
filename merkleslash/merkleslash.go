@@ -23,6 +23,7 @@ import "github.com/cbergoon/merkletree"
 
 // TestContent implements the Content interface provided by merkletree,
 // it represents the content stored in the tree.
+// NOTE: x can be a completely encrypted payload
 type TestContent struct {
 	x string
 }
@@ -42,6 +43,12 @@ func (t TestContent) Equals(other merkletree.Content) (bool, error) {
 	return t.x == other.(TestContent).x, nil
 }
 
+// Get merkle root from trusted location
+// TODO: Implement location/method logic and groupID dispatching, hardcoding for now
+func getRoot(location string, groupID string) string {
+	return "5f30cc80133b9394156e24b233f0c4be32b24e44bb3381f02c7ba52619d0febc"
+}
+
 func main() {
 	fmt.Printf("Hello Merkleslash\n")
 
@@ -57,7 +64,14 @@ func main() {
 	}
 
 	mr := t.MerkleRoot()
-	log.Println("Merkle Root:" , hex.EncodeToString(mr))
+	mrHex := hex.EncodeToString(mr)
+	log.Println("Merkle Root:" , mrHex)
+	
+	// mr2, err := hex.DecodeString(mrHex)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// log.Println("Merkle Root" , mr2)
 
 	vt, err := t.VerifyTree()
 	if err != nil {
@@ -72,5 +86,9 @@ func main() {
 	log.Println("Verify Content:", vc)
 
 	//log.Println(t)
+
+	// 1. Get trusted root
+	newMR := getRoot("", "")
+	log.Println("Trusted root:", newMR)
 
 }
