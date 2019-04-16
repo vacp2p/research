@@ -2,6 +2,7 @@ package main
 
 import "fmt"
 import "log"
+import "encoding/hex"
 import "crypto/sha256"
 import "github.com/cbergoon/merkletree"
 
@@ -56,20 +57,20 @@ func main() {
 	}
 
 	mr := t.MerkleRoot()
-	log.Println("Merkle Root:" , mr)
+	log.Println("Merkle Root:" , hex.EncodeToString(mr))
 
 	vt, err := t.VerifyTree()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Verify Tree: ", vt)
+	log.Println("Verify Tree:", vt)
 
 	vc, err := t.VerifyContent(list[0])
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Verify Content: ", vc)
+	log.Println("Verify Content:", vc)
 
-	log.Println(t)
+	//log.Println(t)
 
 }
