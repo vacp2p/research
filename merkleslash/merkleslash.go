@@ -49,6 +49,15 @@ func getRoot(location string, groupID string) string {
 	return "5f30cc80133b9394156e24b233f0c4be32b24e44bb3381f02c7ba52619d0febc"
 }
 
+// Pull gets difference between what you have and what you know you can have
+// NOTE: This can happen from any untrusted location, as the integritry can be proven
+// TODO: Should return a list of payloads
+func pull(mr string, haves []string) []string {
+	var diff []string
+	diff = append(diff, "xxx")
+	return diff
+}
+
 func main() {
 	fmt.Printf("Hello Merkleslash\n")
 
@@ -91,4 +100,10 @@ func main() {
 	newMR := getRoot("", "")
 	log.Println("Trusted root:", newMR)
 
+	// 2. Sync difference
+	var emptyList []string
+	payloads := pull(newMR, emptyList)
+	log.Println("Pulled payloads:", payloads)
+
+	// TODO: Verify contents
 }
