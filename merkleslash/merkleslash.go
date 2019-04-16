@@ -45,6 +45,15 @@ func (t TestContent) Equals(other merkletree.Content) (bool, error) {
 
 // Get merkle root from trusted location
 // TODO: Implement location/method logic and groupID dispatching, hardcoding for now
+
+// NOTE: Built up from the following:
+// var list []merkletree.Content
+// list = append(list, TestContent{x: "Hello"})
+// list = append(list, TestContent{x: "Hi"})
+// list = append(list, TestContent{x: "Hey"})
+// list = append(list, TestContent{x: "Hola"})
+//
+// t, err := merkletree.NewTree(list)
 func getRoot(location string, groupID string) string {
 	return "5f30cc80133b9394156e24b233f0c4be32b24e44bb3381f02c7ba52619d0febc"
 }
@@ -52,9 +61,16 @@ func getRoot(location string, groupID string) string {
 // Pull gets difference between what you have and what you know you can have
 // NOTE: This can happen from any untrusted location, as the integritry can be proven
 // TODO: Should return a list of payloads
-func pull(mr string, haves []string) []string {
+// XXX: For now, switch between good and bad case
+func pull(location string, mr string, haves []string) []string {
 	var diff []string
-	diff = append(diff, "xxx")
+	// TODO: There's third case, not bad data but missing data
+	// Also deal with multiple items
+	if location == "byzantine" {
+		diff = append(diff, "xxx")
+	} else {
+		diff = append(diff, "Hola")
+	}
 	return diff
 }
 
@@ -65,7 +81,9 @@ func main() {
 	list = append(list, TestContent{x: "Hello"})
 	list = append(list, TestContent{x: "Hi"})
 	list = append(list, TestContent{x: "Hey"})
-	list = append(list, TestContent{x: "Hola"})
+	
+	// XXX: Let's assume we don't have this part of the tree
+	//list = append(list, TestContent{x: "Hola"})
 
 	t, err := merkletree.NewTree(list)
 	if err != nil {
@@ -102,8 +120,36 @@ func main() {
 
 	// 2. Sync difference
 	var emptyList []string
-	payloads := pull(newMR, emptyList)
-	log.Println("Pulled payloads:", payloads)
 
-	// TODO: Verify contents
+	// NOTE: Byzantine case
+	location := "byzantine"
+	payloads := pull(location, newMR, emptyList)
+	//log.Println("Pulled payloads:", payloads)
+	content := TestContent{x: payloads[0]}
+	contents := list
+	contents = append(contents, content)
+	// Build up untrusted tree and compare it with contents
+	untrusted := t
+	// XXX: is there no way to append to tree?
+	err = untrusted.RebuildTreeWith(contents)
+	untrustedRoot := hex.EncodeToString(untrusted.MerkleRoot())
+	log.Println("Untrusted root [Byzantine case]:", untrustedRoot)
+	log.Println("Good data [Good case]?", untrustedRoot == newMR)
+
+	// NOTE: Good case
+	// TODO: partial case
+	location2 := "good"
+	payloads2 := pull(location2, newMR, emptyList)
+	//log.Println("Pulled payloads:", payloads)
+	content2 := TestContent{x: payloads2[0]}
+	contents2 := list
+	contents2 = append(contents2, content2)
+	// Build up untrusted tree and compare it with contents
+	untrusted2 := t
+	// XXX: is there no way to append to tree?
+	err = untrusted.RebuildTreeWith(contents)
+	untrustedRoot2 := hex.EncodeToString(untrusted2.MerkleRoot())
+	log.Println("Untrusted root [Good case]:", untrustedRoot2)
+	log.Println("Good data [Good case]?", untrustedRoot2 == newMR)
+
 }
