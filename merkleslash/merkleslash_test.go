@@ -1,6 +1,7 @@
 package main
 
 import "testing"
+import "log"
 import "github.com/cbergoon/merkletree"
 
 func TestBasicGood(t *testing.T) {
@@ -73,4 +74,76 @@ func TestBasicByzantine(t *testing.T) {
 	if !expect {
         t.Errorf("Byzantine basic: Untrusted root %s and trusted root %s shouldn't match", untrustedRoot, trustedRoot)
     }
+}
+
+// Here's what I want to test:
+// Full tree: C->A; C->B; B->h(3); B->h(4); h(4)->4
+// Trusted root: C
+// Get from untrusted root: A, h(3) ("small") and 4 ("big"). Through these pieces of data we can verify.
+// What does this mean if you have or don't have e.g. A branch? (which can hide a lot of data)
+// I guess this is difference between thin and full client.
+// See: https://bitcoin.stackexchange.com/questions/50674/why-is-the-full-merkle-path-needed-to-verify-a-transaction
+//
+// Next question: how do we specify path?
+// Lets try GetMerklePath
+
+func printPath(mt merkletree.MerkleTree, item merkletree.Content, name string) {
+	_, x, err := mt.GetMerklePath(item)
+	log.Println("Path to", name, x)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func TestPartialVerification(t *testing.T) {
+	// Pre-compute expected tree
+
+	// XXX: Have you heard of for loops
+	var list []merkletree.Content
+	item1 := TestContent{x: "1"}
+	item2 := TestContent{x: "2"}
+	item3 := TestContent{x: "3"}
+	item4 := TestContent{x: "4"}
+	item5 := TestContent{x: "5"}
+
+	list = append(list, item1)
+	list = append(list, item2)
+	list = append(list, item3)
+	list = append(list, item4)
+	list = append(list, item5)
+
+	mt, _ := merkletree.NewTree(list)
+	//trustedRoot := toHex(mt.MerkleRoot())
+
+	printPath(*mt, item1, "1")
+	printPath(*mt, item2, "2")
+	printPath(*mt, item3, "3")
+	printPath(*mt, item4, "4")
+	printPath(*mt, item5, "5")
+
+
+	// // Local node setup, partial
+	// // Assume has access to trustedRoot
+	// var contents []merkletree.Content
+	// contents = append(contents, TestContent{x: "1"})
+	// contents = append(contents, TestContent{x: "2"})
+	// contents = append(contents, TestContent{x: "3"})
+
+	// // Byzantine case, currently sending nothing
+	// // TODO: Since haves is empty it should return full contents?
+	// // XXX: Doesn't make sense to have tree hardcoded in other code
+	// var haves []string
+	// untrustedPayloads := pull("good", trustedRoot, haves)
+	// content := TestContent{x: untrustedPayloads[0]}
+	// contents = append(contents, content)
+
+	// // XXX: is there no way to append to tree?
+	// untrusted := mt
+	// _ = untrusted.RebuildTreeWith(contents)
+	// untrustedRoot := toHex(untrusted.MerkleRoot())
+
+	// expect := (untrustedRoot == trustedRoot)
+	// if !expect {
+    //     t.Errorf("Good basic: Untrusted root %s and trusted root %s should match", untrustedRoot, trustedRoot)
+    // }
 }
