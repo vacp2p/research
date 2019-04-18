@@ -84,8 +84,16 @@ func TestBasicByzantine(t *testing.T) {
 // I guess this is difference between thin and full client.
 // See: https://bitcoin.stackexchange.com/questions/50674/why-is-the-full-merkle-path-needed-to-verify-a-transaction
 //
-// Next question: how do we specify path?
+// Next question: how do we specify path? Index [0 1], etc.
 // Lets try GetMerklePath
+// Not clear exactly how it maps or changes as we rebuild tree but ok for now
+// Now, how can we do partial rebuild here?
+//
+// As a client, I say I have A [x, y], h(3) [x, y]. And a trusted root hash.
+// So I guess there are two ways the query can go: for a specific piece of data (how know?) and diff.
+// Lets graph: https://notes.status.im/MLGgpdgqRzeyTqVWkl7gjg#
+
+// Can use Whisper/mailservers as well for compatibility before Swarm Feeds ready, boom new topic
 
 func printPath(mt merkletree.MerkleTree, item merkletree.Content, name string) {
 	_, x, err := mt.GetMerklePath(item)
@@ -94,6 +102,31 @@ func printPath(mt merkletree.MerkleTree, item merkletree.Content, name string) {
 		log.Fatal(err)
 	}
 }
+
+// 4 nodes
+// 2019/04/18 11:49:07 Path to 1 [1 1]
+// 2019/04/18 11:49:07 Path to 2 [0 1]
+// 2019/04/18 11:49:07 Path to 3 [1 0]
+// 2019/04/18 11:49:07 Path to 4 [0 0]
+
+// 5 nodes
+// 2019/04/18 11:54:36 Path to 1 [1 1 1]
+// 2019/04/18 11:54:36 Path to 2 [0 1 1]
+// 2019/04/18 11:54:36 Path to 3 [1 0 1]
+// 2019/04/18 11:54:36 Path to 4 [0 0 1]
+// 2019/04/18 11:54:36 Path to 5 [1 1 0]
+
+// XXX: Probably need a less naive implementation
+// Yellow paper quote: 
+// > The core of the trie, and its sole requirement in termsof the protocol specification,
+// > is to provide a single value that identifies a given set of key-value pairs, which may be
+// > either a 32-byte sequence or the empty byte sequence.
+//
+// So let's start there and happily rebuild
+
+
+
+
 
 func TestPartialVerification(t *testing.T) {
 	// Pre-compute expected tree
@@ -121,6 +154,8 @@ func TestPartialVerification(t *testing.T) {
 	printPath(*mt, item4, "4")
 	printPath(*mt, item5, "5")
 
+	// print tree
+	log.Print("TREE", mt.String())
 
 	// // Local node setup, partial
 	// // Assume has access to trustedRoot
