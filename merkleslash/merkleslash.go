@@ -50,6 +50,18 @@ func (t TestContent) Equals(other merkletree.Content) (bool, error) {
 	return t.x == other.(TestContent).x, nil
 }
 
+func toHex(merkletree []byte) string {
+	return hex.EncodeToString(merkletree)
+}
+
+func fromHex(merkletree string) []byte {
+	res, err := hex.DecodeString(merkletree)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return res
+}
+
 // Get merkle root from trusted location
 // TODO: Implement location/method logic and groupID dispatching, hardcoding for now
 
@@ -61,7 +73,10 @@ func (t TestContent) Equals(other merkletree.Content) (bool, error) {
 // list = append(list, TestContent{x: "Hola"})
 //
 // t, err := merkletree.NewTree(list)
-func getRoot(location string, groupID string) string {
+
+// TODO: see how this can be used: mt.GetMerklePath
+
+func getTrustedRoot(location string, groupID string) string {
 	return "5f30cc80133b9394156e24b233f0c4be32b24e44bb3381f02c7ba52619d0febc"
 }
 
@@ -76,7 +91,7 @@ func pull(location string, mr string, haves []string) []string {
 	if location == "byzantine" {
 		diff = append(diff, "xxx")
 	} else {
-		diff = append(diff, "Hola")
+		diff = append(diff, "4")
 	}
 	return diff
 }
@@ -122,7 +137,7 @@ func main() {
 	//log.Println(t)
 
 	// 1. Get trusted root
-	newMR := getRoot("", "")
+	newMR := getTrustedRoot("", "")
 	log.Println("Trusted root:", newMR)
 
 	// 2. Sync difference
@@ -158,5 +173,10 @@ func main() {
 	untrustedRoot2 := hex.EncodeToString(untrusted2.MerkleRoot())
 	log.Println("Untrusted root [Good case]:", untrustedRoot2)
 	log.Println("Good data [Good case]?", untrustedRoot2 == newMR)
+
+	// Some more cases, let's tease them out
+	// 1) No data, only trusted root, good feedback (enhancement: partial list of other childs)
+	// 2) Some data
+
 
 }
