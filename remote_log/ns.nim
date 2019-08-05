@@ -1,5 +1,18 @@
 import net, os, nativesockets, strutils
 
+type
+  Message = object
+    arg: string
+    data: string
+
+  ResponseCode = enum
+    OK, ERROR
+
+  # XXX: Want to have Response be either OkResp or ErrResp
+  Response = object
+    code: ResponseCode
+    data: string
+
 var server: Socket  = newSocket()
 
 proc handler() {.noconv.} =
@@ -24,10 +37,9 @@ var clients: seq[Socket] = @[]
 
 #assert("POST :foo bar".split(':')[1] == "foo bar"
 
-type
-  Message = object
-    arg: string
-    data: string
+# XXX: Single global mutating state, fish memory
+# Could be a DB type and persist to disk
+var currentName = ""
 
 proc parseMessage(message: string): Message =
   var msg = Message()
@@ -40,19 +52,22 @@ proc parseMessage(message: string): Message =
 
   return msg
 
-proc handleMessage(message: Message) =
-
+proc handleMessage(message: Message): Response =
   let arg = message.arg
   let data = message.data
 
   if arg == "POST":
     echo("posting: ", data)
+    currentName = data
+    return Response(code: OK, data: currentName)
 
   elif arg == "GET":
     echo("getting: ", data)
+    return Response(code: OK, data: currentName)
 
   else:
     echo("Unable to handle message: ", message)
+    return Response(code: ERROR, data: "bad message")
 
 while true:
   try:
@@ -71,7 +86,9 @@ while true:
       if message == "":
         clientsToRemove.add(index)
 
-      handleMessage(parseMessage(message))
+      let resp = handleMessage(parseMessage(message))
+      # TODO: Respond to client
+      echo("RESPONSE: ", resp)
 
     except TimeoutError:
       discard
