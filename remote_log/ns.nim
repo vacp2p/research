@@ -59,7 +59,7 @@ proc handleMessage(message: Message): Response =
   if arg == "POST":
     echo("posting: ", data)
     currentName = data
-    return Response(code: OK, data: currentName)
+    return Response(code: OK, data: "success")
 
   elif arg == "GET":
     echo("getting: ", data)
@@ -88,7 +88,12 @@ while true:
 
       let resp = handleMessage(parseMessage(message))
       # TODO: Respond to client
+      # XXX: Client is currently non-interactive so sending to other client
+      # That is, node is split into node_receiving and node_sending
+      # Sending to all clients:
       echo("RESPONSE: ", resp)
+      for c in clients:
+        c.send(resp.data & "\r\L")
 
     except TimeoutError:
       discard

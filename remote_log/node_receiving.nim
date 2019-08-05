@@ -12,13 +12,8 @@ setControlCHook(handler)
 client.connect("127.0.0.1", Port(6001))
 stdout.writeLine("Client connected to name service on 127.0.0.1:6001")
 
-# TODO: Rewrite this to be async so it can send/recv at same time
 while true:
-  stdout.write("> ")
-  let message: string = stdin.readLine()
-  client.send(message & "\r\L")
+  let receivedMessage: string = client.recvLine()
+  stdout.writeLine("Message: ", receivedMessage)
 
 client.close()
-
-# 1) Node wants to post data to ns, and ns stores it
-# 2) Node can recevive

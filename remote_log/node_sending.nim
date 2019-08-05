@@ -19,6 +19,3 @@ while true:
   client.send(message & "\r\L")
 
 client.close()
-
-# 1) Node wants to post data to ns, and ns stores it
-# 2) Node can recevive
