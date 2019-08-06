@@ -22,3 +22,10 @@ client.close()
 
 # 1) Node wants to post data to ns, and ns stores it
 # 2) Node can recevive
+
+# Since we want to use CAS update result to do NS update,
+# Having sending and receiving behavior in same proc seems desirable
+# Also easier to reason about, so let's do that
+
+# To do encoding we probably want something like protobuf, or maybe use hacky
+# stringify if that's a thing, or JSON
