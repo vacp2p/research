@@ -1,4 +1,4 @@
-import net, os, nativesockets, strutils
+import net, os, nativesockets, strutils, std/sha1, tables
 
 type
   Message = object
@@ -27,19 +27,24 @@ setControlCHook(handler)
 
 server.setSockOpt(OptReuseAddr, true)
 server.getFd().setBlocking(false)
-server.bindAddr(Port(6001))
+server.bindAddr(Port(6002))
 server.listen()
 
 # TODO: Implicit for Alice, can be part of startup args or so
-stdout.writeLine("Name service starting, listening on 6001")
+stdout.writeLine("Content addressable storage starting, listening on 6002")
 
 var clients: seq[Socket] = @[]
 
 #assert("POST :foo bar".split(':')[1] == "foo bar"
 
 # XXX: Single global mutating state, fish memory
-# Could be a DB type and persist to disk
-var currentName = ""
+var contentStorage = initTable[string,string]()
+
+proc contentHash(data: string): string =
+  # Prepend constant to highlight fact that hash fns can be different
+  let str = "storage-" & data
+  let sha1 = secureHash(str)
+  return $sha1
 
 proc parseMessage(message: string): Message =
   var msg = Message()
@@ -52,18 +57,27 @@ proc parseMessage(message: string): Message =
 
   return msg
 
+proc store(data: string): string =
+  let hash = contentHash(data)
+  echo("store: ", hash)
+  contentStorage[hash] = data
+  echo("store content: ", $contentStorage)
+  return hash
+
 proc handleMessage(message: Message): Response =
   let arg = message.arg
   let data = message.data
 
   if arg == "POST":
     echo("posting: ", data)
-    currentName = data
-    return Response(code: OK, data: "success")
+    let key = store(data)
+    return Response(code: OK, data: key)
 
   elif arg == "GET":
     echo("getting: ", data)
-    return Response(code: OK, data: currentName)
+    # XXX: No validation etc, nil?
+    let data = contentStorage[data]
+    return Response(code: OK, data: data)
 
   else:
     echo("Unable to handle message: ", message)
