@@ -49,3 +49,24 @@ Supports two operations:
 
 - `Upload data => id`
 - `Fetch id => data`
+
+
+## Sketching interface
+
+NS POST <>
+NS GET <>
+
+CAS POST <>
+CAS GET <>
+
+What's in <>?
+
+- hash string
+- blob
+- [[h1_3, h2_3], [h1_2, h2_2]], next_page_chunk]
+
+- How do we want to encode this?
+- Or we can use protobuf or json
+- This seems mostly relevant for ns_head
+
+- lets just start with json thingy and NS/CAS sep
