@@ -70,3 +70,31 @@ What's in <>?
 - This seems mostly relevant for ns_head
 
 - lets just start with json thingy and NS/CAS sep
+
+
+HASH1 and HASH2, all that matters. HASH1 is native for MVDS message (name?) and
+HASH2 native to the remote log CAS.
+
+For NS, we want to know how to update it in/communicate it.
+
+And then actual format with mapping and paging, in a way that's adjustable, and
+so on.
+
+Can we generalize this to pack file for backups? Ie type and pointer to more etc
+
+This would allow to go download whole thingy
+
+also support many remote logs kind of thing, default or w/e
+
+can we remove? scrub somehow.
+
+### Protobuf next
+
+Actually use them, and check enum and dispatching etc.
+
+
+##  Deps
+
+Put in Makefile
+
+nimble install https://github.com/PMunch/protobuf-nim
