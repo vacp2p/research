@@ -1,24 +1,38 @@
-import net, os
+import net, os, threadpool, asyncdispatch, asyncnet
 
-let client = newSocket()
+var socket = newAsyncSocket()
 
 proc handler() {.noconv.} =
   stdout.writeLine("Shutting down connection.")
-  client.close()
+  socket.close()
   quit 0
 
 setControlCHook(handler)
 
-client.connect("127.0.0.1", Port(6001))
-stdout.writeLine("Client connected to name service on 127.0.0.1:6001")
+proc connect(socket: AsyncSocket, serverAddr: string) {.async.} =
+  echo("Connecting to ", serverAddr)
+  await socket.connect(serverAddr, 6001.Port)
+  echo("Connected!")
 
-# TODO: Rewrite this to be async so it can send/recv at same time
+  while true:
+    let line = await socket.recvLine()
+    # TODO: parse message
+    echo("Incoming: ", line)
+
+echo("Node started")
+# TODO: paramCount and paramStr parsing args
+let serverAddr = "localhost"
+asyncCheck connect(socket, serverAddr)
+var messageFlowVar = spawn stdin.readLine()
 while true:
-  stdout.write("> ")
-  let message: string = stdin.readLine()
-  client.send(message & "\r\L")
+  if messageFlowVar.isReady():
+    # TODO: create message
+    #echo("Sending \"", ^messageFlowVar, "\"")
+    let message = ^messageFlowVar & "\r\L"
+    asyncCheck socket.send(message)
+    messageFlowVar = spawn stdin.readLine()
 
-client.close()
+  asyncdispatch.poll()
 
 # 1) Node wants to post data to ns, and ns stores it
 # 2) Node can recevive
@@ -29,3 +43,5 @@ client.close()
 
 # To do encoding we probably want something like protobuf, or maybe use hacky
 # stringify if that's a thing, or JSON
+
+# Consider separating out interactive parts into client.nim
