@@ -71,7 +71,10 @@ proc handleMessage(message: Message): Response =
   if arg == "POST":
     echo("posting: ", data)
     let key = store(data)
-    return Response(code: OK, data: key)
+    # XXX: Ad hoc protocol
+    let ret = data & " " & key
+    echo "Returning from post: ", ret
+    return Response(code: OK, data: ret)
 
   elif arg == "GET":
     echo("getting: ", data)

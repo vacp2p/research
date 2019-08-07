@@ -45,6 +45,8 @@ proc connect(socket: AsyncSocket, serverAddr: string, portInt: int) {.async.} =
     # TODO: Differentiate between NS and CAS
     echo(portInt, ": Incoming: ", line)
 
+    #if portInt == 6002
+
 echo("Node started")
 # TODO: paramCount and paramStr parsing args
 let serverAddr = "localhost"
@@ -71,6 +73,16 @@ while true:
     elif isCASMessage(^messageFlowVar):
       echo("Send CAS: ", prepared)
       asyncCheck socket2.send(message)
+      # When we send here, we also want to keep the message and use for NS
+      # This will be in separate thread though, so how map here?
+      # Nothing should block us from doing multiple and then receiving
+      # So either need to:
+      # 1) Block and wait for incoming
+      # 2) Use request id
+      # 3) Respond with initial hash as well
+      # 4) Some kind of callback based on connection?
+      # 3 is not API compliant but it seems OK from KISS POV
+      # Oh we actually send data blob, not hash...er, fine~.
     else:
       echo("Unknown message type ", ^messageFlowVar)
 
