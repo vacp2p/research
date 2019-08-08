@@ -1,4 +1,5 @@
 import net, os, threadpool, asyncdispatch, asyncnet, strutils
+include protocol
 
 var socket1 = newAsyncSocket()
 var socket2 = newAsyncSocket()
