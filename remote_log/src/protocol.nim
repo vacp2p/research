@@ -55,6 +55,26 @@ message NSGetRequest {
 message NSGetResponse {
   string data = 1;
 }
+
+message Testing {
+  oneof choice {
+    string id = 1;
+    string data = 2;
+  }
+}
+
+// XXX: Best way to deal with GET/POST like this?
+// One-of seems ugly, but maybe it's just with this lib?
+message CASRequest {
+  enum Op {
+    GET = 0;
+    POST = 1;
+  }
+
+  Op operation = 1;
+  string id = 2;
+  string data = 3;
+}
 """
 parseProto(protoSpec)
 
@@ -62,19 +82,62 @@ parseProto(protoSpec)
 # Example follows:
 #--------------------------------------------------------
 # Create our message
-var msg = new ExampleMessage
-msg.number = 10
-msg.text = "Hello world"
-msg.nested = initExampleMessage_SubMessage(aField = 100)
+# var msg = new ExampleMessage
+# msg.number = 10
+# msg.text = "Hello world"
+# msg.nested = initExampleMessage_SubMessage(aField = 100)
 
-# Write it to a stream
-var stream = newStringStream()
-stream.write msg
+# # Write it to a stream
+# var stream = newStringStream()
+# stream.write msg
 
-# Read the message from the stream and output the data, if it's all present
-stream.setPosition(0)
-var readMsg = stream.readExampleMessage()
-if readMsg.has(number, text, nested) and readMsg.nested.has(aField):
-  echo readMsg.number
-  echo readMsg.text
-  echo readMsg.nested.aField
+# # Read the message from the stream and output the data, if it's all present
+# stream.setPosition(0)
+# var readMsg = stream.readExampleMessage()
+# if readMsg.has(number, text, nested) and readMsg.nested.has(aField):
+#   echo readMsg.number
+#   echo readMsg.text
+#   echo readMsg.nested.aField
+
+
+
+# var msg1 = new CASPostRequest
+# msg1.data = "hi"
+
+# oneof testing - works
+#var test = new Testing
+#test.choice = Testing_choice_OneOf(option: 1)
+#test.choice.id = "hello"
+# Err, also works...
+#test.choice.data = "hello"
+
+#var msg2 = new CASRequest
+# var stream2 = newStringStream()
+# stream2.write msg2
+# echo stream2
+
+#msg2.choice[0.data = "hi"
+
+
+
+proc test() =
+  var msg = new CASRequest
+  msg.operation = CASRequest_Op.POST
+  msg.data = "testing"
+  var stream = newStringStream()
+  stream.write msg
+
+  echo("msg ", msg)
+#  echo("stream ", stream)
+
+  # Read the message from the stream and output the data, if it's all present
+  stream.setPosition(0)
+  var readMsg = stream.readCASRequest()
+  if readMsg.has(id):
+    echo("id ", readMsg.id)
+  if readMsg.has(operation) and readMsg.operation == CASRequest_Op.POST:
+    echo("operation is a POST", readMsg.operation, readMsg.operation == CASRequest_Op.POST)
+
+  echo("readMsg ", readMsg)
+
+test()
