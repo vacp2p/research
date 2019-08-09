@@ -1,4 +1,4 @@
-import protobuf, streams
+import protobuf, streams, strutils
 
 # Define protobuf spec and generate Nim code to use it
 const protoSpec = """
@@ -140,4 +140,35 @@ proc test() =
 
   echo("readMsg ", readMsg)
 
-test()
+proc test2() =
+  # First we create a message
+  var msg = new CASRequest
+  msg.operation = CASRequest_Op.POST
+  msg.data = "testing"
+  echo("msg: ", msg)
+
+  # Create a stream and write to it, then stringify dat afield
+  var stream = newStringStream()
+  stream.write(msg)
+  var data = $stream.data
+  # XXX: so this works, kind of, but it's just part of it
+  # I want "\b\x01\x1A\atesting" not just "testing"
+  let req = stream.readAll()
+
+  # Then we stringify it (to send as a line-delimited packet)
+  #let req = $msg #& "\r\L"
+  echo("req: ", req)
+
+  var stream2 = newStringStream()
+  stream2.setPosition(0)
+  var readMsg = stream2.readCASRequest()
+  echo("readMsg: ", readMsg)
+  if readMsg.has(operation):
+    echo("operation found")
+
+#test()
+#test2()
+
+# fromHex API changed? doesn't compile
+#let s = "0x_1235_8df6"
+#doAssert fromHex[int](s) == 305499638
