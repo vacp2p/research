@@ -1,4 +1,4 @@
-import net, os, threadpool, asyncdispatch, asyncnet, strutils
+import net, os, threadpool, asyncdispatch, asyncnet, strutils, streams
 include protocol
 
 var socket1 = newAsyncSocket()
@@ -12,29 +12,6 @@ proc handler() {.noconv.} =
 
 setControlCHook(handler)
 
-proc isNSMessage(message: string): bool =
-  return message.split(' ')[0] == "NS"
-
-proc isCASMessage(message: string): bool =
-  return message.split(' ')[0] == "CAS"
-
-# XXX: drop first part? or maybe you know, use proper encoding
-# XXX: Crashes if bad too, obv
-proc prepareMessage(message: string): string =
-  var s = ""
-  try:
-    s = message.split(' ')[1] & " :" & message.split(':')[1]
-  except:
-    echo("prepareMessage error ", message)
-    s = "bad msg"
-  return s
-
-assert("NS POST :hi".split(' ')[0] == "NS")
-var test = "NS POST :foo bar"
-assert(test.split(' ')[1] & " :" & test.split(':')[1] == "POST :foo bar")
-assert isNSMessage("NS POST :hi")
-assert prepareMessage("NS POST :foo bar") == "POST :foo bar"
-
 proc connect(socket: AsyncSocket, serverAddr: string, portInt: int) {.async.} =
   echo("Connecting to ", serverAddr, ":", portInt)
   await socket.connect(serverAddr, portInt.Port)
@@ -42,21 +19,44 @@ proc connect(socket: AsyncSocket, serverAddr: string, portInt: int) {.async.} =
 
   while true:
     let line = await socket.recvLine()
-    # TODO: parse message
+    # TODO: Post to NS once we receive CASReply
+    #  asyncCheck socket1.send(message)
     # TODO: Differentiate between NS and CAS
-    echo(portInt, ": Incoming: ", line)
-
     #if portInt == 6002
+    echo(portInt, ": Incoming: ", line)
 
 echo("Node started")
 # TODO: paramCount and paramStr parsing args
 let serverAddr = "localhost"
 
-# Connect to NS
-asyncCheck connect(socket1, serverAddr, 6001)
+proc handleInput(input: string) =
+  echo("input ", input)
+  var request = new CASRequest
+  request.operation = CASRequest_Op.POST
+  request.data = input
+  # XXX: In real-life this would be encrypted
+  # XXX: These stream operations seem fishy
+  var stream = newStringStream()
+  stream.write(request)
+  var stringified = $stream.data
 
-# Connecting to CAS
-asyncCheck connect(socket2, serverAddr, 6002)
+  # XXX Why \L?
+  let payload = stringified & "\r\L"
+  # Can't see encoding but they are here in byte string
+  # for c in payload:
+  #   echo("payload items: ", c)
+  asyncCheck socket2.send(payload)
+
+# XXX: If NS and CAS aren't online these will crash
+# This doesn't work
+try:
+  # Connect to NS
+  asyncCheck connect(socket1, serverAddr, 6001)
+  # Connecting to CAS
+  asyncCheck connect(socket2, serverAddr, 6002)
+except:
+  echo("Unable to connect to NS and CAS, quitting")
+  quit 0
 
 var messageFlowVar = spawn stdin.readLine()
 while true:
@@ -65,50 +65,7 @@ while true:
     # TODO: Differentiate between CAS and NS messages
     echo("Sending \"", ^messageFlowVar, "\"")
 
-    let prepared = prepareMessage(^messageFlowVar)
-    let message = prepared & "\r\L"
-
-    if isNSMessage(^messageFlowVar):
-      echo("Send NS: ", prepared)
-      asyncCheck socket1.send(message)
-    elif isCASMessage(^messageFlowVar):
-      echo("Send CAS: ", prepared)
-      asyncCheck socket2.send(message)
-      # When we send here, we also want to keep the message and use for NS
-      # This will be in separate thread though, so how map here?
-      # Nothing should block us from doing multiple and then receiving
-      # So either need to:
-      # 1) Block and wait for incoming
-      # 2) Use request id
-      # 3) Respond with initial hash as well
-      # 4) Some kind of callback based on connection?
-      # 3 is not API compliant but it seems OK from KISS POV
-      # Oh we actually send data blob, not hash...er, fine~.
-    else:
-      echo("Unknown message type ", ^messageFlowVar)
-
+    handleInput(^messageFlowVar)
     messageFlowVar = spawn stdin.readLine()
 
   asyncdispatch.poll()
-
-# 1) Node wants to post data to ns, and ns stores it
-# 2) Node can recevive
-
-# Since we want to use CAS update result to do NS update,
-# Having sending and receiving behavior in same proc seems desirable
-# Also easier to reason about, so let's do that
-
-# To do encoding we probably want something like protobuf, or maybe use hacky
-# stringify if that's a thing, or JSON
-
-# Consider separating out interactive parts into client.nim
-
-# Send message triggers:
-# Upload to cas => get id
-# Upload to NS
-# So other node can fetch
-
-# Interface here?
-# Two connections
-
-# CAS and NS different how?

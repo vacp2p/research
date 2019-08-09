@@ -1,5 +1,7 @@
 import net, os, nativesockets, strutils, std/sha1, tables
 
+include protocol
+
 type
   Message = object
     arg: string
@@ -86,6 +88,34 @@ proc handleMessage(message: Message): Response =
     echo("Unable to handle message: ", message)
     return Response(code: ERROR, data: "bad message")
 
+proc handleMessage2(msg: string): Response =
+  # XXX: This seems backwards, why we are writing a string to a stream?
+  #echo("msg: ", msg)
+  var stream = newStringStream()
+  try:
+    stream.write(msg)
+    stream.setPosition(0)
+    var readMsg = stream.readCASRequest()
+    echo("readMsg: ", readMsg)
+
+    if readMsg.has(operation) and readMsg.operation == CASRequest_Op.POST:
+      echo("Handle post data: ", readMsg.data)
+      #let key = store(data)
+      # TODO: Replace with CASReply
+      # XXX: Ad hoc protocol
+      #let ret = data & " " & key
+    elif readMsg.has(operation) and readMsg.operation == CASRequest_Op.GET:
+      # TODO: Handle
+      echo("Handle get id: ", readMsg.id)
+    else:
+      echo("Can't handle message: ", readMsg)
+
+  except:
+    echo("Unable to write to stream")
+
+  var ret = "TODO"
+  return Response(code: OK, data: ret)
+
 while true:
   try:
     var client: Socket = new(Socket)
@@ -103,7 +133,8 @@ while true:
       if message == "":
         clientsToRemove.add(index)
 
-      let resp = handleMessage(parseMessage(message))
+      let resp = handleMessage2(message)
+      #let resp = handleMessage(parseMessage(message))
       # TODO: Respond to client
       # XXX: Client is currently non-interactive so sending to other client
       # That is, node is split into node_receiving and node_sending
