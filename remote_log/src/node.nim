@@ -12,6 +12,19 @@ proc handler() {.noconv.} =
 
 setControlCHook(handler)
 
+
+proc parseCASResponse(msg: string): CASResponse =
+  var stream = newStringStream()
+  stream.write(msg)
+  stream.setPosition(0)
+  var readMsg = stream.readCASResponse()
+  if readMsg is CASResponse:
+    return readMsg
+  # XXX: How to get actual type?
+  else:
+    raise newException(Exception, "Unable to parse data, not a CASResponse: " & msg)
+
+# TODO: Shouldn't crash just cause other nodes not online
 proc connect(socket: AsyncSocket, serverAddr: string, portInt: int) {.async.} =
   echo("Connecting to ", serverAddr, ":", portInt)
   await socket.connect(serverAddr, portInt.Port)
@@ -22,8 +35,19 @@ proc connect(socket: AsyncSocket, serverAddr: string, portInt: int) {.async.} =
     # TODO: Post to NS once we receive CASReply
     #  asyncCheck socket1.send(message)
     # TODO: Differentiate between NS and CAS
-    #if portInt == 6002
+    # Err, why is this incoming line?
+    # Why not basic validation before? doable?
     echo(portInt, ": Incoming: ", line)
+    # XXX: Hacky to get sender
+    if portInt == 6002:
+      try:
+        var readMsg = parseCASResponse(line)
+        echo("readMsg2: ", readMsg)
+        if readMsg.has(id):
+          # XXX: for data, need to map it back
+          echo("readMsg id: ", readMsg.id)
+      except:
+        echo("Ignoring incoming message: " & getCurrentExceptionMsg())
 
 echo("Node started")
 # TODO: paramCount and paramStr parsing args
@@ -48,7 +72,7 @@ proc handleInput(input: string) =
   asyncCheck socket2.send(payload)
 
 # XXX: If NS and CAS aren't online these will crash
-# This doesn't work
+# This doesn't work, still get error not caught
 try:
   # Connect to NS
   asyncCheck connect(socket1, serverAddr, 6001)

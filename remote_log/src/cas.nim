@@ -61,11 +61,11 @@ proc parseMessage(message: string): Message =
 
 proc store(data: string): string =
   let hash = contentHash(data)
-  echo("store: ", hash)
   contentStorage[hash] = data
   echo("store content: ", $contentStorage)
   return hash
 
+# TODO: Remove this probably
 proc handleMessage(message: Message): Response =
   let arg = message.arg
   let data = message.data
@@ -142,8 +142,12 @@ while true:
       # That is, node is split into node_receiving and node_sending
       # Sending to all clients:
       echo("RESPONSE: ", resp)
+      # TODO XXX: This seems off? Just send to replier here
+      # XXX: Wrong, need to serialize here right
+
+      # TODO: Fixme
       for c in clients:
-        c.send(resp.data & "\r\L")
+        c.send($resp & "\r\L")
 
     except TimeoutError:
       discard
