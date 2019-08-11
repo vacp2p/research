@@ -48,6 +48,7 @@ proc contentHash(data: string): string =
   let sha1 = secureHash(str)
   return $sha1
 
+# TODO: Remove me
 proc parseMessage(message: string): Message =
   var msg = Message()
   stdout.writeLine("Server: received from client: ", message)
@@ -58,6 +59,12 @@ proc parseMessage(message: string): Message =
     echo("Unable to parse message: ", message)
 
   return msg
+
+proc stringifyProtobuf[T](protobuf: T): string =
+  var stream = newStringStream()
+  stream.write(protobuf)
+  var stringified = $stream.data
+  return stringified
 
 proc store(data: string): string =
   let hash = contentHash(data)
@@ -108,6 +115,7 @@ proc handleMessage2(msg: string): CASResponse =
       var resp = new CASResponse
       resp.id = key
       resp.data = data
+      echo("resp: ", resp)
       return resp
     elif readMsg.has(operation) and readMsg.operation == CASRequest_Op.GET:
       # TODO: Handle GET op
@@ -135,20 +143,15 @@ while true:
       if message == "":
         clientsToRemove.add(index)
 
-      let resp = handleMessage2(message)
-      #let resp = handleMessage(parseMessage(message))
-      # TODO: Respond to client
-      # XXX: Client is currently non-interactive so sending to other client
-      # That is, node is split into node_receiving and node_sending
+      # XXX: Getting field id not init, er
+      let casResp = handleMessage2(message)
+      let resp = stringifyProtobuf(casResp)
       # Sending to all clients:
       echo("RESPONSE: ", resp)
-      # TODO XXX: This seems off? Just send to replier here
-      # XXX: Wrong, need to serialize here right
-
-      # TODO: Fixme
+      # TODO: Should send to actually sending client, not all
       for c in clients:
-        c.send($resp & "\r\L")
-
+        let payload = $resp & "\r\L"
+        c.send(payload)
     except TimeoutError:
       discard
 

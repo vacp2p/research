@@ -12,7 +12,7 @@ proc handler() {.noconv.} =
 
 setControlCHook(handler)
 
-
+# TODO: Move to protocol yeah
 proc parseCASResponse(msg: string): CASResponse =
   var stream = newStringStream()
   stream.write(msg)
@@ -43,9 +43,13 @@ proc connect(socket: AsyncSocket, serverAddr: string, portInt: int) {.async.} =
       try:
         var readMsg = parseCASResponse(line)
         echo("readMsg2: ", readMsg)
+        # XXX: This should be hit, wy not?
         if readMsg.has(id):
           # XXX: for data, need to map it back
           echo("readMsg id: ", readMsg.id)
+        echo("readMsg id regardless:", readMsg.id)
+        if readMsg.has(data):
+          echo("readMsg data: ", readMsg.data)
       except:
         echo("Ignoring incoming message: " & getCurrentExceptionMsg())
 
