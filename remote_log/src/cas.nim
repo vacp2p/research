@@ -88,11 +88,13 @@ proc handleMessage(message: Message): Response =
     echo("Unable to handle message: ", message)
     return Response(code: ERROR, data: "bad message")
 
-proc handleMessage2(msg: string): Response =
+# TODO: Return type or error
+proc handleMessage2(msg: string): CASResponse =
   # XXX: This seems backwards, why we are writing a string to a stream?
   #echo("msg: ", msg)
   var stream = newStringStream()
   try:
+    # XXX: Encapsulate this messy stream stuff somewhere else?
     stream.write(msg)
     stream.setPosition(0)
     var readMsg = stream.readCASRequest()
@@ -100,21 +102,21 @@ proc handleMessage2(msg: string): Response =
 
     if readMsg.has(operation) and readMsg.operation == CASRequest_Op.POST:
       echo("Handle post data: ", readMsg.data)
-      #let key = store(data)
-      # TODO: Replace with CASReply
-      # XXX: Ad hoc protocol
-      #let ret = data & " " & key
+      let data = readMsg.data
+      let key = store(data)
+      # Need to differentiate prob
+      var resp = new CASResponse
+      resp.id = key
+      resp.data = data
+      return resp
     elif readMsg.has(operation) and readMsg.operation == CASRequest_Op.GET:
-      # TODO: Handle
+      # TODO: Handle GET op
       echo("Handle get id: ", readMsg.id)
     else:
       echo("Can't handle message: ", readMsg)
 
   except:
     echo("Unable to write to stream")
-
-  var ret = "TODO"
-  return Response(code: OK, data: ret)
 
 while true:
   try:
