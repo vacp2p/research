@@ -98,3 +98,7 @@ Actually use them, and check enum and dispatching etc.
 Put in Makefile
 
 nimble install https://github.com/PMunch/protobuf-nim
+
+### Protobuf service generation
+Install `nimtwirp`, then:
+`nimtwirp_build  -I:. --out:. protocol.proto `
