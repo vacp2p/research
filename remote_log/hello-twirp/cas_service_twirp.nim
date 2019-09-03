@@ -4,7 +4,7 @@ import httpclient
 import json
 import strutils
 
-import protocol_pb
+import cas_service_pb
 
 import nimtwirp/nimtwirp
 import nimtwirp/errors
