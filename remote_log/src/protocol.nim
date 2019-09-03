@@ -42,6 +42,12 @@ message Testing {
   }
 }
 
+// Current lib doesn't support services
+// service SearchService {
+//   rpc Search (SearchRequest) returns (SearchResponse);
+// }
+
+
 // XXX: Best way to deal with GET/POST like this?
 // One-of seems ugly, but maybe it's just with this lib?
 message CASRequest {
@@ -62,7 +68,23 @@ message CASResponse {
 }
 
 """
+
 parseProto(protoSpec)
+
+# service SearchService {
+#   rpc Search (SearchRequest) returns (SearchResponse);
+# }
+
+# //message Foo {}
+#               //
+#               //# api for this
+#               //service Blah {
+#                 //
+#                 //function Post() ()
+#                 //function Get() ()
+#                 //}
+
+
 
 
 # Example follows:
