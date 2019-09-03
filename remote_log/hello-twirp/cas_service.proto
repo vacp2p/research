@@ -13,6 +13,7 @@ service CAS {
 // XXX: This should probably be bytes
 message CASRequest {
   string id = 2;
+  string data = 3;
 }
 
 // XXX: This should probably be bytes

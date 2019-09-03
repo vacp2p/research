@@ -12,6 +12,7 @@ type
     vac_cas_CASRequest* = ref vac_cas_CASRequestObj
     vac_cas_CASRequestObj* = object of Message
         id: string
+        data: string
     vac_cas_CASResponse* = ref vac_cas_CASResponseObj
     vac_cas_CASResponseObj* = object of Message
         id: string
@@ -166,6 +167,7 @@ proc newvac_cas_CASRequest*(): vac_cas_CASRequest =
     initMessage(result[])
     result.procs = vac_cas_CASRequestProcs()
     result.id = ""
+    result.data = ""
 
 proc clearid*(message: vac_cas_CASRequest) =
     message.id = ""
@@ -179,15 +181,32 @@ proc id*(message: vac_cas_CASRequest): string {.inline.} =
 proc `id=`*(message: vac_cas_CASRequest, value: string) {.inline.} =
     setid(message, value)
 
+proc cleardata*(message: vac_cas_CASRequest) =
+    message.data = ""
+
+proc setdata*(message: vac_cas_CASRequest, value: string) =
+    message.data = value
+
+proc data*(message: vac_cas_CASRequest): string {.inline.} =
+    message.data
+
+proc `data=`*(message: vac_cas_CASRequest, value: string) {.inline.} =
+    setdata(message, value)
+
 proc sizeOfvac_cas_CASRequest*(message: vac_cas_CASRequest): uint64 =
     if len(message.id) > 0:
         result = result + sizeOfTag(2, WireType.LengthDelimited)
         result = result + sizeOfString(message.id)
+    if len(message.data) > 0:
+        result = result + sizeOfTag(3, WireType.LengthDelimited)
+        result = result + sizeOfString(message.data)
     result = result + sizeOfUnknownFields(message)
 
 proc writevac_cas_CASRequest*(stream: Stream, message: vac_cas_CASRequest) =
     if len(message.id) > 0:
         protoWriteString(stream, message.id, 2)
+    if len(message.data) > 0:
+        protoWriteString(stream, message.data, 3)
     writeUnknownFields(stream, message)
 
 proc readvac_cas_CASRequest*(stream: Stream): vac_cas_CASRequest =
@@ -202,12 +221,17 @@ proc readvac_cas_CASRequest*(stream: Stream): vac_cas_CASRequest =
         of 2:
             expectWireType(wireType, WireType.LengthDelimited)
             setid(result, protoReadString(stream))
+        of 3:
+            expectWireType(wireType, WireType.LengthDelimited)
+            setdata(result, protoReadString(stream))
         else: readUnknownField(stream, result, tag)
 
 proc toJson*(message: vac_cas_CASRequest): JsonNode =
     result = newJObject()
     if len(message.id) > 0:
         result["id"] = %message.id
+    if len(message.data) > 0:
+        result["data"] = %message.data
 
 proc parsevac_cas_CASRequest*(obj: JsonNode): vac_cas_CASRequest =
     result = newvac_cas_CASRequest()
@@ -217,6 +241,9 @@ proc parsevac_cas_CASRequest*(obj: JsonNode): vac_cas_CASRequest =
     node = getJsonField(obj, "id", "id")
     if node != nil and node.kind != JNull:
         setid(result, parseString(node))
+    node = getJsonField(obj, "data", "data")
+    if node != nil and node.kind != JNull:
+        setdata(result, parseString(node))
 
 proc serialize*(message: vac_cas_CASRequest): string =
     let
