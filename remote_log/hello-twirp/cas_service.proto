@@ -2,22 +2,16 @@ syntax = "proto3";
 
 package vac.cas;
 
-// Content Addressable Storage (CAS) service definition.
+// Content Addressable Storage (CAS) service definition
 service CAS {
-  // Sends a Get request
-  rpc Get(CASRequest) returns (CASResponse) {}
-  // Sends a Post request
-  rpc Post(CASRequest) returns (CASResponse) {}
+  rpc Add(Content) returns (Address) {}
+  rpc Get(Address) returns (Content) {}
 }
 
-// XXX: This should probably be bytes
-message CASRequest {
-  string id = 2;
-  string data = 3;
+message Address {
+  bytes id = 1;
 }
 
-// XXX: This should probably be bytes
-message CASResponse {
-  string id = 2;
-  string data = 3;
+message Content {
+  bytes data = 1;
 }

@@ -9,95 +9,75 @@ import nimpb/nimpb
 import nimpb/json as nimpb_json
 
 type
-    vac_cas_CASRequest* = ref vac_cas_CASRequestObj
-    vac_cas_CASRequestObj* = object of Message
-        id: string
-        data: string
-    vac_cas_CASResponse* = ref vac_cas_CASResponseObj
-    vac_cas_CASResponseObj* = object of Message
-        id: string
-        data: string
+    vac_cas_Address* = ref vac_cas_AddressObj
+    vac_cas_AddressObj* = object of Message
+        id: seq[byte]
+    vac_cas_Content* = ref vac_cas_ContentObj
+    vac_cas_ContentObj* = object of Message
+        data: seq[byte]
 
-proc newvac_cas_CASResponse*(): vac_cas_CASResponse
-proc newvac_cas_CASResponse*(data: string): vac_cas_CASResponse
-proc newvac_cas_CASResponse*(data: seq[byte]): vac_cas_CASResponse
-proc writevac_cas_CASResponse*(stream: Stream, message: vac_cas_CASResponse)
-proc readvac_cas_CASResponse*(stream: Stream): vac_cas_CASResponse
-proc sizeOfvac_cas_CASResponse*(message: vac_cas_CASResponse): uint64
-proc toJson*(message: vac_cas_CASResponse): JsonNode
-proc parsevac_cas_CASResponse*(obj: JsonNode): vac_cas_CASResponse
+proc newvac_cas_Content*(): vac_cas_Content
+proc newvac_cas_Content*(data: string): vac_cas_Content
+proc newvac_cas_Content*(data: seq[byte]): vac_cas_Content
+proc writevac_cas_Content*(stream: Stream, message: vac_cas_Content)
+proc readvac_cas_Content*(stream: Stream): vac_cas_Content
+proc sizeOfvac_cas_Content*(message: vac_cas_Content): uint64
+proc toJson*(message: vac_cas_Content): JsonNode
+proc parsevac_cas_Content*(obj: JsonNode): vac_cas_Content
 
-proc newvac_cas_CASRequest*(): vac_cas_CASRequest
-proc newvac_cas_CASRequest*(data: string): vac_cas_CASRequest
-proc newvac_cas_CASRequest*(data: seq[byte]): vac_cas_CASRequest
-proc writevac_cas_CASRequest*(stream: Stream, message: vac_cas_CASRequest)
-proc readvac_cas_CASRequest*(stream: Stream): vac_cas_CASRequest
-proc sizeOfvac_cas_CASRequest*(message: vac_cas_CASRequest): uint64
-proc toJson*(message: vac_cas_CASRequest): JsonNode
-proc parsevac_cas_CASRequest*(obj: JsonNode): vac_cas_CASRequest
+proc newvac_cas_Address*(): vac_cas_Address
+proc newvac_cas_Address*(data: string): vac_cas_Address
+proc newvac_cas_Address*(data: seq[byte]): vac_cas_Address
+proc writevac_cas_Address*(stream: Stream, message: vac_cas_Address)
+proc readvac_cas_Address*(stream: Stream): vac_cas_Address
+proc sizeOfvac_cas_Address*(message: vac_cas_Address): uint64
+proc toJson*(message: vac_cas_Address): JsonNode
+proc parsevac_cas_Address*(obj: JsonNode): vac_cas_Address
 
-proc fullyQualifiedName*(T: typedesc[vac_cas_CASResponse]): string = "vac.cas.CASResponse"
+proc fullyQualifiedName*(T: typedesc[vac_cas_Content]): string = "vac.cas.Content"
 
-proc readvac_cas_CASResponseImpl(stream: Stream): Message = readvac_cas_CASResponse(stream)
-proc writevac_cas_CASResponseImpl(stream: Stream, msg: Message) = writevac_cas_CASResponse(stream, vac_cas_CASResponse(msg))
-proc toJsonvac_cas_CASResponseImpl(msg: Message): JsonNode = toJson(vac_cas_CASResponse(msg))
-proc fromJsonvac_cas_CASResponseImpl(node: JsonNode): Message = parsevac_cas_CASResponse(node)
+proc readvac_cas_ContentImpl(stream: Stream): Message = readvac_cas_Content(stream)
+proc writevac_cas_ContentImpl(stream: Stream, msg: Message) = writevac_cas_Content(stream, vac_cas_Content(msg))
+proc toJsonvac_cas_ContentImpl(msg: Message): JsonNode = toJson(vac_cas_Content(msg))
+proc fromJsonvac_cas_ContentImpl(node: JsonNode): Message = parsevac_cas_Content(node)
 
-proc vac_cas_CASResponseProcs*(): MessageProcs =
-    result.readImpl = readvac_cas_CASResponseImpl
-    result.writeImpl = writevac_cas_CASResponseImpl
-    result.toJsonImpl = toJsonvac_cas_CASResponseImpl
-    result.fromJsonImpl = fromJsonvac_cas_CASResponseImpl
+proc vac_cas_ContentProcs*(): MessageProcs =
+    result.readImpl = readvac_cas_ContentImpl
+    result.writeImpl = writevac_cas_ContentImpl
+    result.toJsonImpl = toJsonvac_cas_ContentImpl
+    result.fromJsonImpl = fromJsonvac_cas_ContentImpl
 
-proc newvac_cas_CASResponse*(): vac_cas_CASResponse =
+proc newvac_cas_Content*(): vac_cas_Content =
     new(result)
     initMessage(result[])
-    result.procs = vac_cas_CASResponseProcs()
-    result.id = ""
-    result.data = ""
+    result.procs = vac_cas_ContentProcs()
+    result.data = @[]
 
-proc clearid*(message: vac_cas_CASResponse) =
-    message.id = ""
+proc cleardata*(message: vac_cas_Content) =
+    message.data = @[]
 
-proc setid*(message: vac_cas_CASResponse, value: string) =
-    message.id = value
-
-proc id*(message: vac_cas_CASResponse): string {.inline.} =
-    message.id
-
-proc `id=`*(message: vac_cas_CASResponse, value: string) {.inline.} =
-    setid(message, value)
-
-proc cleardata*(message: vac_cas_CASResponse) =
-    message.data = ""
-
-proc setdata*(message: vac_cas_CASResponse, value: string) =
+proc setdata*(message: vac_cas_Content, value: seq[byte]) =
     message.data = value
 
-proc data*(message: vac_cas_CASResponse): string {.inline.} =
+proc data*(message: vac_cas_Content): seq[byte] {.inline.} =
     message.data
 
-proc `data=`*(message: vac_cas_CASResponse, value: string) {.inline.} =
+proc `data=`*(message: vac_cas_Content, value: seq[byte]) {.inline.} =
     setdata(message, value)
 
-proc sizeOfvac_cas_CASResponse*(message: vac_cas_CASResponse): uint64 =
-    if len(message.id) > 0:
-        result = result + sizeOfTag(2, WireType.LengthDelimited)
-        result = result + sizeOfString(message.id)
+proc sizeOfvac_cas_Content*(message: vac_cas_Content): uint64 =
     if len(message.data) > 0:
-        result = result + sizeOfTag(3, WireType.LengthDelimited)
-        result = result + sizeOfString(message.data)
+        result = result + sizeOfTag(1, WireType.LengthDelimited)
+        result = result + sizeOfBytes(message.data)
     result = result + sizeOfUnknownFields(message)
 
-proc writevac_cas_CASResponse*(stream: Stream, message: vac_cas_CASResponse) =
-    if len(message.id) > 0:
-        protoWriteString(stream, message.id, 2)
+proc writevac_cas_Content*(stream: Stream, message: vac_cas_Content) =
     if len(message.data) > 0:
-        protoWriteString(stream, message.data, 3)
+        protoWriteBytes(stream, message.data, 1)
     writeUnknownFields(stream, message)
 
-proc readvac_cas_CASResponse*(stream: Stream): vac_cas_CASResponse =
-    result = newvac_cas_CASResponse()
+proc readvac_cas_Content*(stream: Stream): vac_cas_Content =
+    result = newvac_cas_Content()
     while not atEnd(stream):
         let
             tag = readTag(stream)
@@ -105,112 +85,86 @@ proc readvac_cas_CASResponse*(stream: Stream): vac_cas_CASResponse =
         case fieldNumber(tag)
         of 0:
             raise newException(InvalidFieldNumberError, "Invalid field number: 0")
-        of 2:
+        of 1:
             expectWireType(wireType, WireType.LengthDelimited)
-            setid(result, protoReadString(stream))
-        of 3:
-            expectWireType(wireType, WireType.LengthDelimited)
-            setdata(result, protoReadString(stream))
+            setdata(result, protoReadBytes(stream))
         else: readUnknownField(stream, result, tag)
 
-proc toJson*(message: vac_cas_CASResponse): JsonNode =
+proc toJson*(message: vac_cas_Content): JsonNode =
     result = newJObject()
-    if len(message.id) > 0:
-        result["id"] = %message.id
     if len(message.data) > 0:
         result["data"] = %message.data
 
-proc parsevac_cas_CASResponse*(obj: JsonNode): vac_cas_CASResponse =
-    result = newvac_cas_CASResponse()
+proc parsevac_cas_Content*(obj: JsonNode): vac_cas_Content =
+    result = newvac_cas_Content()
     var node: JsonNode
     if obj.kind != JObject:
         raise newException(nimpb_json.ParseError, "object expected")
-    node = getJsonField(obj, "id", "id")
-    if node != nil and node.kind != JNull:
-        setid(result, parseString(node))
     node = getJsonField(obj, "data", "data")
     if node != nil and node.kind != JNull:
-        setdata(result, parseString(node))
+        setdata(result, parseBytes(node))
 
-proc serialize*(message: vac_cas_CASResponse): string =
+proc serialize*(message: vac_cas_Content): string =
     let
         ss = newStringStream()
-    writevac_cas_CASResponse(ss, message)
+    writevac_cas_Content(ss, message)
     result = ss.data
 
-proc newvac_cas_CASResponse*(data: string): vac_cas_CASResponse =
+proc newvac_cas_Content*(data: string): vac_cas_Content =
     let
         ss = newStringStream(data)
-    result = readvac_cas_CASResponse(ss)
+    result = readvac_cas_Content(ss)
 
-proc newvac_cas_CASResponse*(data: seq[byte]): vac_cas_CASResponse =
+proc newvac_cas_Content*(data: seq[byte]): vac_cas_Content =
     let
         ss = newStringStream(cast[string](data))
-    result = readvac_cas_CASResponse(ss)
+    result = readvac_cas_Content(ss)
 
 
-proc fullyQualifiedName*(T: typedesc[vac_cas_CASRequest]): string = "vac.cas.CASRequest"
+proc fullyQualifiedName*(T: typedesc[vac_cas_Address]): string = "vac.cas.Address"
 
-proc readvac_cas_CASRequestImpl(stream: Stream): Message = readvac_cas_CASRequest(stream)
-proc writevac_cas_CASRequestImpl(stream: Stream, msg: Message) = writevac_cas_CASRequest(stream, vac_cas_CASRequest(msg))
-proc toJsonvac_cas_CASRequestImpl(msg: Message): JsonNode = toJson(vac_cas_CASRequest(msg))
-proc fromJsonvac_cas_CASRequestImpl(node: JsonNode): Message = parsevac_cas_CASRequest(node)
+proc readvac_cas_AddressImpl(stream: Stream): Message = readvac_cas_Address(stream)
+proc writevac_cas_AddressImpl(stream: Stream, msg: Message) = writevac_cas_Address(stream, vac_cas_Address(msg))
+proc toJsonvac_cas_AddressImpl(msg: Message): JsonNode = toJson(vac_cas_Address(msg))
+proc fromJsonvac_cas_AddressImpl(node: JsonNode): Message = parsevac_cas_Address(node)
 
-proc vac_cas_CASRequestProcs*(): MessageProcs =
-    result.readImpl = readvac_cas_CASRequestImpl
-    result.writeImpl = writevac_cas_CASRequestImpl
-    result.toJsonImpl = toJsonvac_cas_CASRequestImpl
-    result.fromJsonImpl = fromJsonvac_cas_CASRequestImpl
+proc vac_cas_AddressProcs*(): MessageProcs =
+    result.readImpl = readvac_cas_AddressImpl
+    result.writeImpl = writevac_cas_AddressImpl
+    result.toJsonImpl = toJsonvac_cas_AddressImpl
+    result.fromJsonImpl = fromJsonvac_cas_AddressImpl
 
-proc newvac_cas_CASRequest*(): vac_cas_CASRequest =
+proc newvac_cas_Address*(): vac_cas_Address =
     new(result)
     initMessage(result[])
-    result.procs = vac_cas_CASRequestProcs()
-    result.id = ""
-    result.data = ""
+    result.procs = vac_cas_AddressProcs()
+    result.id = @[]
 
-proc clearid*(message: vac_cas_CASRequest) =
-    message.id = ""
+proc clearid*(message: vac_cas_Address) =
+    message.id = @[]
 
-proc setid*(message: vac_cas_CASRequest, value: string) =
+proc setid*(message: vac_cas_Address, value: seq[byte]) =
     message.id = value
 
-proc id*(message: vac_cas_CASRequest): string {.inline.} =
+proc id*(message: vac_cas_Address): seq[byte] {.inline.} =
     message.id
 
-proc `id=`*(message: vac_cas_CASRequest, value: string) {.inline.} =
+proc `id=`*(message: vac_cas_Address, value: seq[byte]) {.inline.} =
     setid(message, value)
 
-proc cleardata*(message: vac_cas_CASRequest) =
-    message.data = ""
-
-proc setdata*(message: vac_cas_CASRequest, value: string) =
-    message.data = value
-
-proc data*(message: vac_cas_CASRequest): string {.inline.} =
-    message.data
-
-proc `data=`*(message: vac_cas_CASRequest, value: string) {.inline.} =
-    setdata(message, value)
-
-proc sizeOfvac_cas_CASRequest*(message: vac_cas_CASRequest): uint64 =
+proc sizeOfvac_cas_Address*(message: vac_cas_Address): uint64 =
     if len(message.id) > 0:
-        result = result + sizeOfTag(2, WireType.LengthDelimited)
-        result = result + sizeOfString(message.id)
-    if len(message.data) > 0:
-        result = result + sizeOfTag(3, WireType.LengthDelimited)
-        result = result + sizeOfString(message.data)
+        result = result + sizeOfTag(1, WireType.LengthDelimited)
+        result = result + sizeOfBytes(message.id)
     result = result + sizeOfUnknownFields(message)
 
-proc writevac_cas_CASRequest*(stream: Stream, message: vac_cas_CASRequest) =
+proc writevac_cas_Address*(stream: Stream, message: vac_cas_Address) =
     if len(message.id) > 0:
-        protoWriteString(stream, message.id, 2)
-    if len(message.data) > 0:
-        protoWriteString(stream, message.data, 3)
+        protoWriteBytes(stream, message.id, 1)
     writeUnknownFields(stream, message)
 
-proc readvac_cas_CASRequest*(stream: Stream): vac_cas_CASRequest =
-    result = newvac_cas_CASRequest()
+proc readvac_cas_Address*(stream: Stream): vac_cas_Address =
+    result = newvac_cas_Address()
     while not atEnd(stream):
         let
             tag = readTag(stream)
@@ -218,47 +172,39 @@ proc readvac_cas_CASRequest*(stream: Stream): vac_cas_CASRequest =
         case fieldNumber(tag)
         of 0:
             raise newException(InvalidFieldNumberError, "Invalid field number: 0")
-        of 2:
+        of 1:
             expectWireType(wireType, WireType.LengthDelimited)
-            setid(result, protoReadString(stream))
-        of 3:
-            expectWireType(wireType, WireType.LengthDelimited)
-            setdata(result, protoReadString(stream))
+            setid(result, protoReadBytes(stream))
         else: readUnknownField(stream, result, tag)
 
-proc toJson*(message: vac_cas_CASRequest): JsonNode =
+proc toJson*(message: vac_cas_Address): JsonNode =
     result = newJObject()
     if len(message.id) > 0:
         result["id"] = %message.id
-    if len(message.data) > 0:
-        result["data"] = %message.data
 
-proc parsevac_cas_CASRequest*(obj: JsonNode): vac_cas_CASRequest =
-    result = newvac_cas_CASRequest()
+proc parsevac_cas_Address*(obj: JsonNode): vac_cas_Address =
+    result = newvac_cas_Address()
     var node: JsonNode
     if obj.kind != JObject:
         raise newException(nimpb_json.ParseError, "object expected")
     node = getJsonField(obj, "id", "id")
     if node != nil and node.kind != JNull:
-        setid(result, parseString(node))
-    node = getJsonField(obj, "data", "data")
-    if node != nil and node.kind != JNull:
-        setdata(result, parseString(node))
+        setid(result, parseBytes(node))
 
-proc serialize*(message: vac_cas_CASRequest): string =
+proc serialize*(message: vac_cas_Address): string =
     let
         ss = newStringStream()
-    writevac_cas_CASRequest(ss, message)
+    writevac_cas_Address(ss, message)
     result = ss.data
 
-proc newvac_cas_CASRequest*(data: string): vac_cas_CASRequest =
+proc newvac_cas_Address*(data: string): vac_cas_Address =
     let
         ss = newStringStream(data)
-    result = readvac_cas_CASRequest(ss)
+    result = readvac_cas_Address(ss)
 
-proc newvac_cas_CASRequest*(data: seq[byte]): vac_cas_CASRequest =
+proc newvac_cas_Address*(data: seq[byte]): vac_cas_Address =
     let
         ss = newStringStream(cast[string](data))
-    result = readvac_cas_CASRequest(ss)
+    result = readvac_cas_Address(ss)
 
 
