@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package vac.ns;
+
+// Should be compatible with Swarm Feeds, IPFS IPNS, ENS, and DNS.
+
+// Name System (NS) service definition
+service NS {
+  rpc Update(NameUpdate) returns (Response) {}
+  rpc Fetch(Query) returns (Content) {}
+}
+
+// TODO: NameInit?
+
+message NameUpdate {
+  string name = 1;
+  bytes content = 1;
+}
+
+message Query {
+  string name = 1;
+}
+
+message Content {
+  bytes data = 1;
+}
+
+// XXX: Anything? Ok/Error
+message Response{
+  bytes data = 1;
+}
