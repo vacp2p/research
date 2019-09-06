@@ -14,7 +14,7 @@ service NS {
 
 message NameUpdate {
   string name = 1;
-  bytes content = 1;
+  bytes content = 2;
 }
 
 message Query {
@@ -25,7 +25,8 @@ message Content {
   bytes data = 1;
 }
 
-// XXX: Anything? Ok/Error
-message Response{
+// XXX: Anything? Ok/Error, enum?
+// XXX: Also bad naming
+message Response {
   bytes data = 1;
 }
