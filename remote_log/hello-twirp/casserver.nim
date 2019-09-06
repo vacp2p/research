@@ -12,6 +12,7 @@ import strutils
 import byteutils
 
 proc AddImpl(service: CAS, Address: vac_cas_Content): Future[vac_cas_Address] {.async.} =
+  echo("AddImpl: ")
   # TODO: Actually store this in a (non-persisted) hash table
   result = newvac_cas_Address()
   result.id = hexToSeqByte("id2".toHex())
@@ -19,6 +20,7 @@ proc AddImpl(service: CAS, Address: vac_cas_Content): Future[vac_cas_Address] {.
 # seq[bytes]
 
 proc GetImpl(service: CAS, CASRequest: vac_cas_Address): Future[vac_cas_Content] {.async.} =
+  echo("GetImpl: ")
   result = newvac_cas_Content()
   result.data = hexToSeqByte("data2".toHex())
 

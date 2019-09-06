@@ -12,11 +12,13 @@ import strutils
 import byteutils
 
 proc UpdateImpl(service: NS, param: vac_ns_NameUpdate): Future[vac_ns_Response] {.async.} =
+  echo("UpdateImpl: ")
   # TODO: Actually store previous data
   result = newvac_ns_Response()
   result.data = hexToSeqByte("ok".toHex())
 
 proc FetchImpl(service: NS, param: vac_ns_Query): Future[vac_ns_Content] {.async.} =
+  echo("FetchImpl: ")
   # TODO: Actually fetch previous data
   result = newvac_ns_Content()
   result.data = hexToSeqByte("data2".toHex())
