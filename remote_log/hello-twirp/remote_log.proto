@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package vac.remotelog;
+
+// XXX: Move out of ns_service.proto?
+// Two parts: body and tail (+ header?)
+message RemoteLog {
+  Body body = 1;
+  bytes tail = 2;
+
+  // Order preserved
+  message Body {
+    repeated Pair pair = 1;
+  }
+
+  // XXX: Potentially extended with embedded data
+  message Pair {
+    bytes remoteHash = 1;
+    bytes localHash = 2;
+  }
+}
