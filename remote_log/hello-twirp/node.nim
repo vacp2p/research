@@ -8,6 +8,9 @@ import cas_service_twirp
 import ns_service_pb
 import ns_service_twirp
 
+import remote_log_pb
+#import remote_log_twirp
+
 import strutils
 import byteutils
 
@@ -49,5 +52,34 @@ try:
 except Exception as e:
   echo(&"Exception: {e.msg}")
 
-
 echo("Done")
+
+# TODO: Do the CAS and NS dance
+
+# TODO: Remote log protobuf spec
+
+# Remote log misc notes
+# One one extreme just a linked list
+# [[h1,h2], next]
+# On other, fully fledged log (backup?)
+# [[h1, data], [h2,..], nil]
+# dealing with changing log loc
+# guarantees and relaxation (should vs may data around)
+# find out what data is missing
+# privacy protection? wire assumption ~
+# pack format
+
+# Let's construct one here, example
+var pairs: seq[vac_remotelog_RemoteLog_Pair]
+var pair = newvac_remotelog_RemoteLog_Pair()
+var body = newvac_remotelog_RemoteLog_Body()
+var remotelog = newvac_remotelog_RemoteLog()
+try:
+  pair.remoteHash = hexToSeqByte("foo".toHex())
+  pair.localHash = hexToSeqByte("foo2".toHex())
+  body.pair = pairs
+  remotelog.body = body
+  remotelog.tail = hexToSeqByte("0x")
+except:
+  echo("Unable to create Remote log data")
+  quit(QuitFailure)
