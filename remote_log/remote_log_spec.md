@@ -17,16 +17,17 @@ from a node that is offline.
 
 ## Definitions
 
-| Term        | Definition                                                                             |
-| ----------- | -------------------------------------------------------------------------------------- |
+| Term        | Definition                                                                                   |
+| ----------- | --------------------------------------------------------------------------------------       |
+| CAS         | Content-addressed storage. Stores data that can be addressed by its hash.                    |
+| Name system | Name system. Associates mutable data to a name.                                              |
+| Remote log  | Replication of a local log at a different location.                                          |
 
 ## Roles
 
 1. Node
 2. Name system (NS)
 3. Content-addressed storage (CAS)
-
-As well as the *remote log* payload.
 
 ## Wire Protocol
 
@@ -79,6 +80,8 @@ message Response {
 ```
 
 <!-- // TODO: NameInit? -->
+
+<!-- TODO: Consider extending pair with (optional) data -->
 
 #### Remote
 ```protobuf
