@@ -14,18 +14,21 @@ import remote_log_pb
 import strutils
 import byteutils
 
-# CAS
-var content = newvac_cas_Content()
-try:
-  content.data = hexToSeqByte("foo".toHex())
-except:
-  echo("Unable to create Content data")
-  quit(QuitFailure)
+# CAS util
+proc createContent*(s: string): vac_cas_Content =
+  var content = newvac_cas_Content()
+  try:
+    content.data = hexToSeqByte(s.toHex())
+  except:
+    echo("Unable to create Content data")
+    quit(QuitFailure)
+  return content
 
 let casClient = newCASClient("http://localhost:8001")
 
 # XXX: resp is wrong here
 try:
+  let content = createContent("foo")
   let resp = Add(casClient, content)
   let str = parseHexStr(toHex(resp.id))
   echo(&"I got a new post: {str}")

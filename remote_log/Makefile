@@ -9,5 +9,10 @@ nsserver: src/nsserver.nim src/ns_service_pb.nim src/ns_service_twirp.nim
 node: src/node.nim
 	nim c -o:bin/node src/node.nim
 
+castest: tests/castest.nim
+	nim c --r o:bin/castest tests/castest.nim
+
+test: castest
+
 %_pb.nim %_twirp.nim: %.proto
 	nimtwirp_build -I:. --out:. $^
