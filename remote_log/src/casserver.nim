@@ -10,14 +10,33 @@ import cas_service_twirp
 
 import strutils
 import byteutils
+import std/sha1
+import tables
 
-proc AddImpl(service: CAS, Address: vac_cas_Content): Future[vac_cas_Address] {.async.} =
+# XXX: Single global mutating state, fish memory
+var contentStorage = initTable[string,vac_cas_Content]()
+
+proc contentHash(data: string): string =
+  # Prepend constant to highlight fact that hash fns can be different
+  let str = "storage-" & data
+  let sha1 = secureHash(str)
+  return $sha1
+
+# XXX: This procedure is not GC safe since it accesses global db
+proc store(data: vac_cas_Content): string =
+  var s = serialize(data)
+  echo("Store serialized: ", s)
+  let hash = contentHash(s)
+  contentStorage[hash] = data
+  # TODO: Print out whole db, serialize per value
+  #echo("store content: ", $contentStorage)
+  return hash
+
+proc AddImpl(service: CAS, content: vac_cas_Content): Future[vac_cas_Address] {.gcsafe, async.} =
   echo("AddImpl: ")
-  # TODO: Actually store this in a (non-persisted) hash table
+  let hash = store(content)
   result = newvac_cas_Address()
-  result.id = hexToSeqByte("id2".toHex())
-
-# seq[bytes]
+  result.id = hexToSeqByte(hash.toHex())
 
 proc GetImpl(service: CAS, CASRequest: vac_cas_Address): Future[vac_cas_Content] {.async.} =
   echo("GetImpl: ")
