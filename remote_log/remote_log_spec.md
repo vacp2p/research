@@ -12,7 +12,8 @@ TBD.
 
 ## Abstract
 
-This specification outlines how to perform
+A remote log is a replication of a local log. This means a node can read data
+from a node that is offline.
 
 ## Definitions
 
