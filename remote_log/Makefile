@@ -10,7 +10,7 @@ node: src/node.nim
 	nim c -o:bin/node src/node.nim
 
 castest: tests/castest.nim
-	nim c --r o:bin/castest tests/castest.nim
+	nim c --r tests/castest.nim
 
 test: castest
 

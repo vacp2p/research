@@ -17,19 +17,21 @@ proc createContent*(s: string): vac_cas_Content =
     quit(QuitFailure)
   return content
 
-var content = createContent("hello")
-
 let casClient = newCASClient("http://localhost:8001")
 
-# XXX: resp is wrong here
-try:
-  let resp = Add(casClient, content)
-  let str = parseHexStr(toHex(resp.id))
-  echo(&"I got a new post: {str}")
-except Exception as e:
-  echo(&"Exception: {e.msg}")
+proc postContent(s: string): string =
+  var content = createContent(s)
+  try:
+    let resp = Add(casClient, content)
+    let str = parseHexStr(toHex(resp.id))
+    echo(&"I got a new post: {str}")
+    return str
+  except Exception as e:
+    echo(&"Exception: {e.msg}")
 
 when isMainModule:
   echo("Running CAS tests")
   doAssert 1 == 1
-#  doAssert 1 == 2
+  let id = postContent("hello")
+  echo("ID:", id)
+  # TODO: Run retrieve test on this ID
