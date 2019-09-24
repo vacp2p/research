@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.3 (Draft)
+> Version: 0.0.4 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -116,6 +116,14 @@ message RemoteLog {
 ## Synchronization
 
 ### Roles
+
+There are three fundamental roles:
+
+1. Node
+2. Name system (NS)
+3. Content-addressed storage (CAS)
+
+Additionally, the *remote log* protobuf is what is stored at the Name system.
 
 ### Flow
 
