@@ -140,6 +140,25 @@ The *remote log* protobuf is what is stored at the Name system.
     Figure 1: Remote log data synchronization.
 </p>
 
+### More on the remote log
+
+The remote log lets receiving nodes know what data they are missing. Depending
+on the specific requirements and capabilities of the nodes and name system, the
+information can be referred to differently. We distinguish between three rough
+modes:
+
+1. Fully replicated log
+2. Normal sized page with CAS mapping
+3. "Linked list" mode - minimally sized page with CAS mapping
+
+<!-- TODO: Elaborate on continuum from linked list to fully replicated log -->
+<!-- TODO: Include illustration of data layout, ASCII style? -->
+<!-- TODO: Elaborate on how to indicate which CAS is used, a la multiaddr -->
+
+### Interaction with MVDS
+
+<!-- TODO: Elaborate on interaction with MVDS, especially with what messages are synced, etc -->
+
 ## Footnotes
 
 1. <https://github.com/vacp2p/research/tree/master/remote_log>
