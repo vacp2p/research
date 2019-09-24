@@ -119,15 +119,16 @@ message RemoteLog {
 
 ### Roles
 
-There are three fundamental roles:
+There are four fundamental roles:
 
-1. Node
+1. Alice
+2. Bob
 2. Name system (NS)
 3. Content-addressed storage (CAS)
 
-Additionally, the *remote log* protobuf is what is stored at the Name system.
+The *remote log* protobuf is what is stored at the Name system.
 
-<!-- If two parties, Alice and Bob, are synchronizing, then node is split into two roles -->
+"Bob" can represents anything from 0 to N participants. Unlike Alice, Bob only needs read-only access to NS and CAS.
 
 ### Flow
 
