@@ -18,8 +18,9 @@
 
 ## Abstract
 
-A remote log is a replication of a local log. This means a node can read data
-from a node that is offline.
+A remote log is a replication of a local log. This means a node can read data from a node that is offline.
+
+This specification is complemented by a proof of concept implementation <sup>1</sup>.
 
 ## Definitions
 
@@ -143,7 +144,7 @@ CAS->>Bob: Content
 
 ## Footnotes
 
-TBD.
+1. <https://github.com/vacp2p/research/tree/master/remote_log>
 
 ## Acknowledgements
 
