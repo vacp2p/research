@@ -27,21 +27,15 @@ This specification is complemented by a proof of concept implementation <sup>1</
 | Term        | Definition                                                                                   |
 | ----------- | --------------------------------------------------------------------------------------       |
 | CAS         | Content-addressed storage. Stores data that can be addressed by its hash.                    |
-| Name system | Name system. Associates mutable data to a name.                                              |
+| NS          | Name system. Associates mutable data to a name.                                              |
 | Remote log  | Replication of a local log at a different location.                                          |
-
-## Roles
-
-1. Node
-2. Name system (NS)
-3. Content-addressed storage (CAS)
 
 ## Wire Protocol
 
-### Secure Transport, Storage, and Name System
+### Secure Transport, storage, and name system
 
 This specification does not define anything related to to: secure transport,
-content addressed storage, or the Name System. It is assumed these capabilities
+content addressed storage, or the name system. It is assumed these capabilities
 are abstracted away in such a way that any such protocol can easily be
 implemented.
 
@@ -119,11 +113,11 @@ message RemoteLog {
 
 <!-- TODO: Extend pair with (optional) data -->
 
-## Flow
+## Synchronization
 
-<!-- This section is only here for research right now, might move or be unnecessary -->
+### Roles
 
-<!-- Wil likely be replaced with similar flow to one in MVDS.spec -->
+### Flow
 
 ```mermaid
 sequenceDiagram
@@ -139,7 +133,7 @@ Bob->>CAS: Fetch Query
 CAS->>Bob: Content
 ```
 
-<!-- 
+<!-- TODO: Actually in-line this sequence diagram -->
 
 
 ## Footnotes
