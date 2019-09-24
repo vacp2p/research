@@ -1,14 +1,23 @@
 # Remote log specification
 
-<!-- Live version atm: https://notes.status.im/HPLXoeM3Sn6e8sG8TQ2Clw# -->
-
-> Version: 0.1 (Draft)
+> Version: 0.0.2 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
 ## Table of Contents
 
-TBD.
+- [Abstract](#abstract)
+- [Definitions](#definitions)
+- [Roles](#roles)
+- [Wire Protocol](#wire-protocol)
+    - [Payloads](#payloads)
+        - [CAS service](#cas-service)
+            - [NS service](#ns-service)
+        - [Remote](#remote)
+- [Flow](#flow)
+- [Footnotes](#footnotes)
+- [Acknowledgements](#acknowledgements)
+
 
 ## Abstract
 
