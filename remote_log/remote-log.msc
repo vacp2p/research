@@ -3,9 +3,9 @@ msc {
   hscale="2", wordwraparcs=on;
 
   alice [label="Alice"],
-  bob [label="Bob"],
-  cas [label="CAS"] ,
-  ns [label="NS"];
+  cas [label="CAS"],
+  ns [label="NS"],
+  bob [label="Bob"];
 
   --- [label="Alice replicates data to a remote log"];
   alice => cas [label="Add content"];
