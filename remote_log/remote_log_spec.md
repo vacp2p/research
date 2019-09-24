@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.4 (Draft)
+> Version: 0.0.5 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -115,6 +115,8 @@ message RemoteLog {
 
 ## Synchronization
 
+<!-- TODO: Elaborate on interaction with MVDS, especially with what messages are synced, etc -->
+
 ### Roles
 
 There are three fundamental roles:
@@ -125,24 +127,17 @@ There are three fundamental roles:
 
 Additionally, the *remote log* protobuf is what is stored at the Name system.
 
+<!-- If two parties, Alice and Bob, are synchronizing, then node is split into two roles -->
+
 ### Flow
 
-```mermaid
-sequenceDiagram
+<!-- diagram -->
 
-Alice->>CAS: Add content
-CAS->>Alice: Address
-Alice->>NS: Update NameUpdate
-NS->>Alice: Response
-
-Bob->>NS: Fetch
-NS->>Bob: Content
-Bob->>CAS: Fetch Query
-CAS->>Bob: Content
-```
-
-<!-- TODO: Actually in-line this sequence diagram -->
-
+<p align="center">
+    <img src="./remote-log.png" />
+    <br />
+    Figure 1: Remote log data synchronization.
+</p>
 
 ## Footnotes
 
