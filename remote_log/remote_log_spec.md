@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.5 (Draft)
+> Version: 0.0.6 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -8,11 +8,14 @@
 
 - [Abstract](#abstract)
 - [Definitions](#definitions)
-- [Roles](#roles)
 - [Wire Protocol](#wire-protocol)
-    - [Secure Transport, Storage, and Name System](#secure-transport-storage-and-name-system)
+    - [Secure Transport, storage, and name system](#secure-transport-storage-and-name-system)
     - [Payloads](#payloads)
-- [Flow](#flow)
+- [Synchronization](#synchronization)
+    - [Roles](#roles)
+    - [Flow](#flow)
+    - [More on the remote log](#more-on-the-remote-log)
+    - [Interaction with MVDS](#interaction-with-mvds)
 - [Footnotes](#footnotes)
 - [Acknowledgements](#acknowledgements)
 
