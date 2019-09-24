@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.2 (Draft)
+> Version: 0.0.3 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -10,14 +10,11 @@
 - [Definitions](#definitions)
 - [Roles](#roles)
 - [Wire Protocol](#wire-protocol)
+    - [Secure Transport, Storage, and Name System](#secure-transport-storage-and-name-system)
     - [Payloads](#payloads)
-        - [CAS service](#cas-service)
-            - [NS service](#ns-service)
-        - [Remote](#remote)
 - [Flow](#flow)
 - [Footnotes](#footnotes)
 - [Acknowledgements](#acknowledgements)
-
 
 ## Abstract
 
@@ -40,9 +37,21 @@ from a node that is offline.
 
 ## Wire Protocol
 
+### Secure Transport, Storage, and Name System
+
+This specification does not define anything related to to: secure transport,
+content addressed storage, or the Name System. It is assumed these capabilities
+are abstracted away in such a way that any such protocol can easily be
+implemented.
+
+<!-- TODO: Elaborate on properties required here. -->
+
 ### Payloads
 
-#### CAS service
+Payloads are implemented using [protocol buffers v3](https://developers.google.com/protocol-buffers/).
+
+**CAS service**:
+
 ```protobuf
 package vac.cas;
 
@@ -60,7 +69,7 @@ message Content {
 }
 ```
 
-##### NS service
+**NS service**:
 
 ```protobuf
 service NS {
@@ -81,18 +90,16 @@ message Content {
   bytes data = 1;
 }
 
-// XXX: Anything? Ok/Error, enum?
-// XXX: Also bad naming
 message Response {
   bytes data = 1;
 }
 ```
 
-<!-- // TODO: NameInit? -->
+<!-- XXX: Response and data type a bit weird, Ok/Err enum? -->
+<!-- TODO: Do we want NameInit here? -->
 
-<!-- TODO: Consider extending pair with (optional) data -->
+**Remote log:**
 
-#### Remote
 ```protobuf
 message RemoteLog {
   Body body = 1;
@@ -108,6 +115,8 @@ message RemoteLog {
   }
 }
 ```
+
+<!-- TODO: Extend pair with (optional) data -->
 
 ## Flow
 
