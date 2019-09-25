@@ -75,13 +75,12 @@ echo("Done")
 # Let's construct one here, example
 var pairs: seq[vac_remotelog_RemoteLog_Pair]
 var pair = newvac_remotelog_RemoteLog_Pair()
-var body = newvac_remotelog_RemoteLog_Body()
 var remotelog = newvac_remotelog_RemoteLog()
 try:
   pair.remoteHash = hexToSeqByte("foo".toHex())
   pair.localHash = hexToSeqByte("foo2".toHex())
-  body.pair = pairs
-  remotelog.body = body
+  # XXX: Where is pair added to pairs?
+  remotelog.pair = pairs
   remotelog.tail = hexToSeqByte("0x")
 except:
   echo("Unable to create Remote log data")

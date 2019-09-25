@@ -6,7 +6,7 @@ casserver: src/casserver.nim src/cas_service_pb.nim src/cas_service_twirp.nim
 nsserver: src/nsserver.nim src/ns_service_pb.nim src/ns_service_twirp.nim
 	nim c -o:bin/ns src/nsserver.nim
 
-node: src/node.nim
+node: src/node.nim src/remote_log_pb.nim src/remote_log_twirp.nim
 	nim c -o:bin/node src/node.nim
 
 castest: tests/castest.nim

@@ -11,15 +11,12 @@ import nimpb/json as nimpb_json
 type
     vac_remotelog_RemoteLog* = ref vac_remotelog_RemoteLogObj
     vac_remotelog_RemoteLogObj* = object of Message
-        body: vac_remotelog_RemoteLog_Body
+        pair: seq[vac_remotelog_RemoteLog_Pair]
         tail: seq[byte]
     vac_remotelog_RemoteLog_Pair* = ref vac_remotelog_RemoteLog_PairObj
     vac_remotelog_RemoteLog_PairObj* = object of Message
         remoteHash: seq[byte]
         localHash: seq[byte]
-    vac_remotelog_RemoteLog_Body* = ref vac_remotelog_RemoteLog_BodyObj
-    vac_remotelog_RemoteLog_BodyObj* = object of Message
-        pair: seq[vac_remotelog_RemoteLog_Pair]
 
 proc newvac_remotelog_RemoteLog_Pair*(): vac_remotelog_RemoteLog_Pair
 proc newvac_remotelog_RemoteLog_Pair*(data: string): vac_remotelog_RemoteLog_Pair
@@ -29,15 +26,6 @@ proc readvac_remotelog_RemoteLog_Pair*(stream: Stream): vac_remotelog_RemoteLog_
 proc sizeOfvac_remotelog_RemoteLog_Pair*(message: vac_remotelog_RemoteLog_Pair): uint64
 proc toJson*(message: vac_remotelog_RemoteLog_Pair): JsonNode
 proc parsevac_remotelog_RemoteLog_Pair*(obj: JsonNode): vac_remotelog_RemoteLog_Pair
-
-proc newvac_remotelog_RemoteLog_Body*(): vac_remotelog_RemoteLog_Body
-proc newvac_remotelog_RemoteLog_Body*(data: string): vac_remotelog_RemoteLog_Body
-proc newvac_remotelog_RemoteLog_Body*(data: seq[byte]): vac_remotelog_RemoteLog_Body
-proc writevac_remotelog_RemoteLog_Body*(stream: Stream, message: vac_remotelog_RemoteLog_Body)
-proc readvac_remotelog_RemoteLog_Body*(stream: Stream): vac_remotelog_RemoteLog_Body
-proc sizeOfvac_remotelog_RemoteLog_Body*(message: vac_remotelog_RemoteLog_Body): uint64
-proc toJson*(message: vac_remotelog_RemoteLog_Body): JsonNode
-proc parsevac_remotelog_RemoteLog_Body*(obj: JsonNode): vac_remotelog_RemoteLog_Body
 
 proc newvac_remotelog_RemoteLog*(): vac_remotelog_RemoteLog
 proc newvac_remotelog_RemoteLog*(data: string): vac_remotelog_RemoteLog
@@ -161,108 +149,6 @@ proc newvac_remotelog_RemoteLog_Pair*(data: seq[byte]): vac_remotelog_RemoteLog_
     result = readvac_remotelog_RemoteLog_Pair(ss)
 
 
-proc fullyQualifiedName*(T: typedesc[vac_remotelog_RemoteLog_Body]): string = "vac.remotelog.RemoteLog.Body"
-
-proc readvac_remotelog_RemoteLog_BodyImpl(stream: Stream): Message = readvac_remotelog_RemoteLog_Body(stream)
-proc writevac_remotelog_RemoteLog_BodyImpl(stream: Stream, msg: Message) = writevac_remotelog_RemoteLog_Body(stream, vac_remotelog_RemoteLog_Body(msg))
-proc toJsonvac_remotelog_RemoteLog_BodyImpl(msg: Message): JsonNode = toJson(vac_remotelog_RemoteLog_Body(msg))
-proc fromJsonvac_remotelog_RemoteLog_BodyImpl(node: JsonNode): Message = parsevac_remotelog_RemoteLog_Body(node)
-
-proc vac_remotelog_RemoteLog_BodyProcs*(): MessageProcs =
-    result.readImpl = readvac_remotelog_RemoteLog_BodyImpl
-    result.writeImpl = writevac_remotelog_RemoteLog_BodyImpl
-    result.toJsonImpl = toJsonvac_remotelog_RemoteLog_BodyImpl
-    result.fromJsonImpl = fromJsonvac_remotelog_RemoteLog_BodyImpl
-
-proc newvac_remotelog_RemoteLog_Body*(): vac_remotelog_RemoteLog_Body =
-    new(result)
-    initMessage(result[])
-    result.procs = vac_remotelog_RemoteLog_BodyProcs()
-    result.pair = @[]
-
-proc clearpair*(message: vac_remotelog_RemoteLog_Body) =
-    message.pair = @[]
-    clearFields(message, [1])
-
-proc haspair*(message: vac_remotelog_RemoteLog_Body): bool =
-    result = hasField(message, 1) or (len(message.pair) > 0)
-
-proc setpair*(message: vac_remotelog_RemoteLog_Body, value: seq[vac_remotelog_RemoteLog_Pair]) =
-    message.pair = value
-    setField(message, 1)
-
-proc addpair*(message: vac_remotelog_RemoteLog_Body, value: vac_remotelog_RemoteLog_Pair) =
-    add(message.pair, value)
-
-proc pair*(message: vac_remotelog_RemoteLog_Body): seq[vac_remotelog_RemoteLog_Pair] {.inline.} =
-    message.pair
-
-proc `pair=`*(message: vac_remotelog_RemoteLog_Body, value: seq[vac_remotelog_RemoteLog_Pair]) {.inline.} =
-    setpair(message, value)
-
-proc sizeOfvac_remotelog_RemoteLog_Body*(message: vac_remotelog_RemoteLog_Body): uint64 =
-    for value in message.pair:
-        result = result + sizeOfTag(1, WireType.LengthDelimited)
-        result = result + sizeOfLengthDelimited(sizeOfvac_remotelog_RemoteLog_Pair(value))
-    result = result + sizeOfUnknownFields(message)
-
-proc writevac_remotelog_RemoteLog_Body*(stream: Stream, message: vac_remotelog_RemoteLog_Body) =
-    for value in message.pair:
-        writeMessage(stream, value, 1)
-    writeUnknownFields(stream, message)
-
-proc readvac_remotelog_RemoteLog_Body*(stream: Stream): vac_remotelog_RemoteLog_Body =
-    result = newvac_remotelog_RemoteLog_Body()
-    while not atEnd(stream):
-        let
-            tag = readTag(stream)
-            wireType = wireType(tag)
-        case fieldNumber(tag)
-        of 0:
-            raise newException(InvalidFieldNumberError, "Invalid field number: 0")
-        of 1:
-            expectWireType(wireType, WireType.LengthDelimited)
-            let data = readLengthDelimited(stream)
-            addpair(result, newvac_remotelog_RemoteLog_Pair(data))
-        else: readUnknownField(stream, result, tag)
-
-proc toJson*(message: vac_remotelog_RemoteLog_Body): JsonNode =
-    result = newJObject()
-    if len(message.pair) > 0:
-        let arr = newJArray()
-        for value in message.pair:
-            add(arr, toJson(value))
-        result["pair"] = arr
-
-proc parsevac_remotelog_RemoteLog_Body*(obj: JsonNode): vac_remotelog_RemoteLog_Body =
-    result = newvac_remotelog_RemoteLog_Body()
-    var node: JsonNode
-    if obj.kind != JObject:
-        raise newException(nimpb_json.ParseError, "object expected")
-    node = getJsonField(obj, "pair", "pair")
-    if node != nil and node.kind != JNull:
-        if node.kind != JArray:
-            raise newException(ValueError, "not an array")
-        for value in node:
-            addpair(result, parsevac_remotelog_RemoteLog_Pair(value))
-
-proc serialize*(message: vac_remotelog_RemoteLog_Body): string =
-    let
-        ss = newStringStream()
-    writevac_remotelog_RemoteLog_Body(ss, message)
-    result = ss.data
-
-proc newvac_remotelog_RemoteLog_Body*(data: string): vac_remotelog_RemoteLog_Body =
-    let
-        ss = newStringStream(data)
-    result = readvac_remotelog_RemoteLog_Body(ss)
-
-proc newvac_remotelog_RemoteLog_Body*(data: seq[byte]): vac_remotelog_RemoteLog_Body =
-    let
-        ss = newStringStream(cast[string](data))
-    result = readvac_remotelog_RemoteLog_Body(ss)
-
-
 proc fullyQualifiedName*(T: typedesc[vac_remotelog_RemoteLog]): string = "vac.remotelog.RemoteLog"
 
 proc readvac_remotelog_RemoteLogImpl(stream: Stream): Message = readvac_remotelog_RemoteLog(stream)
@@ -280,25 +166,28 @@ proc newvac_remotelog_RemoteLog*(): vac_remotelog_RemoteLog =
     new(result)
     initMessage(result[])
     result.procs = vac_remotelog_RemoteLogProcs()
-    result.body = nil
+    result.pair = @[]
     result.tail = @[]
 
-proc clearbody*(message: vac_remotelog_RemoteLog) =
-    message.body = nil
+proc clearpair*(message: vac_remotelog_RemoteLog) =
+    message.pair = @[]
     clearFields(message, [1])
 
-proc hasbody*(message: vac_remotelog_RemoteLog): bool =
-    result = hasField(message, 1)
+proc haspair*(message: vac_remotelog_RemoteLog): bool =
+    result = hasField(message, 1) or (len(message.pair) > 0)
 
-proc setbody*(message: vac_remotelog_RemoteLog, value: vac_remotelog_RemoteLog_Body) =
-    message.body = value
+proc setpair*(message: vac_remotelog_RemoteLog, value: seq[vac_remotelog_RemoteLog_Pair]) =
+    message.pair = value
     setField(message, 1)
 
-proc body*(message: vac_remotelog_RemoteLog): vac_remotelog_RemoteLog_Body {.inline.} =
-    message.body
+proc addpair*(message: vac_remotelog_RemoteLog, value: vac_remotelog_RemoteLog_Pair) =
+    add(message.pair, value)
 
-proc `body=`*(message: vac_remotelog_RemoteLog, value: vac_remotelog_RemoteLog_Body) {.inline.} =
-    setbody(message, value)
+proc pair*(message: vac_remotelog_RemoteLog): seq[vac_remotelog_RemoteLog_Pair] {.inline.} =
+    message.pair
+
+proc `pair=`*(message: vac_remotelog_RemoteLog, value: seq[vac_remotelog_RemoteLog_Pair]) {.inline.} =
+    setpair(message, value)
 
 proc cleartail*(message: vac_remotelog_RemoteLog) =
     message.tail = @[]
@@ -313,17 +202,17 @@ proc `tail=`*(message: vac_remotelog_RemoteLog, value: seq[byte]) {.inline.} =
     settail(message, value)
 
 proc sizeOfvac_remotelog_RemoteLog*(message: vac_remotelog_RemoteLog): uint64 =
-    if hasbody(message):
+    for value in message.pair:
         result = result + sizeOfTag(1, WireType.LengthDelimited)
-        result = result + sizeOfLengthDelimited(sizeOfvac_remotelog_RemoteLog_Body(message.body))
+        result = result + sizeOfLengthDelimited(sizeOfvac_remotelog_RemoteLog_Pair(value))
     if len(message.tail) > 0:
         result = result + sizeOfTag(2, WireType.LengthDelimited)
         result = result + sizeOfBytes(message.tail)
     result = result + sizeOfUnknownFields(message)
 
 proc writevac_remotelog_RemoteLog*(stream: Stream, message: vac_remotelog_RemoteLog) =
-    if hasbody(message):
-        writeMessage(stream, message.body, 1)
+    for value in message.pair:
+        writeMessage(stream, value, 1)
     if len(message.tail) > 0:
         protoWriteBytes(stream, message.tail, 2)
     writeUnknownFields(stream, message)
@@ -340,7 +229,7 @@ proc readvac_remotelog_RemoteLog*(stream: Stream): vac_remotelog_RemoteLog =
         of 1:
             expectWireType(wireType, WireType.LengthDelimited)
             let data = readLengthDelimited(stream)
-            setbody(result, newvac_remotelog_RemoteLog_Body(data))
+            addpair(result, newvac_remotelog_RemoteLog_Pair(data))
         of 2:
             expectWireType(wireType, WireType.LengthDelimited)
             settail(result, protoReadBytes(stream))
@@ -348,8 +237,11 @@ proc readvac_remotelog_RemoteLog*(stream: Stream): vac_remotelog_RemoteLog =
 
 proc toJson*(message: vac_remotelog_RemoteLog): JsonNode =
     result = newJObject()
-    if hasbody(message):
-        result["body"] = toJson(message.body)
+    if len(message.pair) > 0:
+        let arr = newJArray()
+        for value in message.pair:
+            add(arr, toJson(value))
+        result["pair"] = arr
     if len(message.tail) > 0:
         result["tail"] = %message.tail
 
@@ -358,9 +250,12 @@ proc parsevac_remotelog_RemoteLog*(obj: JsonNode): vac_remotelog_RemoteLog =
     var node: JsonNode
     if obj.kind != JObject:
         raise newException(nimpb_json.ParseError, "object expected")
-    node = getJsonField(obj, "body", "body")
+    node = getJsonField(obj, "pair", "pair")
     if node != nil and node.kind != JNull:
-        setbody(result, parsevac_remotelog_RemoteLog_Body(node))
+        if node.kind != JArray:
+            raise newException(ValueError, "not an array")
+        for value in node:
+            addpair(result, parsevac_remotelog_RemoteLog_Pair(value))
     node = getJsonField(obj, "tail", "tail")
     if node != nil and node.kind != JNull:
         settail(result, parseBytes(node))

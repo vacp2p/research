@@ -102,12 +102,8 @@ message Response {
 
 ```protobuf
 message RemoteLog {
-  Body body = 1;
+  repeated Pair pair = 1;
   bytes tail = 2;
-
-  message Body {
-    repeated Pair pair = 1;
-  }
 
   message Pair {
     bytes remoteHash = 1;
@@ -116,7 +112,7 @@ message RemoteLog {
 }
 ```
 
-<!-- TODO: Remove Body and replace with Pair -->
+<!-- TODO: Better name for Pair, Mapping? -->
 
 <!-- TODO: Extend pair with (optional) data -->
 
