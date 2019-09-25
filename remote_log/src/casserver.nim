@@ -13,14 +13,20 @@ import byteutils
 import std/sha1
 import tables
 
+# TODO: Rename casserver->cas, same with ns
+
+# contentStorage maps addresses (encoded as strings) to content.
+#
 # XXX: Single global mutating state, fish memory
+# TODO: Implement map as fixed-length byte sequence
 var contentStorage = initTable[string,vac_cas_Content]()
 
 proc contentHash(data: string): string =
-  # Prepend constant to highlight fact that hash fns can be different
+  # Add constant to ensure hashes are different
+  # This is likely the case in production environments
   let str = "storage-" & data
-  let sha1 = secureHash(str)
-  return $sha1
+  let sha1 = toLowerAscii($secureHash(str))
+  return sha1
 
 # XXX: This procedure is not GC safe since it accesses global db
 proc store(data: vac_cas_Content): string =
