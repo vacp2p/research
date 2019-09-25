@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.8 (Draft)
+> Version: 0.0.9 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -14,7 +14,8 @@
 - [Synchronization](#synchronization)
     - [Roles](#roles)
     - [Flow](#flow)
-    - [More on the remote log](#more-on-the-remote-log)
+    - [Remote log](#remote-log)
+    - [Next page semantics](#next-page-semantics)
     - [Interaction with MVDS](#interaction-with-mvds)
 - [Footnotes](#footnotes)
 - [Acknowledgements](#acknowledgements)
@@ -143,7 +144,7 @@ The *remote log* protobuf is what is stored at the Name system.
     Figure 1: Remote log data synchronization.
 </p>
 
-### More on the remote log
+### Remote log
 
 The remote log lets receiving nodes know what data they are missing. Depending
 on the specific requirements and capabilities of the nodes and name system, the
@@ -158,7 +159,7 @@ modes:
 <!-- TODO: Elaborate on how to indicate which CAS is used, a la multiaddr -->
 
 
-*Data format:*
+**Data format:**
 
 ```
 | H1_3 | H2_3 |
@@ -172,9 +173,16 @@ Here the upper section indicates a list of ordered pairs, and the lower section
 contains the address for the next page chunk. `H1` is the native hash function,
 and `H2` is the one used by the CAS.
 
+
+### Next page semantics
+
+TBD.
+
 <!-- TODO: Document next page chunk semantics, full page -->
 
 ### Interaction with MVDS
+
+TBD.
 
 <!-- TODO: Elaborate on interaction with MVDS, especially with what messages are synced, etc -->
 
