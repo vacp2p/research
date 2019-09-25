@@ -31,11 +31,14 @@ proc contentHash(data: string): string =
 # XXX: This procedure is not GC safe since it accesses global db
 proc store(data: vac_cas_Content): string =
   var s = serialize(data)
-  echo("Store serialized: ", s)
+  echo("Store serialized data: <", s, ">")
   let hash = contentHash(s)
   contentStorage[hash] = data
-  # TODO: Print out whole db, serialize per value
-  #echo("store content: ", $contentStorage)
+
+  # Print out whole cas db
+  echo("contentStorage:")
+  for k, v in contentStorage:
+    echo("cas hash: <", k, "> cas content: <", serialize(v), ">")
   return hash
 
 proc AddImpl(service: CAS, content: vac_cas_Content): Future[vac_cas_Address] {.gcsafe, async.} =
