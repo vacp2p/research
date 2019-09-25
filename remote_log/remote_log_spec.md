@@ -67,6 +67,8 @@ message Content {
 }
 ```
 
+<!-- XXX/TODO: Can we get rid of the id/data complication and just use bytes? -->
+
 **NS service**:
 
 ```protobuf
@@ -113,6 +115,8 @@ message RemoteLog {
   }
 }
 ```
+
+<!-- TODO: Remove Body and replace with Pair -->
 
 <!-- TODO: Extend pair with (optional) data -->
 
