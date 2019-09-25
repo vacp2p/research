@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.6 (Draft)
+> Version: 0.0.8 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -155,8 +155,24 @@ modes:
 3. "Linked list" mode - minimally sized page with CAS mapping
 
 <!-- TODO: Elaborate on continuum from linked list to fully replicated log -->
-<!-- TODO: Include illustration of data layout, ASCII style? -->
 <!-- TODO: Elaborate on how to indicate which CAS is used, a la multiaddr -->
+
+
+*Data format:*
+
+```
+| H1_3 | H2_3 |
+| H1_2 | H2_2 |
+| H1_1 | H2_1 |
+| ------------|
+| next_page   |
+```
+
+Here the upper section indicates a list of ordered pairs, and the lower section
+contains the address for the next page chunk. `H1` is the native hash function,
+and `H2` is the one used by the CAS.
+
+<!-- TODO: Document next page chunk semantics, full page -->
 
 ### Interaction with MVDS
 
