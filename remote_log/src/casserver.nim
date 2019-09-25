@@ -42,15 +42,25 @@ proc store(data: vac_cas_Content): string =
   return hash
 
 proc AddImpl(service: CAS, content: vac_cas_Content): Future[vac_cas_Address] {.gcsafe, async.} =
-  echo("AddImpl: ")
   let hash = store(content)
   result = newvac_cas_Address()
   result.id = hexToSeqByte(hash.toHex())
 
-proc GetImpl(service: CAS, CASRequest: vac_cas_Address): Future[vac_cas_Content] {.async.} =
-  echo("GetImpl: ")
-  result = newvac_cas_Content()
-  result.data = hexToSeqByte("data2".toHex())
+proc GetImpl(service: CAS, address: vac_cas_Address): Future[vac_cas_Content] {.gcsafe, async.} =
+  # We use hexstring of the bytes id as hash index
+  let hash = tohex(address.id)
+  echo("GetImpl Address: <", hash, ">")
+  # This doesnt work
+  if contentStorage.hasKey(hash):
+    let content = contentStorage[hash]
+    echo("Content:", serialize(content))
+    result = content
+  else:
+    echo("Key not found in content store: <", hash, ">")
+    #XXX: wrong
+    result = newvac_cas_Content()
+  # NYI
+  #result.data = hexToSeqByte("data3".toHex())
 
 var
   server = newAsyncHttpServer()
@@ -58,6 +68,7 @@ var
 
 service = newCAS()
 service.AddImpl = AddImpl
+service.GetImpl = GetImpl
 
 proc handler(req: Request) {.async.} =
   # Each service will have a generated handleRequest() proc which takes the
