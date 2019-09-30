@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.10 (Draft)
+> Version: 0.1.0 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -109,6 +109,7 @@ message RemoteLog {
   message Pair {
     bytes remoteHash = 1;
     bytes localHash = 2;
+    bytes data = 3;
   }
 }
 ```

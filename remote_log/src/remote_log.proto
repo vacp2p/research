@@ -10,6 +10,7 @@ message RemoteLog {
   bytes tail = 2;
 
   // XXX: Potentially extended with embedded data
+  // TODO: Add data and re-gen protos here
   message Pair {
     bytes remoteHash = 1;
     bytes localHash = 2;
