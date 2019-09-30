@@ -1,6 +1,6 @@
 # Remote log specification
 
-> Version: 0.0.9 (Draft)
+> Version: 0.0.10 (Draft)
 >
 > Authors: Oskar Thorén oskar@status.im, Dean Eigenmann dean@status.im
 
@@ -155,9 +155,7 @@ modes:
 2. Normal sized page with CAS mapping
 3. "Linked list" mode - minimally sized page with CAS mapping
 
-<!-- TODO: Elaborate on continuum from linked list to fully replicated log -->
 <!-- TODO: Elaborate on how to indicate which CAS is used, a la multiaddr -->
-
 
 **Data format:**
 
@@ -171,8 +169,29 @@ modes:
 
 Here the upper section indicates a list of ordered pairs, and the lower section
 contains the address for the next page chunk. `H1` is the native hash function,
-and `H2` is the one used by the CAS.
+and `H2` is the one used by the CAS. The numbers corresponds to the messages.
 
+**Embedded data:**
+
+A remote log MAY also choose to embed the wire payloads that corresponds to the
+native hash. This bypasses the need for a dedicated CAS and additional
+round-trips, with a trade-off in bandwidth usage.
+
+```
+| H1_3 | | C_3 |
+| H1_2 | | C_2 |
+| H1_1 | | C_1 |
+| -------------|
+| next_page    |
+```
+
+Here `C` stands for the content that would be stored at the CAS.
+
+Both patterns can be used in parallel, e,g. by storing the last `k` messages
+directly and use CAS pointers for the rest. Together with the `next_page` page
+semantics, this gives users flexibility in terms of bandwidth and
+latency/indirection, all the way from a simple linked list to a fully replicated
+log. The latter is useful for things like backups on durable storage.
 
 ### Next page semantics
 
