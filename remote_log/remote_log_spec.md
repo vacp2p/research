@@ -176,9 +176,10 @@ and `H2` is the one used by the CAS.
 
 ### Next page semantics
 
-TBD.
+The pointer to the 'next page' is another remote log entry, at a previous point
+in time.
 
-<!-- TODO: Document next page chunk semantics, full page -->
+<!-- TODO: Determine requirement re overlapping, adjacent, and/or missing entries -->
 
 ### Interaction with MVDS
 
