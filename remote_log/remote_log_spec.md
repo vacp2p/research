@@ -155,8 +155,6 @@ modes:
 2. Normal sized page with CAS mapping
 3. "Linked list" mode - minimally sized page with CAS mapping
 
-<!-- TODO: Elaborate on how to indicate which CAS is used, a la multiaddr -->
-
 **Data format:**
 
 ```
@@ -170,6 +168,8 @@ modes:
 Here the upper section indicates a list of ordered pairs, and the lower section
 contains the address for the next page chunk. `H1` is the native hash function,
 and `H2` is the one used by the CAS. The numbers corresponds to the messages.
+
+To indicate which CAS is used, a remote log SHOULD use a multiaddr.
 
 **Embedded data:**
 
