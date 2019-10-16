@@ -208,6 +208,20 @@ bloom_elements = 100 # elements in set, n
 # Note that this is very sensitive, so if 200 element you want 1 hash fn, and
 # if 50 topics you want 7. Understanding the implications using a suboptimal
 # number of hash function is left as an exercise to the reader.
+#
+# Implied false positive rate (https://hur.st/bloomfilter/?n=100&p=&m=512&k=3)
+# p=~0.087, roughly.
+bloom_false_positive = 0.1 # false positive rate, p
+# Sensitivity to n:
+# n=50 => p=1%, n=100 => p=10%, n=200 => 30%
+#
+# Note that false positivity has two faces, one is in terms of extra bandwidth usage
+# The other is in terms of anonymity / plausible deniability for listening on topic
+# I.e. N envelopes go to node => 1% false positive rate => 1% of N goes to recipient node
+# Even if they only wanted 1 message!
+#
+# The false positive is a factor of total network traffic
+
 case1()
 case2()
 case3()
