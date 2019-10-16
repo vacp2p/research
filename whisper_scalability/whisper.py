@@ -144,6 +144,7 @@ a12 = "- A12. Bloom filter elements, i.e. topics, (n) (static): " + str(bloom_el
 a13 = "- A13. Bloom filter assuming optimal k choice (sensitive to m, n)."
 a14 = "- A14. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
 a15 = "- A15. Benign duplicate receives factor (static): " + str(benign_duplicate_receives)
+a16 = "- A16. Assuming no bad envelopes, bad PoW, expired, etc (static)."
 
 # Cases
 #-----------------------------------------------------------
@@ -268,19 +269,64 @@ def case6():
         return (total_load + false_positive_load) * benign_duplicate_receives
 
     print_header("Case 6. Case 5 + Benign duplicate receives")
-    print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14, a15])
+    print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14, a15, a16])
     print_usage(load_users)
     print("------------------------------------------------------------")
 
+# Case 7: Waka mode - like Infura but for chat, no metadata connection
+def case7():
+
+    def load_users(n_users):
+        if n_users < n_partitions:
+            # Assume spread out, not colliding
+            factor_load = 1
+        else:
+            # Assume spread out evenly, collides proportional to users
+            factor_load = n_users / n_partitions
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * factor_load
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+
+        return total_load
+
+    print_header("Case 7. Waka mode - no metadata protection with bloom filter and one node connected; still static shard")
+    print("Next step up is to either only use contact code, or shard more aggressively.")
+    print("Note that this requires change of other nodes behavior, not just local node.")
+    print("")
+    print_assumptions([a1, a2, a3, a6, a7, a9])
+    print_usage(load_users)
+    print("------------------------------------------------------------")
 
 # Run cases
 #-----------------------------------------------------------
+
+
+# Print goals
+print("")
+print(bcolors.HEADER + "Whisper theoretical model. Attempts to encode characteristics of it.")
+print("")
+print("Goals:")
+print("1. Ensure network scales by being user or usage bound, as opposed to bandwidth growing in proportion to network size.")
+print("2. Staying with in a reasonable bandwidth limit for limited data plans.")
+print("3. Do the above without materially impacting existing nodes.")
+print("" + bcolors.ENDC)
+
 case1()
 case2()
 case3()
 case4()
 case5()
 case6()
+
+print("")
+print("Assumptions not covered so far:")
+print("- Offline case (impacts duplicates, bloom filter if rotated, bad envelopes)")
+print("")
+
+case7()
 
 # Notes
 #-----------------------------------------------------------
