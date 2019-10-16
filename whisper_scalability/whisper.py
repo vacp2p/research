@@ -222,11 +222,63 @@ bloom_false_positive = 0.1 # false positive rate, p
 #
 # The false positive is a factor of total network traffic
 
+def case5():
+    # Case 5: all messages are passed through a bloom filter with a certain false positive rate
+
+    partitions = 5000
+
+    def load_users(n_users):
+        if n_users < partitions:
+            # Assume spread out, not colliding
+            factor_load = 1
+        else:
+            # Assume spread out evenly, collides proportional to users
+            factor_load = n_users / partitions
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * factor_load
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+
+        # false positive total network traffic, assuming full node relaying
+        network_load = envelope_size * envelopes_per_message * \
+            received_messages_per_day * n_users
+        false_positive_load = network_load * bloom_false_positive
+
+        return total_load + false_positive_load
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
+
+    print bcolors.HEADER + "\nCase 5. All messages are passed through bloom filter with false positive rate (otherwise like case 4)" + bcolors.ENDC
+    print ""
+    print "Assumptions:"
+    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
+    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
+    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
+    print "- A4. Proportion of private messages (static): " + str(private_message_proportion)
+    print "- A5. Public messages only received by relevant recipients (static)"
+    print "- A6. Private messages are partitioned evenly across partition shards (static), n=" + str(partitions)
+    print "- A7. Bloom filter size (m) (static): " + str(bloom_size)
+    print "- A8. Bloom filter hash functions (k) (static): " + str(bloom_hash_fns)
+    print "- A9. Bloom filter elements, i.e. topics, (n) (static): " + str(bloom_elements)
+    print "- A10. Bloom filter optimal k choice (sensitive to m, n)"
+    print "- A11. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
+    print ""
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
+    print ""
+    print("------------------------------------------------------------")
+
+
 case1()
 case2()
 case3()
 case4()
-
+case5()
 
 # Ok, let's get serious. What assumptions do we need to encode?
 # Also, what did I observe? I observed 15GB/m = 500mb per day.
@@ -273,3 +325,14 @@ case4()
 # - and also data sync
 # duplication_factor
 # bad_envelopes
+
+# Ask feedback:
+# Which of these assumptions are false?
+# Any assumptions or conditions not accurately captured?
+# Which are most interesting to you?
+# Which do we want to verify, and what metrics do we need to verify?
+
+# If we x100 users tomorrow, how can we move the partition topic?
+# Path we are on today, and alternative path
+
+# Also not captured: fallover of relaying node, if it exceeds bandwidth link
