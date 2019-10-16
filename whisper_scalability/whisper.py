@@ -44,6 +44,22 @@ def load_color_fmt(load, string):
 def print_header(string):
     print bcolors.HEADER + string + bcolors.ENDC + "\n"
 
+def print_assumptions(xs):
+    print "Assumptions:"
+    for x in xs:
+        print x
+    print ""
+
+def usage_str(load_users_fn, n_users):
+    load = load_users_fn(n_users)
+    return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users_fn(n_users)) + "/day")
+
+def print_usage(load_users):
+    print usage_str(load_users, 100)
+    print usage_str(load_users, 100 * 100)
+    print usage_str(load_users, 100 * 100 * 100)
+    print ""
+
 # Assumptions
 #-----------------------------------------------------------
 
@@ -116,55 +132,34 @@ a12 = "- A12. Bloom filter elements, i.e. topics, (n) (static): " + str(bloom_el
 a13 = "- A13. Bloom filter optimal k choice (sensitive to m, n)"
 a14 = "- A14. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
 
-def print_assumptions(xs):
-    print "Assumptions:"
-    for x in xs:
-        print x
-
 # Cases
 #-----------------------------------------------------------
 
+# Case 1: only receiving messages meant for you
 def case1():
     def load_users(n_users):
         return envelope_size * envelopes_per_message * \
             received_messages_per_day
 
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
     print_header("Case 1. Only receiving messages meant for you")
     print_assumptions([a1, a2, a3, a4])
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
+    print_usage(load_users)
     print("------------------------------------------------------------")
 
+# Case 2: receiving all messages
 def case2():
-    # Case 2: receiving all messages
 
     def load_users(n_users):
         return envelope_size * envelopes_per_message * \
             received_messages_per_day * n_users
 
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
     print_header("Case 2. Receiving messages for everyone")
     print_assumptions([a1, a2, a3, a5])
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
+    print_usage(load_users)
     print("------------------------------------------------------------")
 
-
+# Case 3: all private messages go over one discovery topic
 def case3():
-    # Case 3: all private messages go over one discovery topic
 
     # Public scales per usage, all private messages are received
     # over one discovery topic
@@ -177,22 +172,13 @@ def case3():
             load_public * (1 - private_message_proportion)
         return total_load
 
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
     print_header("Case 3. All private messages go over one discovery topic")
     print_assumptions([a1, a2, a3, a6, a7, a8])
-
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
+    print_usage(load_users)
     print("------------------------------------------------------------")
 
+# Case 4: all private messages are partitioned into shards
 def case4():
-    # Case 4: all private messages are partitioned into shards
 
     def load_users(n_users):
         if n_users < n_partitions:
@@ -209,21 +195,13 @@ def case4():
             load_public * (1 - private_message_proportion)
         return total_load
 
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
     print_header("Case 4. All private messages are partitioned into shards")
     print_assumptions([a1, a2, a3, a6, a7, a9])
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
+    print_usage(load_users)
     print("------------------------------------------------------------")
 
+# Case 5: all messages are passed through a bloom filter with a certain false positive rate
 def case5():
-    # Case 5: all messages are passed through a bloom filter with a certain false positive rate
 
     def load_users(n_users):
         if n_users < n_partitions:
@@ -246,28 +224,24 @@ def case5():
 
         return total_load + false_positive_load
 
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
     print_header("Case 5. Case 4 + All messages are passed through bloom filter with false positive rate")
     print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14])
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
+    print_usage(load_users)
     print("------------------------------------------------------------")
 
 
+# Run cases
+#-----------------------------------------------------------
 case1()
 case2()
 case3()
 case4()
 case5()
 
-# Ok, let's get serious. What assumptions do we need to encode?
-# Also, what did I observe? I observed 15GB/m = 500mb per day.
+# Misc notes
+#-----------------------------------------------------------
+
+# What did I observe? I observed 15GB/m = 500mb per day.
 
 # Things to encode:
 # - Noisy topic
