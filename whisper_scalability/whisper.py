@@ -62,8 +62,14 @@ def bandwidth_usage(n_users):
 
 def case1():
     # Case 1: only receiving messages meant for you
-    load = envelope_size * envelopes_per_message * \
-        received_messages_per_day
+
+    def load_users(n_users):
+        return envelope_size * envelopes_per_message * \
+            received_messages_per_day
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
 
     print bcolors.HEADER + "\nCase 1. Only receiving messages meant for you" + bcolors.ENDC
     print ""
@@ -73,7 +79,9 @@ def case1():
     print "- A3. Received messages / day (static): " + str(received_messages_per_day)
     print "- A4. Only receiving messages meant for you"
     print ""
-    print load_color_fmt(load, "For N users, receiving bandwidth is " + sizeof_fmt(load) + "/day")
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
     print ""
     print("------------------------------------------------------------")
 
