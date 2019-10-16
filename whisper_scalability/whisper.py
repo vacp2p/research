@@ -12,7 +12,7 @@ class bcolors:
 def sizeof_fmt(num):
     for x in ['bytes','KB','MB','GB','TB']:
         if num < 1024.0:
-            return "%3.0f%s" % (num, x)
+            return "%3.1f%s" % (num, x)
         num /= 1024.0
 
 def magnitude_fmt(num):
@@ -134,8 +134,48 @@ def case3():
     print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
     print "- A3. Received messages / day (static): " + str(received_messages_per_day)
     print "- A4. Proportion of private messages (static): " + str(private_message_proportion)
-    print "- A5. All private messages are received by everyone (same topic) (static)"
-    print "- A6. Public messages only received by relevant recipients (static)"
+    print "- A5. Public messages only received by relevant recipients (static)"
+    print "- A6. All private messages are received by everyone (same topic) (static)"
+    print ""
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
+    print ""
+    print("------------------------------------------------------------")
+
+def case4():
+    # Case 4: all private messages are partitioned into shards
+
+    partitions = 5000
+
+    def load_users(n_users):
+        if n_users < partitions:
+            # Assume spread out, not colliding
+            factor_load = 1
+        else:
+            # Assume spread out evenly, collides proportional to users
+            factor_load = n_users / partitions
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * factor_load
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+        return total_load
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
+
+    print bcolors.HEADER + "\nCase 4. All private messages are partitioned into shards" + bcolors.ENDC
+    print ""
+    print "Assumptions:"
+    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
+    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
+    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
+    print "- A4. Proportion of private messages (static): " + str(private_message_proportion)
+    print "- A5. Public messages only received by relevant recipients (static)"
+    print "- A6. Private messages are partitioned evenly across partition shards (static), n=" + str(partitions)
     print ""
     print usage_str(100)
     print usage_str(100 * 100)
@@ -146,6 +186,7 @@ def case3():
 case1()
 case2()
 case3()
+case4()
 
 
 # Ok, let's get serious. What assumptions do we need to encode?
@@ -177,3 +218,8 @@ case3()
 # Heavy user, and duplicate messages (peers), Envelope size?
 # Say * 4 (size) * 2 (duplicates) * 2 (usage) then it is within x8-16.
 # Also missing bloom filter here
+
+# I am also assuming we are roughly 100 users today, is this accurate?
+# How many unique public keys have we seen in common chats the last month?
+
+# TODO: It'd be neat if you could encode assumptions set
