@@ -1,3 +1,6 @@
+# Util and format functions
+#-----------------------------------------------------------
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -38,159 +41,34 @@ def load_color_prefix(load):
 def load_color_fmt(load, string):
     return load_color_prefix(load) + string + bcolors.ENDC
 
-# We assume an envelope is 1kb
-envelope_size = 1024
+def print_header(string):
+    print bcolors.HEADER + string + bcolors.ENDC + "\n"
 
-# 100, 10k, 1m - jumping two orders of magnitude
-n_users = 10000
-
-# Due to negotiation, data sync, etc
-# Rough assumed overhead, constant factor
-envelopes_per_message = 10
-
-# Receiving messages per day
-# TODO: Split up by channel, etc
-received_messages_per_day = 100
-
-def bandwidth_usage(n_users):
-    print(n_users)
+# Assumptions
+#-----------------------------------------------------------
 
 # We assume a node is not relaying messages, but only sending
+#
 # Goal:
 # - make it user-bound, not network-bound
 # - reasonable bw and fetch time
 # ~1GB per month, ~ 30 mb per day, ~1 mb per hour
 
-def case1():
-    # Case 1: only receiving messages meant for you
+envelope_size = 1024 # 1kb
 
-    def load_users(n_users):
-        return envelope_size * envelopes_per_message * \
-            received_messages_per_day
+# Due to negotiation, data sync, etc
+# Rough assumed overhead, constant factor
+envelopes_per_message = 10
 
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
-    print bcolors.HEADER + "\nCase 1. Only receiving messages meant for you" + bcolors.ENDC
-    print ""
-    print "Assumptions:"
-    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
-    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
-    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
-    print "- A4. Only receiving messages meant for you"
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
-    print("------------------------------------------------------------")
-
-def case2():
-    # Case 2: receiving all messages
-
-    def load_users(n_users):
-        return envelope_size * envelopes_per_message * \
-            received_messages_per_day * n_users
-
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
-    print bcolors.HEADER + "\nCase 2. Receiving messages for everyone" + bcolors.ENDC
-    print ""
-    print "Assumptions:"
-    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
-    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
-    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
-    print "- A4. Received messages for everyone"
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
-    print("------------------------------------------------------------")
-
-
+received_messages_per_day = 100
 
 # Assume half of all messages are in 1:1 and group chat
 # XXX: Implicitly assume message/envelope ratio same for 1:1 and public,
 # probably not true due to things like key negotiation and data sync
 private_message_proportion = 0.5
 
-def case3():
-    # Case 3: all private messages go over one discovery topic
-
-    # Public scales per usage, all private messages are received
-    # over one discovery topic
-    def load_users(n_users):
-        load_private = envelope_size * envelopes_per_message * \
-            received_messages_per_day * n_users
-        load_public = envelope_size * envelopes_per_message * \
-            received_messages_per_day
-        total_load = load_private * private_message_proportion + \
-            load_public * (1 - private_message_proportion)
-        return total_load
-
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
-    print bcolors.HEADER + "\nCase 3. All private messages go over one discovery topic" + bcolors.ENDC
-    print ""
-    print "Assumptions:"
-    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
-    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
-    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
-    print "- A4. Proportion of private messages (static): " + str(private_message_proportion)
-    print "- A5. Public messages only received by relevant recipients (static)"
-    print "- A6. All private messages are received by everyone (same topic) (static)"
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
-    print("------------------------------------------------------------")
-
-def case4():
-    # Case 4: all private messages are partitioned into shards
-
-    partitions = 5000
-
-    def load_users(n_users):
-        if n_users < partitions:
-            # Assume spread out, not colliding
-            factor_load = 1
-        else:
-            # Assume spread out evenly, collides proportional to users
-            factor_load = n_users / partitions
-        load_private = envelope_size * envelopes_per_message * \
-            received_messages_per_day * factor_load
-        load_public = envelope_size * envelopes_per_message * \
-            received_messages_per_day
-        total_load = load_private * private_message_proportion + \
-            load_public * (1 - private_message_proportion)
-        return total_load
-
-    def usage_str(n_users):
-        load = load_users(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
-
-    print bcolors.HEADER + "\nCase 4. All private messages are partitioned into shards" + bcolors.ENDC
-    print ""
-    print "Assumptions:"
-    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
-    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
-    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
-    print "- A4. Proportion of private messages (static): " + str(private_message_proportion)
-    print "- A5. Public messages only received by relevant recipients (static)"
-    print "- A6. Private messages are partitioned evenly across partition shards (static), n=" + str(partitions)
-    print ""
-    print usage_str(100)
-    print usage_str(100 * 100)
-    print usage_str(100 * 100 * 100)
-    print ""
-    print("------------------------------------------------------------")
+# Number of partitions for partition topic
+n_partitions = 5000
 
 # On Bloom filter, false positive rate:
 #
@@ -222,18 +100,138 @@ bloom_false_positive = 0.1 # false positive rate, p
 #
 # The false positive is a factor of total network traffic
 
-def case5():
-    # Case 5: all messages are passed through a bloom filter with a certain false positive rate
+# Assumption strings
+a1 = "- A1. Envelope size (static): " + str(envelope_size) + "kb"
+a2 = "- A2. Envelopes / message (static): " + str(envelopes_per_message)
+a3 = "- A3. Received messages / day (static): " + str(received_messages_per_day)
+a4 = "- A4. Only receiving messages meant for you"
+a5 = "- A5. Received messages for everyone"
+a6 = "- A6. Proportion of private messages (static): " + str(private_message_proportion)
+a7 = "- A7. Public messages only received by relevant recipients (static)"
+a8 = "- A8. All private messages are received by everyone (same topic) (static)"
+a9 = "- A9. Private messages are partitioned evenly across partition shards (static), n=" + str(n_partitions)
+a10 = "- A10. Bloom filter size (m) (static): " + str(bloom_size)
+a11 = "- A11. Bloom filter hash functions (k) (static): " + str(bloom_hash_fns)
+a12 = "- A12. Bloom filter elements, i.e. topics, (n) (static): " + str(bloom_elements)
+a13 = "- A13. Bloom filter optimal k choice (sensitive to m, n)"
+a14 = "- A14. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
 
-    partitions = 5000
+def print_assumptions(xs):
+    print "Assumptions:"
+    for x in xs:
+        print x
+
+# Cases
+#-----------------------------------------------------------
+
+def case1():
+    def load_users(n_users):
+        return envelope_size * envelopes_per_message * \
+            received_messages_per_day
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
+
+    print_header("Case 1. Only receiving messages meant for you")
+    print_assumptions([a1, a2, a3, a4])
+    print ""
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
+    print ""
+    print("------------------------------------------------------------")
+
+def case2():
+    # Case 2: receiving all messages
 
     def load_users(n_users):
-        if n_users < partitions:
+        return envelope_size * envelopes_per_message * \
+            received_messages_per_day * n_users
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
+
+    print_header("Case 2. Receiving messages for everyone")
+    print_assumptions([a1, a2, a3, a5])
+    print ""
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
+    print ""
+    print("------------------------------------------------------------")
+
+
+def case3():
+    # Case 3: all private messages go over one discovery topic
+
+    # Public scales per usage, all private messages are received
+    # over one discovery topic
+    def load_users(n_users):
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * n_users
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+        return total_load
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
+
+    print_header("Case 3. All private messages go over one discovery topic")
+    print_assumptions([a1, a2, a3, a6, a7, a8])
+
+    print ""
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
+    print ""
+    print("------------------------------------------------------------")
+
+def case4():
+    # Case 4: all private messages are partitioned into shards
+
+    def load_users(n_users):
+        if n_users < n_partitions:
             # Assume spread out, not colliding
             factor_load = 1
         else:
             # Assume spread out evenly, collides proportional to users
-            factor_load = n_users / partitions
+            factor_load = n_users / n_partitions
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * factor_load
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+        return total_load
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
+
+    print_header("Case 4. All private messages are partitioned into shards")
+    print_assumptions([a1, a2, a3, a6, a7, a9])
+    print ""
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
+    print ""
+    print("------------------------------------------------------------")
+
+def case5():
+    # Case 5: all messages are passed through a bloom filter with a certain false positive rate
+
+    def load_users(n_users):
+        if n_users < n_partitions:
+            # Assume spread out, not colliding
+            factor_load = 1
+        else:
+            # Assume spread out evenly, collides proportional to users
+            factor_load = n_users / n_partitions
         load_private = envelope_size * envelopes_per_message * \
             received_messages_per_day * factor_load
         load_public = envelope_size * envelopes_per_message * \
@@ -252,20 +250,8 @@ def case5():
         load = load_users(n_users)
         return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
 
-    print bcolors.HEADER + "\nCase 5. All messages are passed through bloom filter with false positive rate (otherwise like case 4)" + bcolors.ENDC
-    print ""
-    print "Assumptions:"
-    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
-    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
-    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
-    print "- A4. Proportion of private messages (static): " + str(private_message_proportion)
-    print "- A5. Public messages only received by relevant recipients (static)"
-    print "- A6. Private messages are partitioned evenly across partition shards (static), n=" + str(partitions)
-    print "- A7. Bloom filter size (m) (static): " + str(bloom_size)
-    print "- A8. Bloom filter hash functions (k) (static): " + str(bloom_hash_fns)
-    print "- A9. Bloom filter elements, i.e. topics, (n) (static): " + str(bloom_elements)
-    print "- A10. Bloom filter optimal k choice (sensitive to m, n)"
-    print "- A11. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
+    print_header("Case 5. Case 4 + All messages are passed through bloom filter with false positive rate")
+    print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14])
     print ""
     print usage_str(100)
     print usage_str(100 * 100)
