@@ -9,6 +9,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 # https://web.archive.org/web/20111010015624/http://blogmag.net/blog/read/38/Print_human_readable_file_size
+# TODO: Get rid of bytes and KB, always print as as MB and above, then %3.1f
 def sizeof_fmt(num):
     for x in ['bytes','KB','MB','GB','TB']:
         if num < 1024.0:
@@ -191,6 +192,22 @@ def case4():
     print ""
     print("------------------------------------------------------------")
 
+# On Bloom filter, false positive rate:
+#
+# Bloom logic
+# f: in_set?(s, x) => (maybe, no)
+# if false_positive high => lots of maybe => direct hits
+# test happens at routing node and depends on what filter preference peer has,
+# OR what request mailserver receives
+#
+bloom_size = 512     # size of filter, m
+bloom_hash_fns = 3   # number of hash functions, k
+bloom_elements = 100 # elements in set, n
+# assuming optimal number of hash functions, i.e. k=(m/n)ln 2
+# (512/100)*math.log(2) ~ 3.46
+# Note that this is very sensitive, so if 200 element you want 1 hash fn, and
+# if 50 topics you want 7. Understanding the implications using a suboptimal
+# number of hash function is left as an exercise to the reader.
 case1()
 case2()
 case3()
@@ -231,3 +248,14 @@ case4()
 # How many unique public keys have we seen in common chats the last month?
 
 # TODO: It'd be neat if you could encode assumptions set
+
+# Ok, problem. We know case 4 is inaccurate. Ish.
+# Duplicate messages, bloom filter. Need to encode these.
+# Also heavy usage etc.
+
+# More factors:
+# percentage_offline
+# - impacts mailservers
+# - and also data sync
+# duplication_factor
+# bad_envelopes
