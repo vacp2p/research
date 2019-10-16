@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- This file was created with the aha Ansi HTML Adapter. https://github.com/theZiz/aha -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="application/xml+xhtml; charset=UTF-8" />
+<title>stdin</title>
+</head>
+<body style="color:white; background-color:black">
+<pre>
+
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Whisper theoretical model. Attempts to encode characteristics of it.
+
+Goals:
+1. Ensure network scales by being user or usage bound, as opposed to bandwidth growing in proportion to network size.
+2. Staying with in a reasonable bandwidth limit for limited data plans.
+3. Do the above without materially impacting existing nodes.
+</span>
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 1. Only receiving messages meant for you</span>
+
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A4. Only receiving messages meant for you.
+
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 100 users, receiving bandwidth is 1000.0KB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 10k users, receiving bandwidth is 1000.0KB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For  1m users, receiving bandwidth is 1000.0KB/day</span>
+
+------------------------------------------------------------
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 2. Receiving messages for everyone</span>
+
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A5. Received messages for everyone.
+
+<span style="filter: contrast(70%) brightness(190%);color:red;">For 100 users, receiving bandwidth is   97.7MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is    9.5GB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is  953.7GB/day</span>
+
+------------------------------------------------------------
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 3. All private messages go over one discovery topic</span>
+
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A6. Proportion of private messages (static): 0.5
+- A7. Public messages only received by relevant recipients (static).
+- A8. All private messages are received by everyone (same topic) (static).
+
+<span style="filter: contrast(70%) brightness(190%);color:yellow;">For 100 users, receiving bandwidth is   49.3MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is    4.8GB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is  476.8GB/day</span>
+
+------------------------------------------------------------
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 4. All private messages are partitioned into shards</span>
+
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A6. Proportion of private messages (static): 0.5
+- A7. Public messages only received by relevant recipients (static).
+- A9. Private messages are partitioned evenly across partition shards (static), n=5000
+
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 100 users, receiving bandwidth is 1000.0KB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 10k users, receiving bandwidth is    1.5MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is   98.1MB/day</span>
+
+------------------------------------------------------------
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 5. Case 4 + All messages are passed through bloom filter with false positive rate</span>
+
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A6. Proportion of private messages (static): 0.5
+- A7. Public messages only received by relevant recipients (static).
+- A9. Private messages are partitioned evenly across partition shards (static), n=5000
+- A10. Bloom filter size (m) (static): 512
+- A11. Bloom filter hash functions (k) (static): 3
+- A12. Bloom filter elements, i.e. topics, (n) (static): 100
+- A13. Bloom filter assuming optimal k choice (sensitive to m, n).
+- A14. Bloom filter false positive proportion of full traffic, p=0.1
+
+<span style="filter: contrast(70%) brightness(190%);color:lime;">For 100 users, receiving bandwidth is   10.7MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is  978.0MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is   95.5GB/day</span>
+
+------------------------------------------------------------
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 6. Case 5 + Benign duplicate receives</span>
+
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A6. Proportion of private messages (static): 0.5
+- A7. Public messages only received by relevant recipients (static).
+- A9. Private messages are partitioned evenly across partition shards (static), n=5000
+- A10. Bloom filter size (m) (static): 512
+- A11. Bloom filter hash functions (k) (static): 3
+- A12. Bloom filter elements, i.e. topics, (n) (static): 100
+- A13. Bloom filter assuming optimal k choice (sensitive to m, n).
+- A14. Bloom filter false positive proportion of full traffic, p=0.1
+- A15. Benign duplicate receives factor (static): 2
+- A16. Assuming no bad envelopes, bad PoW, expired, etc (static).
+
+<span style="filter: contrast(70%) brightness(190%);color:lime;">For 100 users, receiving bandwidth is   21.5MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is    1.9GB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is  190.9GB/day</span>
+
+------------------------------------------------------------
+
+Assumptions not covered so far:
+- Offline case (impacts duplicates, bloom filter if rotated, bad envelopes)
+
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 7. Waka mode - no metadata protection with bloom filter and one node connected; still static shard</span>
+
+Next step up is to either only use contact code, or shard more aggressively.
+Note that this requires change of other nodes behavior, not just local node.
+
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A6. Proportion of private messages (static): 0.5
+- A7. Public messages only received by relevant recipients (static).
+- A9. Private messages are partitioned evenly across partition shards (static), n=5000
+
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 100 users, receiving bandwidth is 1000.0KB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 10k users, receiving bandwidth is    1.5MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is   98.1MB/day</span>
+
+------------------------------------------------------------
+</pre>
+</body>
+</html>
