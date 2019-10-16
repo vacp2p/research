@@ -12,13 +12,13 @@ class bcolors:
 def sizeof_fmt(num):
     for x in ['bytes','KB','MB','GB','TB']:
         if num < 1024.0:
-            return "%.0f%s" % (num, x)
+            return "%3.0f%s" % (num, x)
         num /= 1024.0
 
 def magnitude_fmt(num):
     for x in ['','k','m']:
         if num < 1000:
-            return "%d%s" % (num, x)
+            return "%2d%s" % (num, x)
         num /= 1000
 
 # We assume an envelope is 1kb
@@ -126,3 +126,7 @@ def case2():
 
 case1()
 case2()
+
+
+# Ok, let's get serious. What assumptions do we need to encode?
+# Also, what did I observe? I observed 15GB/m = 500mb per day.
