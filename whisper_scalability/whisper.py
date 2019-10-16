@@ -93,11 +93,16 @@ n_partitions = 5000
 # if false_positive high => lots of maybe => direct hits
 # test happens at routing node and depends on what filter preference peer has,
 # OR what request mailserver receives
-#
+
 bloom_size = 512     # size of filter, m
 bloom_hash_fns = 3   # number of hash functions, k
+
+# This correspond to topics in bloom filter
+# Might be a tad too high, assuming roughly maps to conversations
+# I.e. public chat + contact code + partition topic (1 topic per convo)
 bloom_elements = 100 # elements in set, n
-# assuming optimal number of hash functions, i.e. k=(m/n)ln 2
+
+# Assuming optimal number of hash functions, i.e. k=(m/n)ln 2
 # (512/100)*math.log(2) ~ 3.46
 # Note that this is very sensitive, so if 200 element you want 1 hash fn, and
 # if 50 topics you want 7. Understanding the implications using a suboptimal
@@ -116,21 +121,29 @@ bloom_false_positive = 0.1 # false positive rate, p
 #
 # The false positive is a factor of total network traffic
 
+# If you are connected to two peers, you often get same message from both peers
+# Even though both are acting according to protocol
+# E.g. see https://our.status.im/whisper-pss-comparison/
+# With mailservers and non perfect queries this might be higher
+# On the other hand, with one mailserver it might be lower
+benign_duplicate_receives = 2
+
 # Assumption strings
 a1 = "- A1. Envelope size (static): " + str(envelope_size) + "kb"
 a2 = "- A2. Envelopes / message (static): " + str(envelopes_per_message)
 a3 = "- A3. Received messages / day (static): " + str(received_messages_per_day)
-a4 = "- A4. Only receiving messages meant for you"
-a5 = "- A5. Received messages for everyone"
+a4 = "- A4. Only receiving messages meant for you."
+a5 = "- A5. Received messages for everyone."
 a6 = "- A6. Proportion of private messages (static): " + str(private_message_proportion)
-a7 = "- A7. Public messages only received by relevant recipients (static)"
-a8 = "- A8. All private messages are received by everyone (same topic) (static)"
+a7 = "- A7. Public messages only received by relevant recipients (static)."
+a8 = "- A8. All private messages are received by everyone (same topic) (static)."
 a9 = "- A9. Private messages are partitioned evenly across partition shards (static), n=" + str(n_partitions)
 a10 = "- A10. Bloom filter size (m) (static): " + str(bloom_size)
 a11 = "- A11. Bloom filter hash functions (k) (static): " + str(bloom_hash_fns)
 a12 = "- A12. Bloom filter elements, i.e. topics, (n) (static): " + str(bloom_elements)
-a13 = "- A13. Bloom filter optimal k choice (sensitive to m, n)"
+a13 = "- A13. Bloom filter assuming optimal k choice (sensitive to m, n)."
 a14 = "- A14. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
+a15 = "- A15. Benign duplicate receives factor (static): " + str(benign_duplicate_receives)
 
 # Cases
 #-----------------------------------------------------------
@@ -230,6 +243,36 @@ def case5():
     print("------------------------------------------------------------")
 
 
+# Case 6: Same as case 5 but with duplicate receives
+def case6():
+
+    def load_users(n_users):
+        if n_users < n_partitions:
+            # Assume spread out, not colliding
+            factor_load = 1
+        else:
+            # Assume spread out evenly, collides proportional to users
+            factor_load = n_users / n_partitions
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * factor_load
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+
+        # false positive total network traffic, assuming full node relaying
+        network_load = envelope_size * envelopes_per_message * \
+            received_messages_per_day * n_users
+        false_positive_load = network_load * bloom_false_positive
+
+        return (total_load + false_positive_load) * benign_duplicate_receives
+
+    print_header("Case 6. Case 5 + Benign duplicate receives")
+    print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14, a15])
+    print_usage(load_users)
+    print("------------------------------------------------------------")
+
+
 # Run cases
 #-----------------------------------------------------------
 case1()
@@ -237,62 +280,34 @@ case2()
 case3()
 case4()
 case5()
+case6()
 
-# Misc notes
+# Notes
 #-----------------------------------------------------------
 
-# What did I observe? I observed 15GB/m = 500mb per day.
+# What did I observe? I observed 15GB/m = 500mb per day. This was with
+# discovery topic. After case 6, with case 3 discovery multiplier (x50, and
+# maybe tiny bit fewer bloom_n), this roughly checks out. Also heavy user +
+# envelope size. And number of users?
 
-# Things to encode:
-# - Noisy topic
-# - Duplicate messages
-# - Bloom filter false positives
-# - Bugs / invalid messages
+# Things left to encode:
+# - Bugs / invalid / bad envelopes
 # - Offline case dominant
+# - percentage_offline
+#   - impacts mailservers
+#   - and also data sync
+# - Unknowns?
 
-# Now getting somewhere, still big discrepency though. I.e.
-# Case 3. All private messages go over one discovery topic
-
-# Assumptions:
-# - A1. Envelope size (static): 1024kb
-# - A2. Envelopes / message (static): 10
-# - A3. Received messages / day (static): 100
-# - A4. Proportion of private messages (static): 0.5
-# - A5. All private messages are received by everyone (same topic) (static)
-# - A6. Public messages only received by relevant recipients (static)
-
-# For 100 users, receiving bandwidth is  49MB/day
-# For 10k users, receiving bandwidth is   5GB/day
-# For  1m users, receiving bandwidth is 477GB/day
-
-# 50mb*30 = 1.5GB, I see 15GB so x10. What's missing?
-# Heavy user, and duplicate messages (peers), Envelope size?
-# Say * 4 (size) * 2 (duplicates) * 2 (usage) then it is within x8-16.
-# Also missing bloom filter here
-
-# I am also assuming we are roughly 100 users today, is this accurate?
-# How many unique public keys have we seen in common chats the last month?
-
-# TODO: It'd be neat if you could encode assumptions set
-
-# Ok, problem. We know case 4 is inaccurate. Ish.
-# Duplicate messages, bloom filter. Need to encode these.
-# Also heavy usage etc.
-
-# More factors:
-# percentage_offline
-# - impacts mailservers
-# - and also data sync
-# duplication_factor
-# bad_envelopes
-
-# Ask feedback:
+# Feedback:
 # Which of these assumptions are false?
 # Any assumptions or conditions not accurately captured?
 # Which are most interesting to you?
 # Which do we want to verify, and what metrics do we need to verify?
 
-# If we x100 users tomorrow, how can we move the partition topic?
-# Path we are on today, and alternative path
-
-# Also not captured: fallover of relaying node, if it exceeds bandwidth link
+# Misc:
+# - If we x100 users tomorrow, how can we move the partition topic?
+# - Show: path we are on today, and alternative path
+# - Also not captured: fallover of relaying node, if it exceeds bandwidth link
+# - It'd be neat if you could encode assumptions set
+# - Get secondary out of model confirmation
+# - How many unique public keys have we seen in common chats the last month?
