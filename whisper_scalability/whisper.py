@@ -109,11 +109,43 @@ def case2():
 # probably not true due to things like key negotiation and data sync
 private_message_proportion = 0.5
 
-# Case 3: all private messages go over one discovery topic
+def case3():
+    # Case 3: all private messages go over one discovery topic
+
+    # Public scales per usage, all private messages are received
+    # over one discovery topic
+    def load_users(n_users):
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * n_users
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+        return total_load
+
+    def usage_str(n_users):
+        load = load_users(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users(n_users)) + "/day")
+
+    print bcolors.HEADER + "\nCase 3. All private messages go over one discovery topic" + bcolors.ENDC
+    print ""
+    print "Assumptions:"
+    print "- A1. Envelope size (static): " + str(envelope_size) + "kb"
+    print "- A2. Envelopes / message (static): " + str(envelopes_per_message)
+    print "- A3. Received messages / day (static): " + str(received_messages_per_day)
+    print "- A4. Proportion of private messages (static): " + str(private_message_proportion)
+    print "- A5. All private messages are received by everyone (same topic) (static)"
+    print "- A6. Public messages only received by relevant recipients (static)"
+    print ""
+    print usage_str(100)
+    print usage_str(100 * 100)
+    print usage_str(100 * 100 * 100)
+    print ""
+    print("------------------------------------------------------------")
 
 case1()
 case2()
-#case3()
+case3()
 
 
 # Ok, let's get serious. What assumptions do we need to encode?
@@ -125,3 +157,23 @@ case2()
 # - Bloom filter false positives
 # - Bugs / invalid messages
 # - Offline case dominant
+
+# Now getting somewhere, still big discrepency though. I.e.
+# Case 3. All private messages go over one discovery topic
+
+# Assumptions:
+# - A1. Envelope size (static): 1024kb
+# - A2. Envelopes / message (static): 10
+# - A3. Received messages / day (static): 100
+# - A4. Proportion of private messages (static): 0.5
+# - A5. All private messages are received by everyone (same topic) (static)
+# - A6. Public messages only received by relevant recipients (static)
+
+# For 100 users, receiving bandwidth is  49MB/day
+# For 10k users, receiving bandwidth is   5GB/day
+# For  1m users, receiving bandwidth is 477GB/day
+
+# 50mb*30 = 1.5GB, I see 15GB so x10. What's missing?
+# Heavy user, and duplicate messages (peers), Envelope size?
+# Say * 4 (size) * 2 (duplicates) * 2 (usage) then it is within x8-16.
+# Also missing bloom filter here
