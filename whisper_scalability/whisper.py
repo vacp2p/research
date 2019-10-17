@@ -344,6 +344,9 @@ def case8():
     print("")
     print_assumptions([a1, a2, a3, a6, a7, a9])
     print_usage(load_users)
+    print("NOTE: To solve 1m case we need to increase partitions gracefully")
+    print("Alternatively, find a different way to partition envelopes within")
+    print("This currently would require oter nodes to adapt")
     print("------------------------------------------------------------")
 
 # Run cases
