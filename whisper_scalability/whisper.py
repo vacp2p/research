@@ -162,7 +162,7 @@ def case1():
         return envelope_size * envelopes_per_message * \
             received_messages_per_day
 
-    print_header("Case 1. Only receiving messages meant for you")
+    print_header("Case 1. Only receiving messages meant for you [naive case]")
     print_assumptions([a1, a2, a3, a4])
     print_usage(load_users)
     print("------------------------------------------------------------")
@@ -174,7 +174,7 @@ def case2():
         return envelope_size * envelopes_per_message * \
             received_messages_per_day * n_users
 
-    print_header("Case 2. Receiving messages for everyone")
+    print_header("Case 2. Receiving messages for everyone [naive case]")
     print_assumptions([a1, a2, a3, a5])
     print_usage(load_users)
     print("------------------------------------------------------------")
