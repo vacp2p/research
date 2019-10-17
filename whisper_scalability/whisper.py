@@ -344,9 +344,6 @@ def case8():
     print("")
     print_assumptions([a1, a2, a3, a6, a7, a9])
     print_usage(load_users)
-    print("NOTE: To solve 1m case we need to increase partitions gracefully")
-    print("Alternatively, find a different way to partition envelopes within")
-    print("This currently would require oter nodes to adapt")
     print("------------------------------------------------------------")
 
 # Run cases
@@ -355,7 +352,7 @@ def case8():
 
 # Print goals
 print("")
-print(bcolors.HEADER + "Whisper theoretical model. Attempts to encode characteristics of it.")
+print(bcolors.HEADER + "Whisper theoretical model. Attempts to encode characteristics of it." + bcolors.ENDC)
 print("")
 print("Goals:")
 print("1. Ensure network scales by being user or usage bound, as opposed to bandwidth growing in proportion to network size.")
