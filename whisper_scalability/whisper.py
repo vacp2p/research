@@ -128,6 +128,10 @@ bloom_false_positive = 0.1 # false positive rate, p
 # On the other hand, with one mailserver it might be lower
 benign_duplicate_receives = 2
 
+# 90% time spent offline, i.e. 10% or ~2.5h per day online.
+# Also note Whisper TTL, so when coming online you will get more envelopes
+offline_time_proportion = 0.9
+
 # Assumption strings
 a1 = "- A1. Envelope size (static): " + str(envelope_size) + "kb"
 a2 = "- A2. Envelopes / message (static): " + str(envelopes_per_message)
@@ -144,10 +148,10 @@ a12 = "- A12. Bloom filter elements, i.e. topics, (n) (static): " + str(bloom_el
 a13 = "- A13. Bloom filter assuming optimal k choice (sensitive to m, n)."
 a14 = "- A14. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
 a15 = "- A15. Benign duplicate receives factor (static): " + str(benign_duplicate_receives)
-a16 = "- A16. Assuming no bad envelopes, bad PoW, expired, etc (static)."
-a17 = "- A17. Assuming no bad request or duplicate messages for mailservers (static)."
-a18 = "- A18. Assuming node can change false positive rate reliably for mailservers to p=" + str(bloom_false_positive / 10)
-a19 = "- A19. Assuming no online traffic, only offline fetching for mailservers (static)."
+a16 = "- A16. No bad envelopes, bad PoW, expired, etc (static)."
+a17 = "- A17. User is offline p% of the time (static) p=" + str(offline_time_proportion)
+a18 = "- A18. No bad request, duplicate messages for mailservers, and overlap/retires are perfect (static)."
+a19 = "- A19. Mailserver only fetches topic interested in."
 
 # Cases
 #-----------------------------------------------------------
@@ -300,13 +304,18 @@ def case7():
         network_load = envelope_size * envelopes_per_message * \
             received_messages_per_day * n_users
 
-        # XXX: Hacky variable setting p = 0.01
-        false_positive_load = network_load * (bloom_false_positive / 10)
+        false_positive_load = network_load * bloom_false_positive
 
-        return (total_load + false_positive_load)
+        online_traffic = (total_load + false_positive_load) * benign_duplicate_receives
+        # fetching happens with topics, also no duplicates
+        offline_traffic = total_load
 
-    print_header("Case 7. Mailserver case with better bloom filter, no online mode")
-    print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14, a15, a17, a18, a19])
+        total_traffic = (offline_traffic * offline_time_proportion) + \
+            (online_traffic * (1 - offline_time_proportion))
+        return total_traffic
+
+    print_header("Case 7. Case 6 + Mailserver case under ideal conditions and mostly offline")
+    print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19])
     print_usage(load_users)
     print("------------------------------------------------------------")
 
