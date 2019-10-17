@@ -117,7 +117,7 @@ Assumptions:
 <span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is  190.9GB/day</span>
 
 ------------------------------------------------------------
-<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 7. Case 6 + Mailserver case under ideal conditions and mostly offline</span>
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 7. Case 6 + Mailserver case under good conditions with smaller bloom false positive and mostly offline</span>
 
 Assumptions:
 - A1. Envelope size (static): 1024kb
@@ -135,11 +135,11 @@ Assumptions:
 - A16. No bad envelopes, bad PoW, expired, etc (static).
 - A17. User is offline p% of the time (static) p=0.9
 - A18. No bad request, duplicate messages for mailservers, and overlap/retires are perfect (static).
-- A19. Mailserver only fetches topic interested in.
+- A19. Mailserver requests can change false positive rate to be p=0.01
 
-<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 100 users, receiving bandwidth is    3.0MB/day</span>
-<span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is  196.9MB/day</span>
-<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is   19.2GB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 100 users, receiving bandwidth is    3.9MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is  284.8MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is   27.8GB/day</span>
 
 ------------------------------------------------------------
 <span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 8. Waka mode - no metadata protection with bloom filter and one node connected; still static shard</span>

@@ -132,6 +132,9 @@ benign_duplicate_receives = 2
 # Also note Whisper TTL, so when coming online you will get more envelopes
 offline_time_proportion = 0.9
 
+# Changable bloom filter, assume 1% can be fixed with multiple queries
+bloom_false_positive_2 = 0.01
+
 # Assumption strings
 a1 = "- A1. Envelope size (static): " + str(envelope_size) + "kb"
 a2 = "- A2. Envelopes / message (static): " + str(envelopes_per_message)
@@ -151,7 +154,7 @@ a15 = "- A15. Benign duplicate receives factor (static): " + str(benign_duplicat
 a16 = "- A16. No bad envelopes, bad PoW, expired, etc (static)."
 a17 = "- A17. User is offline p% of the time (static) p=" + str(offline_time_proportion)
 a18 = "- A18. No bad request, duplicate messages for mailservers, and overlap/retires are perfect (static)."
-a19 = "- A19. Mailserver only fetches topic interested in."
+a19 = "- A19. Mailserver requests can change false positive rate to be p=" + str(bloom_false_positive_2)
 
 # Cases
 #-----------------------------------------------------------
@@ -306,15 +309,18 @@ def case7():
 
         false_positive_load = network_load * bloom_false_positive
 
+        # mailserver splits up bloom filter into 1% false positive (p=f(m,n,k))
+        false_positive_load_2 = network_load * bloom_false_positive_2
+
         online_traffic = (total_load + false_positive_load) * benign_duplicate_receives
         # fetching happens with topics, also no duplicates
-        offline_traffic = total_load
+        offline_traffic = total_load + false_positive_load_2
 
         total_traffic = (offline_traffic * offline_time_proportion) + \
             (online_traffic * (1 - offline_time_proportion))
         return total_traffic
 
-    print_header("Case 7. Case 6 + Mailserver case under ideal conditions and mostly offline")
+    print_header("Case 7. Case 6 + Mailserver case under good conditions with smaller bloom false positive and mostly offline")
     print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19])
     print_usage(load_users)
     print("------------------------------------------------------------")
