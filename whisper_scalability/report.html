@@ -91,6 +91,9 @@ Assumptions:
 <span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is  978.0MB/day</span>
 <span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is   95.5GB/day</span>
 
+NOTE: Traffic extremely sensitive to bloom false positives
+This completely dominates network traffic at scale.
+With p=1% we get 10k users ~100MB/day and 1m users ~10gb/day)
 ------------------------------------------------------------
 <span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 6. Case 5 + Benign duplicate receives</span>
 
@@ -114,11 +117,31 @@ Assumptions:
 <span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is  190.9GB/day</span>
 
 ------------------------------------------------------------
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 7. Mailserver case with better bloom filter, no online mode</span>
 
-Assumptions not covered so far:
-- Offline case (impacts duplicates, bloom filter if rotated, bad envelopes)
+Assumptions:
+- A1. Envelope size (static): 1024kb
+- A2. Envelopes / message (static): 10
+- A3. Received messages / day (static): 100
+- A6. Proportion of private messages (static): 0.5
+- A7. Public messages only received by relevant recipients (static).
+- A9. Private messages are partitioned evenly across partition shards (static), n=5000
+- A10. Bloom filter size (m) (static): 512
+- A11. Bloom filter hash functions (k) (static): 3
+- A12. Bloom filter elements, i.e. topics, (n) (static): 100
+- A13. Bloom filter assuming optimal k choice (sensitive to m, n).
+- A14. Bloom filter false positive proportion of full traffic, p=0.1
+- A15. Benign duplicate receives factor (static): 2
+- A17. Assuming no bad request or duplicate messages for mailservers (static).
+- A18. Assuming node can change false positive rate reliably for mailservers to p=0.01
+- A19. Assuming no online traffic, only offline fetching for mailservers (static).
 
-<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 7. Waka mode - no metadata protection with bloom filter and one node connected; still static shard</span>
+<span style="filter: contrast(70%) brightness(190%);color:#3333FF;">For 100 users, receiving bandwidth is    2.0MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For 10k users, receiving bandwidth is   99.1MB/day</span>
+<span style="filter: contrast(70%) brightness(190%);color:red;">For  1m users, receiving bandwidth is    9.6GB/day</span>
+
+------------------------------------------------------------
+<span style="filter: contrast(70%) brightness(190%);color:fuchsia;">Case 8. Waka mode - no metadata protection with bloom filter and one node connected; still static shard</span>
 
 Next step up is to either only use contact code, or shard more aggressively.
 Note that this requires change of other nodes behavior, not just local node.
