@@ -219,7 +219,7 @@ def case4():
             load_public * (1 - private_message_proportion)
         return total_load
 
-    print_header("Case 4. All private messages are partitioned into shards")
+    print_header("Case 4. All private messages are partitioned into shards [naive case]")
     print_assumptions([a1, a2, a3, a6, a7, a9])
     print_usage(load_users)
     print("------------------------------------------------------------")
