@@ -145,6 +145,9 @@ a13 = "- A13. Bloom filter assuming optimal k choice (sensitive to m, n)."
 a14 = "- A14. Bloom filter false positive proportion of full traffic, p=" + str(bloom_false_positive)
 a15 = "- A15. Benign duplicate receives factor (static): " + str(benign_duplicate_receives)
 a16 = "- A16. Assuming no bad envelopes, bad PoW, expired, etc (static)."
+a17 = "- A17. Assuming no bad request or duplicate messages for mailservers (static)."
+a18 = "- A18. Assuming node can change false positive rate reliably for mailservers to p=" + str(bloom_false_positive / 10)
+a19 = "- A19. Assuming no online traffic, only offline fetching for mailservers (static)."
 
 # Cases
 #-----------------------------------------------------------
@@ -241,6 +244,9 @@ def case5():
     print_header("Case 5. Case 4 + All messages are passed through bloom filter with false positive rate")
     print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14])
     print_usage(load_users)
+    print("NOTE: Traffic extremely sensitive to bloom false positives")
+    print("This completely dominates network traffic at scale.")
+    print("With p=1% we get 10k users ~100MB/day and 1m users ~10gb/day)")
     print("------------------------------------------------------------")
 
 
@@ -273,8 +279,39 @@ def case6():
     print_usage(load_users)
     print("------------------------------------------------------------")
 
-# Case 7: Waka mode - like Infura but for chat, no metadata connection
+# Case 7: Mailservers case
 def case7():
+
+    def load_users(n_users):
+        if n_users < n_partitions:
+            # Assume spread out, not colliding
+            factor_load = 1
+        else:
+            # Assume spread out evenly, collides proportional to users
+            factor_load = n_users / n_partitions
+        load_private = envelope_size * envelopes_per_message * \
+            received_messages_per_day * factor_load
+        load_public = envelope_size * envelopes_per_message * \
+            received_messages_per_day
+        total_load = load_private * private_message_proportion + \
+            load_public * (1 - private_message_proportion)
+
+        # false positive total network traffic, assuming full node relaying
+        network_load = envelope_size * envelopes_per_message * \
+            received_messages_per_day * n_users
+
+        # XXX: Hacky variable setting p = 0.01
+        false_positive_load = network_load * (bloom_false_positive / 10)
+
+        return (total_load + false_positive_load)
+
+    print_header("Case 7. Mailserver case with better bloom filter, no online mode")
+    print_assumptions([a1, a2, a3, a6, a7, a9, a10, a11, a12, a13, a14, a15, a17, a18, a19])
+    print_usage(load_users)
+    print("------------------------------------------------------------")
+
+# Case 8: Waka mode - like Infura but for chat, no metadata connection
+def case8():
 
     def load_users(n_users):
         if n_users < n_partitions:
@@ -292,7 +329,7 @@ def case7():
 
         return total_load
 
-    print_header("Case 7. Waka mode - no metadata protection with bloom filter and one node connected; still static shard")
+    print_header("Case 8. Waka mode - no metadata protection with bloom filter and one node connected; still static shard")
     print("Next step up is to either only use contact code, or shard more aggressively.")
     print("Note that this requires change of other nodes behavior, not just local node.")
     print("")
@@ -320,13 +357,8 @@ case3()
 case4()
 case5()
 case6()
-
-print("")
-print("Assumptions not covered so far:")
-print("- Offline case (impacts duplicates, bloom filter if rotated, bad envelopes)")
-print("")
-
 case7()
+case8()
 
 # Notes
 #-----------------------------------------------------------
@@ -338,10 +370,8 @@ case7()
 
 # Things left to encode:
 # - Bugs / invalid / bad envelopes
-# - Offline case dominant
-# - percentage_offline
-#   - impacts mailservers
-#   - and also data sync
+# - percentage offline probably impacts data sync overhead
+# - as does number of envelopes per message for private/public chats
 # - Unknowns?
 
 # Feedback:
@@ -352,6 +382,7 @@ case7()
 
 # Misc:
 # - If we x100 users tomorrow, how can we move the partition topic?
+#   - also relevant for bloom filter p% at event
 # - Show: path we are on today, and alternative path
 # - Also not captured: fallover of relaying node, if it exceeds bandwidth link
 # - It'd be neat if you could encode assumptions set
