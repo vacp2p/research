@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+echo "[Running charlie with key charlie.key on port 9602 and logs in charlie.log.]"
+go run hello_pss.go charlie.key 9602 2> charlie.log
+echo "[Done.]"

@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+echo "[Running alice with key alice.key on port 9600 and logs in alice.log.]"
+go run hello_pss.go alice.key 9600 2> alice.log
+echo "[Done.]"
