@@ -10,6 +10,9 @@ This repository contains experimental code related to research for the [vac prot
 
  - [remote log](./remote_log) - Contains a nim mock server representing a [remote log](https://notes.status.im/Rwh-18AdSgKAkhfwfBE-OA).
 
+ - [Whisper Scalability Model](./whisper_scalability) - Theoretical model for bandwidth usage given some assumptions and usage, see [report](https://htmlpreview.github.io/?https://github.com/vacp2p/research/blob/master/whisper_scalability/report.html) and [Discuss post](https://discuss.status.im/t/fixing-whisper-for-great-profit/1419).
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
