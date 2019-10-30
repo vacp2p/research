@@ -3,3 +3,4 @@ sync_pb2.pyc
 .data*
 *.log
 build
+node_modules
