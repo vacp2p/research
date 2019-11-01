@@ -13,6 +13,8 @@ const bigInt = zkSnark.bigInt;
 const eddsa = circomlib.eddsa;
 const mimcsponge = circomlib.mimcsponge;
 
+// Largely based on https://github.com/kobigurk/semaphore
+
 // Utils
 
 function log(s) {
@@ -159,7 +161,7 @@ function checkWitness(circuit, witness) {
 function makeInputs(signature, signal_hash, external_nullifier, identity, identity_path) {
     const identity_nullifier = identity.identity_nullifier;
     const identity_trapdoor = identity.identity_trapdoor;
-    const pubKey = getPublicKey(identity)
+    const pubKey = getPublicKey(identity);
     const identity_path_elements = identity_path.path_elements;
     const identity_path_index = identity_path.path_index;
 
@@ -234,11 +236,17 @@ function run() {
     // Perform setup - only done once
     // performSetup(circuit);
 
+    // TODO: Case where identity isn't in tree, this should mean they aren't allowed to signal and thus proof is invalid (?)
+    // XXX: Not quite clear to me how this would work, since you have to verify with merkle tree
     updateTreeAndGetPath(tree, 1, identity.identity_commitment)
         .then((identity_path) => {
+            console.log("identity_path", identity_path);
+
             // Input, what we want to signal
             let signal_hash = signal("hello world");
             // In order to prevent double signals
+            // _How_ does it do this though?
+            // And how do we prove we are identity allowed to signal? What happens if identity isn't in tree?
             let external_nullifier = bigInt(12312);
             let msg = message(external_nullifier, signal_hash);
             let signature = sign(identity, msg);
@@ -256,4 +264,40 @@ function run() {
         });
 }
 
+// badRun: Identity not part of tree
+// I don't understand how the following holds:
+// The commitment of the identity structure (identity_pk, identity_nullifier, identity_trapdoor) exists in the identity tree with the root root, using the path (identity_path_elements, identity_path_index). This ensures that the user was added to the system at some point in the past.
+// Cause we don't actually _use_ the tree to check membership
+// This tree should live in a smart contract or so
+// XXX: Some issue with identity_path, might just be format though?
+function badRun() {
+    let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
+    let tree = MakeMerkleTree();
+    let circuit = loadCircuit();
+    // Perform setup - only done once
+    // performSetup(circuit);
+
+    // fake path
+    let identity_path = {root: '0', path_elements: ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'], path_index: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], element: "0"};
+    // Input, what we want to signal
+    let signal_hash = signal("hello world");
+    // In order to prevent double signals
+    // _How_ does it do this though?
+    // And how do we prove we are identity allowed to signal? What happens if identity isn't in tree?
+    let external_nullifier = bigInt(12312);
+    let msg = message(external_nullifier, signal_hash);
+    let signature = sign(identity, msg);
+    checkSignature(msg, signature, getPublicKey(identity));
+    let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
+    // Here it breaks, something wrong with witness -> inputs -> identity_path
+    // throw new Error("Invalid signal identifier: "+ name);
+    let witness = circuit.calculateWitness(inputs);
+    checkWitness(circuit, witness);
+    // In this case we already have proof for that specific thing!
+    //let {proof, publicSignals} = generateProofWithKey(witness);
+    let {proof, publicSignals} = loadPreComputedProof(witness);
+    verifyProofWithKey(proof, publicSignals);
+}
+
 run();
+//badRun();
