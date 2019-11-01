@@ -244,12 +244,15 @@ function run() {
 
             // Input, what we want to signal
             let signal_hash = signal("hello world");
+            console.log("signal hash", signal_hash);
             // In order to prevent double signals
             // _How_ does it do this though?
             // And how do we prove we are identity allowed to signal? What happens if identity isn't in tree?
             let external_nullifier = bigInt(12312);
             let msg = message(external_nullifier, signal_hash);
+            console.log("msg", msg);
             let signature = sign(identity, msg);
+            console.log("signature", signature);
             checkSignature(msg, signature, getPublicKey(identity));
             let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
             let witness = circuit.calculateWitness(inputs);
@@ -269,6 +272,7 @@ function run() {
 // The commitment of the identity structure (identity_pk, identity_nullifier, identity_trapdoor) exists in the identity tree with the root root, using the path (identity_path_elements, identity_path_index). This ensures that the user was added to the system at some point in the past.
 // Cause we don't actually _use_ the tree to check membership
 // This tree should live in a smart contract or so
+// TODO: Emulate smart contract here?
 // XXX: Some issue with identity_path, might just be format though?
 function badRun() {
     let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
@@ -300,4 +304,56 @@ function badRun() {
 }
 
 run();
-//badRun();
+//badRun(); // XXX doesn't work right now
+
+// nullifiers_hash is uniquely derived from external_nullifier, identity_nullifier and identity_path_index. This ensures a user cannot broadcast a signal with the same external_nullifier more than once.
+//
+// if you have a different signal but same external_hash
+
+// I want to detect if someone signals twice with same external nullifier, what consequence does this have?
+// Next step is validation of external nullifier I suppose
+// Even if same signal OR if change signal, both counts as double signaling
+
+// I don't follow how 'owner' sets external nullifier, and identity commitment.
+// ("Make a signal a day is OK"). Oh wait! Whats in proof, you got those public signals, 4 of them.
+
+// Do these correspond directly?
+// signal_hash
+// external_nullifier
+// root
+// nullifiers_hash
+// "publicSignals":["5121897353393075953233736662126164055971964573317818869495592865833472332086","6540712601030472624123295577656975405754743854357625108717032000526996056503","125606243838566630058575099447702412745558900339761109861010052356172984351","12312"]
+
+// 1256... is the signal_hash, i.e. just a a hash of signal
+// 12312 is external nullifier
+// 512... is the root of the merkle tree
+// and I suppose 654... is the nullifiers_hash
+
+// Ok cool, so can we do with this public info in proof?
+// - we can see if someone has used the same external nullifier twice (double spend)
+// - we can also check if external_nullifier is a reasonable date
+// I don't get why we need nullifiers hash... oh wait, cause you can have (signal, external nullifier) same for different participants
+// so what you want to check is with nullifier hash, since thats hashed with identity too
+
+// e.g. only allow
+// - single nullifier hash, if multiple we should 'reject proof' (though it is valid? just wrong kind? eh)
+// - external nullifiers in a specific time range (+-20s in unix time)
+// e.g. don't allow random stuff in external nullifier
+
+// then the extension for rate limiting and slashing goes something like:
+// deposit in contract some slashable stuff
+// then reveal from https://ethresear.ch/t/semaphore-rln-rate-limiting-nullifier-for-spam-prevention-in-anonymous-p2p-setting/5009
+//
+//
+// "We generate a nullifier_private_key based upon hash(external_nullifier, leaf_private_key)
+// We encrypt the leaf_private_key with the nullfier_private_key and reveal the result as a public input.
+//     We user shamir secret sharing to encode the nullifier_private_key so that 51% of the shares are required to reconstruct the secret.
+//     We then use signal to randomly select 50% of the shares and reveal them.
+
+// Now each time you create a signal with the same external_nullifier but different signal it
+
+// calculates the same nullifier_private_key key and encrypts your leaf_private_key with it.
+//     It calculates the same shamir secret and shares.
+//     But it reveals a different 50% of the shares."
+
+// Need to think about this more
