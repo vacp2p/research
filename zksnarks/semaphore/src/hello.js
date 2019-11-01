@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const fs = require('fs');
+const sha1 = require('sha1');
 const zkSnark = require('snarkjs');
 const circomlib = require('circomlib');
 const web3Utils = require('web3-utils');
@@ -34,8 +35,7 @@ beBuff2int = function(buff) {
     return res;
 };
 
-// TODO: Optionally persist this identity
-function generate_identity() {
+function generateIdentity() {
     const private_key = crypto.randomBytes(32).toString('hex');
     const prvKey = Buffer.from(private_key, 'hex');
     const pubKey = eddsa.prv2pub(prvKey);
@@ -47,16 +47,32 @@ function generate_identity() {
 
 		const identity_commitment = pedersenHash([bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]), bigInt(identity_nullifier), bigInt(identity_trapdoor)]);
 
-    console.log(`identity_commitment: ${identity_commitment}`);
+    log(`identity_commitment: ${identity_commitment}`);
     const generated_identity = {
         private_key,
         identity_nullifier: identity_nullifier.toString(),
         identity_trapdoor: identity_trapdoor.toString(),
-        identity_commitment: identity_commitment.toString(),
-        public_key: pubKey
+        identity_commitment: identity_commitment.toString()
     };
-
+    console.log("Identity commitment (Save this to load identity)", identity_commitment.toString());
+    const filename = "build/identity_commitment_" + identity_commitment.toString();
+    // XXX: Maybe not needed here, weird BigInt parsing
+    fs.writeFileSync(filename, JSON.stringify(stringifyBigInts(generated_identity)), "utf8");
     return generated_identity;
+}
+
+function getPublicKey(identity) {
+    const private_key = identity.private_key;
+    const prvKey = Buffer.from(private_key, 'hex');
+    const pubKey = eddsa.prv2pub(prvKey);
+    return pubKey;
+}
+
+function loadIdentity(identity_commitment) {
+    log("loadIdentity");
+    const filename = "build/identity_commitment_" + identity_commitment;
+    const identity = JSON.parse(fs.readFileSync(filename, "utf8"));
+    return identity;
 }
 
 function MakeMerkleTree() {
@@ -101,8 +117,20 @@ function generateProofWithKey(witness) {
     const vk_proof = JSON.parse(fs.readFileSync("build/myCircuit.vk_proof", "utf8"));
     log("generateProof");
     let proof = zkSnark.groth.genProof(unstringifyBigInts(vk_proof), unstringifyBigInts(witness));
-    fs.writeFileSync("build/proof1", JSON.stringify(stringifyBigInts(proof)), "utf8");
+    const witness_hash = sha1(JSON.stringify(stringifyBigInts(witness)));
+    const filename = "build/witness_proof_" + witness_hash;
+    console.log("witness hash", filename);
+    fs.writeFileSync(filename, JSON.stringify(stringifyBigInts(proof)), "utf8");
     console.log("proof done and persisted", proof);
+    return proof;
+}
+
+function loadPreComputedProof(witness) {
+    const witness_hash = sha1(JSON.stringify(stringifyBigInts(witness)));
+    const filename = "build/witness_proof_" + witness_hash;
+    console.log("witness hash", filename);
+    log("loadPreComputedProof");
+    const proof = unstringifyBigInts(JSON.parse(fs.readFileSync(filename, "utf8")));
     return proof;
 }
 
@@ -110,20 +138,20 @@ function verifyProofWithKey(proof, publicSignals) {
     const vk_verifier = JSON.parse(fs.readFileSync("build/myCircuit.vk_verifier", "utf8"));
     log("verifyProof");
     if (zkSnark.groth.isValid(unstringifyBigInts(vk_verifier), unstringifyBigInts(proof), unstringifyBigInts(publicSignals))) {
-        console.log("The proof is valid");
+        log("The proof is valid");
     } else {
-        console.log("The proof is not valid");
+        log("The proof is not valid");
     }
 }
 
 function checkSignature(msg, signature, pubKey) {
-    console.log("checkSignature");
+    log("checkSignature");
     assert(eddsa.verifyMiMCSponge(msg, signature, pubKey));
 }
 
 // XXX: What does this actually do?
 function checkWitness(circuit, witness) {
-    console.log("checkWitness");
+    log("checkWitness");
     assert(circuit.checkWitness(witness));
 }
 
@@ -131,7 +159,7 @@ function checkWitness(circuit, witness) {
 function makeInputs(signature, signal_hash, external_nullifier, identity, identity_path) {
     const identity_nullifier = identity.identity_nullifier;
     const identity_trapdoor = identity.identity_trapdoor;
-    const pubKey = identity.public_key;
+    const pubKey = getPublicKey(identity)
     const identity_path_elements = identity_path.path_elements;
     const identity_path_index = identity_path.path_index;
 
@@ -197,9 +225,12 @@ function loadCircuit() {
 // performSetup(circuit);
 
 function run() {
-    let identity = generate_identity();
+    // Once per identity
+    // let identity = generateIdentity();
+    let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
     let tree = MakeMerkleTree();
     let circuit = loadCircuit();
+
     // Perform setup - only done once
     // performSetup(circuit);
 
@@ -211,14 +242,18 @@ function run() {
             let external_nullifier = bigInt(12312);
             let msg = message(external_nullifier, signal_hash);
             let signature = sign(identity, msg);
-            checkSignature(msg, signature, identity.public_key);
+            checkSignature(msg, signature, getPublicKey(identity));
             let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
             let witness = circuit.calculateWitness(inputs);
             checkWitness(circuit, witness);
-            let {proof, publicSignals} = generateProofWithKey(witness);
+            // In this case we already have proof for that specific thing!
+            //let {proof, publicSignals} = generateProofWithKey(witness);
+            let {proof, publicSignals} = loadPreComputedProof(witness);
             verifyProofWithKey(proof, publicSignals);
         })
         .catch((err) => {
             console.log("error", err);
         });
 }
+
+run();
