@@ -45,18 +45,18 @@ function generateIdentity() {
     // XXX: Right now just using random bytes, what should this be?
     const identity_nullifier = '0x' + crypto.randomBytes(31).toString('hex');
     const identity_trapdoor = '0x' + crypto.randomBytes(31).toString('hex');
-    log(`generate identity from (private_key, public_key[0], public_key[1], identity_nullifier): (${private_key}, ${pubKey[0]}, ${pubKey[1]}, ${identity_nullifier}, ${identity_trapdoor})`);
+    //log(`generate identity from (private_key, public_key[0], public_key[1], identity_nullifier): (${private_key}, ${pubKey[0]}, ${pubKey[1]}, ${identity_nullifier}, ${identity_trapdoor})`);
 
 		const identity_commitment = pedersenHash([bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]), bigInt(identity_nullifier), bigInt(identity_trapdoor)]);
 
-    log(`identity_commitment: ${identity_commitment}`);
+    //log(`identity_commitment: ${identity_commitment}`);
     const generated_identity = {
         private_key,
         identity_nullifier: identity_nullifier.toString(),
         identity_trapdoor: identity_trapdoor.toString(),
         identity_commitment: identity_commitment.toString()
     };
-    console.log("Identity commitment (Save this to load identity)", identity_commitment.toString());
+    //console.log("Identity commitment (Save this to load identity)", identity_commitment.toString());
     const filename = "build/identity_commitment_" + identity_commitment.toString();
     // XXX: Maybe not needed here, weird BigInt parsing
     fs.writeFileSync(filename, JSON.stringify(stringifyBigInts(generated_identity)), "utf8");
@@ -101,7 +101,7 @@ function performSetup(circuit) {
     fs.writeFileSync("myCircuit.vk_proof", JSON.stringify(stringifyBigInts(setup.vk_proof)), "utf8");
     fs.writeFileSync("myCircuit.vk_verifier", JSON.stringify(stringifyBigInts(setup.vk_verifier)), "utf8");
 
-    console.log("Toxic waste:", setup.toxic);  // Must be discarded.
+    //console.log("Toxic waste:", setup.toxic);  // Must be discarded.
 }
 
 // Find path to a index containing identity commitment.
@@ -121,16 +121,16 @@ function generateProofWithKey(witness) {
     let proof = zkSnark.groth.genProof(unstringifyBigInts(vk_proof), unstringifyBigInts(witness));
     const witness_hash = sha1(JSON.stringify(stringifyBigInts(witness)));
     const filename = "build/witness_proof_" + witness_hash;
-    console.log("witness hash", filename);
+    //console.log("witness hash", filename);
     fs.writeFileSync(filename, JSON.stringify(stringifyBigInts(proof)), "utf8");
-    console.log("proof done and persisted", proof);
+    //console.log("proof done and persisted", proof);
     return proof;
 }
 
 function loadPreComputedProof(witness) {
     const witness_hash = sha1(JSON.stringify(stringifyBigInts(witness)));
     const filename = "build/witness_proof_" + witness_hash;
-    console.log("witness hash", filename);
+    //console.log("witness hash", filename);
     log("loadPreComputedProof");
     const proof = unstringifyBigInts(JSON.parse(fs.readFileSync(filename, "utf8")));
     return proof;
@@ -139,10 +139,10 @@ function loadPreComputedProof(witness) {
 function loadOrGenerateProofWithKey(witness) {
     let res;
     try {
-        console.log("Looking for already existing proof...");
+        //log("Looking for already existing proof...");
         res = loadPreComputedProof(witness);
     } catch(err) {
-        console.log("Can't find proof for witness, generating new proof");
+        //log("Can't find proof for witness, generating new proof");
         res = generateProofWithKey(witness);
     }
     return res;
@@ -254,19 +254,19 @@ function run() {
     // XXX: Not quite clear to me how this would work, since you have to verify with merkle tree
     updateTreeAndGetPath(tree, 1, identity.identity_commitment)
         .then((identity_path) => {
-            console.log("identity_path", identity_path);
+            //console.log("identity_path", identity_path);
 
             // Input, what we want to signal
             let signal_hash = signal("hello world");
-            console.log("signal hash", signal_hash);
+            //console.log("signal hash", signal_hash);
             // In order to prevent double signals
             // _How_ does it do this though?
             // And how do we prove we are identity allowed to signal? What happens if identity isn't in tree?
             let external_nullifier = bigInt(12312);
             let msg = message(external_nullifier, signal_hash);
-            console.log("msg", msg);
+            //console.log("msg", msg);
             let signature = sign(identity, msg);
-            console.log("signature", signature);
+            //console.log("signature", signature);
             checkSignature(msg, signature, getPublicKey(identity));
             let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
             let witness = circuit.calculateWitness(inputs);
@@ -313,7 +313,7 @@ function badRun() {
     verifyProofWithKey(proof, publicSignals);
 }
 
-run();
+//run();
 //badRun(); // XXX doesn't work right now
 
 // nullifiers_hash is uniquely derived from external_nullifier, identity_nullifier and identity_path_index. This ensures a user cannot broadcast a signal with the same external_nullifier more than once.
@@ -367,3 +367,85 @@ run();
 //     But it reveals a different 50% of the shares."
 
 // Need to think about this more
+
+
+// If this is a voting signal, how do we ensure voting only once? Fixed external nullifier
+
+// In voting, we restrict external nullifier to a constant
+// This way a given identity can only signal once
+function votingExample(vote_token, vote_signal) {
+    let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
+    let tree = MakeMerkleTree();
+    let circuit = loadCircuit();
+
+    console.log("votingExample", vote_token, vote_signal);
+
+    // Add identity to tree
+    let res = updateTreeAndGetPath(tree, 1, identity.identity_commitment)
+        .then((identity_path) => {
+            //console.log("identity_path", identity_path);
+
+            // Input, what we want to signal
+            let signal_hash = signal(vote_signal);
+            //console.log("signal hash", signal_hash);
+
+            // Let's say external nullifier has to be this, if it isn't it should fail validation
+            let external_nullifier = vote_token;
+            let msg = message(external_nullifier, signal_hash);
+            //console.log("msg", msg);
+            let signature = sign(identity, msg);
+            //console.log("signature", signature);
+            checkSignature(msg, signature, getPublicKey(identity));
+            let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
+            let witness = circuit.calculateWitness(inputs);
+            checkWitness(circuit, witness);
+            let {proof, publicSignals} = loadOrGenerateProofWithKey(witness);
+            return untrustedVerify(proof, publicSignals);
+        })
+        .catch((err) => {
+            console.log("error !", err);
+            return false;
+        });
+    return res;
+}
+
+function untrustedVerify(proof, publicSignals) {
+    let merkle_root = publicSignals[0];
+    let nullifier_hash = publicSignals[1];
+    let signal_hash = publicSignals[2];
+    let external_nullifier = publicSignals[3];
+
+    // This is the only valid external nullifier for this vote
+    // XXX: Is what we want to check nullifier hash?
+    // "With same external nullifier more than once"
+    let vote_token = BigInt(12312);
+
+    // TODO: Ensure part of merkle tree
+    // TODO: Signal again
+
+    try {
+        assert(external_nullifier == vote_token, "Wrong token!");
+        assert(verifyProofWithKey(proof, publicSignals));
+        console.log("All checks out!");
+        return true;
+    } catch(err) {
+        console.log("Assertions failed:", err.message);
+        return false;
+    };
+}
+
+async function voteTesting() {
+    try {
+        assert(await votingExample(BigInt(12312), "I vote for A") == true);
+        assert(await votingExample(BigInt(12319), "I vote for A") == false);
+        // TODO: voteState - keep track of nullifier hashes seen between runs
+        //assert(await votingExample(BigInt(12312), "I vote for B") == false);
+
+        // TODO: Bad identity, this requires constructing 'untrusted' tree and verifying
+        // root and nullifier hash (I believe)
+    } catch(err) {
+        console.log("Oops, no good", err);
+    }
+};
+
+voteTesting();
