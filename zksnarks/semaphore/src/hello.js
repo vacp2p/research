@@ -136,13 +136,27 @@ function loadPreComputedProof(witness) {
     return proof;
 }
 
+function loadOrGenerateProofWithKey(witness) {
+    let res;
+    try {
+        console.log("Looking for already existing proof...");
+        res = loadPreComputedProof(witness);
+    } catch(err) {
+        console.log("Can't find proof for witness, generating new proof");
+        res = generateProofWithKey(witness);
+    }
+    return res;
+}
+
 function verifyProofWithKey(proof, publicSignals) {
     const vk_verifier = JSON.parse(fs.readFileSync("build/myCircuit.vk_verifier", "utf8"));
     log("verifyProof");
     if (zkSnark.groth.isValid(unstringifyBigInts(vk_verifier), unstringifyBigInts(proof), unstringifyBigInts(publicSignals))) {
         log("The proof is valid");
+        return true;
     } else {
         log("The proof is not valid");
+        return false;
     }
 }
 
@@ -257,9 +271,7 @@ function run() {
             let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
             let witness = circuit.calculateWitness(inputs);
             checkWitness(circuit, witness);
-            // In this case we already have proof for that specific thing!
-            //let {proof, publicSignals} = generateProofWithKey(witness);
-            let {proof, publicSignals} = loadPreComputedProof(witness);
+            let {proof, publicSignals} = loadOrGenerateProofWithKey(witness);
             verifyProofWithKey(proof, publicSignals);
         })
         .catch((err) => {
@@ -297,9 +309,7 @@ function badRun() {
     // throw new Error("Invalid signal identifier: "+ name);
     let witness = circuit.calculateWitness(inputs);
     checkWitness(circuit, witness);
-    // In this case we already have proof for that specific thing!
-    //let {proof, publicSignals} = generateProofWithKey(witness);
-    let {proof, publicSignals} = loadPreComputedProof(witness);
+    let {proof, publicSignals} = loadOrGenerateProofWithKey(witness);
     verifyProofWithKey(proof, publicSignals);
 }
 
