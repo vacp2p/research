@@ -420,9 +420,6 @@ function untrustedVerify(proof, publicSignals) {
     // "With same external nullifier more than once"
     let vote_token = BigInt(12312);
 
-    // TODO: Ensure part of merkle tree
-    // TODO: Signal again
-
     try {
         assert(external_nullifier == vote_token, "Wrong token!");
         assert(verifyProofWithKey(proof, publicSignals));
@@ -442,10 +439,24 @@ async function voteTesting() {
         //assert(await votingExample(BigInt(12312), "I vote for B") == false);
 
         // TODO: Bad identity, this requires constructing 'untrusted' tree and verifying
-        // root and nullifier hash (I believe)
+        // TODO: To check for bad identity, we can simple reconstruct tree with:
+        // identity commitment and path
+        // Then merkle root has to match, and ZKP proves you are part of that
+        // tree with that root
+        // ...what does this mean if we add/leave network? need to update /
+        // allow slack
     } catch(err) {
         console.log("Oops, no good", err);
     }
 };
 
 voteTesting();
+
+// // test merkle tree, untrusted pov
+// let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
+// let commitment = identity.identity_commitment;
+// let tree = MakeMerkleTree();
+// let path = updateTreeAndGetPath(tree, 1, identity.identity_commitment);
+// root = merkle_root
+// is_valid(proof)
+// enough to show that identity is part of merkle tree at some specific position
