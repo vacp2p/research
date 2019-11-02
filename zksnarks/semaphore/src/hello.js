@@ -186,13 +186,13 @@ function makeInputs(signature, signal_hash, external_nullifier, identity, identi
 function signal(str) {
     let signal_str = str;
     const signal_to_contract = asciiToHex(signal_str);
-    const signal_to_contract_bytes = new Buffer(signal_to_contract.slice(2), 'hex');
+    const signal_to_contract_bytes = Buffer.from(signal_to_contract.slice(2), 'hex');
     const signal_hash_raw = ethers.utils.solidityKeccak256(
         ['bytes'],
         [signal_to_contract_bytes],
     );
     // XXX: Buffer deprecated, replace
-    const signal_hash_raw_bytes = new Buffer(signal_hash_raw.slice(2), 'hex');
+    const signal_hash_raw_bytes = Buffer.from(signal_hash_raw.slice(2), 'hex');
     const signal_hash = beBuff2int(signal_hash_raw_bytes.slice(0, 31));
     return signal_hash;
 }
