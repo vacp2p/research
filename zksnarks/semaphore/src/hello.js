@@ -230,6 +230,15 @@ function loadCircuit() {
     return circuit;
 }
 
+function shamirSeed(pk, en) {
+    // XXX: probably more safe way to hash pk and en
+    const seed = sha1(pk + en);
+    const key = secrets.str2hex(seed);
+    console.log("Shamir key", key);
+    return key;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 // NOTE: Using Groth
@@ -279,97 +288,6 @@ function run() {
             console.log("error", err);
         });
 }
-
-// badRun: Identity not part of tree
-// I don't understand how the following holds:
-// The commitment of the identity structure (identity_pk, identity_nullifier, identity_trapdoor) exists in the identity tree with the root root, using the path (identity_path_elements, identity_path_index). This ensures that the user was added to the system at some point in the past.
-// Cause we don't actually _use_ the tree to check membership
-// This tree should live in a smart contract or so
-// TODO: Emulate smart contract here?
-// XXX: Some issue with identity_path, might just be format though?
-function badRun() {
-    let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
-    let tree = MakeMerkleTree();
-    let circuit = loadCircuit();
-    // Perform setup - only done once
-    // performSetup(circuit);
-
-    // fake path
-    let identity_path = {root: '0', path_elements: ['0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'], path_index: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], element: "0"};
-    // Input, what we want to signal
-    let signal_hash = signal("hello world");
-    // In order to prevent double signals
-    // _How_ does it do this though?
-    // And how do we prove we are identity allowed to signal? What happens if identity isn't in tree?
-    let external_nullifier = bigInt(12312);
-    let msg = message(external_nullifier, signal_hash);
-    let signature = sign(identity, msg);
-    checkSignature(msg, signature, getPublicKey(identity));
-    let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
-    // Here it breaks, something wrong with witness -> inputs -> identity_path
-    // throw new Error("Invalid signal identifier: "+ name);
-    let witness = circuit.calculateWitness(inputs);
-    checkWitness(circuit, witness);
-    let {proof, publicSignals} = loadOrGenerateProofWithKey(witness);
-    verifyProofWithKey(proof, publicSignals);
-}
-
-//run();
-//badRun(); // XXX doesn't work right now
-
-// nullifiers_hash is uniquely derived from external_nullifier, identity_nullifier and identity_path_index. This ensures a user cannot broadcast a signal with the same external_nullifier more than once.
-//
-// if you have a different signal but same external_hash
-
-// I want to detect if someone signals twice with same external nullifier, what consequence does this have?
-// Next step is validation of external nullifier I suppose
-// Even if same signal OR if change signal, both counts as double signaling
-
-// I don't follow how 'owner' sets external nullifier, and identity commitment.
-// ("Make a signal a day is OK"). Oh wait! Whats in proof, you got those public signals, 4 of them.
-
-// Do these correspond directly?
-// signal_hash
-// external_nullifier
-// root
-// nullifiers_hash
-// "publicSignals":["5121897353393075953233736662126164055971964573317818869495592865833472332086","6540712601030472624123295577656975405754743854357625108717032000526996056503","125606243838566630058575099447702412745558900339761109861010052356172984351","12312"]
-
-// 1256... is the signal_hash, i.e. just a a hash of signal
-// 12312 is external nullifier
-// 512... is the root of the merkle tree
-// and I suppose 654... is the nullifiers_hash
-
-// Ok cool, so can we do with this public info in proof?
-// - we can see if someone has used the same external nullifier twice (double spend)
-// - we can also check if external_nullifier is a reasonable date
-// I don't get why we need nullifiers hash... oh wait, cause you can have (signal, external nullifier) same for different participants
-// so what you want to check is with nullifier hash, since thats hashed with identity too
-
-// e.g. only allow
-// - single nullifier hash, if multiple we should 'reject proof' (though it is valid? just wrong kind? eh)
-// - external nullifiers in a specific time range (+-20s in unix time)
-// e.g. don't allow random stuff in external nullifier
-
-// then the extension for rate limiting and slashing goes something like:
-// deposit in contract some slashable stuff
-// then reveal from https://ethresear.ch/t/semaphore-rln-rate-limiting-nullifier-for-spam-prevention-in-anonymous-p2p-setting/5009
-//
-//
-// "We generate a nullifier_private_key based upon hash(external_nullifier, leaf_private_key)
-// We encrypt the leaf_private_key with the nullfier_private_key and reveal the result as a public input.
-//     We user shamir secret sharing to encode the nullifier_private_key so that 51% of the shares are required to reconstruct the secret.
-//     We then use signal to randomly select 50% of the shares and reveal them.
-
-// Now each time you create a signal with the same external_nullifier but different signal it
-
-// calculates the same nullifier_private_key key and encrypts your leaf_private_key with it.
-//     It calculates the same shamir secret and shares.
-//     But it reveals a different 50% of the shares."
-
-// Need to think about this more
-
-// If this is a voting signal, how do we ensure voting only once? Fixed external nullifier
 
 // In voting, we restrict external nullifier to a constant
 // This way a given identity can only signal once
@@ -451,72 +369,8 @@ async function voteTesting() {
     }
 };
 
-//voteTesting();
-
-// // test merkle tree, untrusted pov
-// let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
-// let commitment = identity.identity_commitment;
-// let tree = MakeMerkleTree();
-// let path = updateTreeAndGetPath(tree, 1, identity.identity_commitment);
-// root = merkle_root
-// is_valid(proof)
-// enough to show that identity is part of merkle tree at some specific position
-
-
-// Rate limiting! Now we want some form of secret shamir sharing here.
-
-// > Firstly we have a smart contract that allows anyone to deposit some
-// > currency and join our group. At any point a users can be removed from the
-// > group if someone calls a function passing their private key as an input.
-// > Anyone who does this will receive 33% of the slashed stake the remainder is
-// > burned.
-
-// TODO: Clean up above and badRun
-
-// 1. Based on nullifier hash (hash of external nullifier / leaf private key), we
-// generate a private key
-// 2. Encrypt leaf private key based on this nullifier private key
-// 3. Use Shamir Secret Sharing to encode nullifier private key
-
-// ...etc, lets break
-
-// Code up shamir secret sharing?
-// What changes to ZKP does this require
-
-// If previously nullifier hash was hash(external_nullifier, leaf_private_key), wheres private key?
-
-// nullifiers_hash is uniquely derived from external_nullifier, identity_nullifier and identity_path_index. This ensures a user cannot broadcast a signal with the same external_nullifier more than once.
-// sow hat you mean? its hash of identity nullifier
-// commitment is just identity nullifier and trapdoor
-
-// Same external nullifier and different signal:
-// Generate same secret shares etc, but reveal different portion
-// 2/3 likely it'll pick another one. Then we can slash.
-// Lets mock
-// Doing in snarks is a bit too involved for now
-
-// TODO: Add to snark (GHI) fun experiment too, standalone ish
-
+// TODO: Add samir to snark (GHI)
 // Assumption: same complexity ish
-
-function shamirSeed(pk, en) {
-    // XXX: probably more safe way to hash pk and en
-    const seed = sha1(pk + en);
-    const key = secrets.str2hex(seed);
-    console.log("Shamir key", key);
-    return key;
-}
-
-// Calculates a secret key that requires 2/3 shares to compute
-// Uses pk and en as seed and returns a random share.
-// If pk and en are the same, there's a 2/3 chance of reveal.
-// XXX: Share generation not deterministic, need to re-use
-// function shamirShare(key) {
-//    const shares = secrets.share(key, 3, 2);
-//     //const randIndex = Math.floor(Math.random()*Math.floor(3));
-//     //return {secretKey: key, randomShare: shares[randIndex]};
-//     return shares;
-// }
 
 // XXX This would be dealt with in Snarks
 // XXX: Ugly global
@@ -543,7 +397,6 @@ function foundShamirKey() {
         }
     }
     //console.log("CANDIDATES:", candidates);
-
     //console.log("trustedKeysStore", trustedKeysStore);
     for (let k = 0; k < candidates.length; k++) {
         let key_candidate = secrets.combine(candidates[k]);
@@ -553,19 +406,7 @@ function foundShamirKey() {
             return true;
         }
     }
-
     return false;
-
-    //let sel = [sharesStore[0], sharesStore[1]];
-    //let key_candidate = secrets.combine(sel);
-//     console.log("key candidate", key_candidate);
-//     console.log("trustedKeysStore", trustedKeysStore);
-//     if (trustedKeysStore.has(key_candidate)) {
-//         console.log("Found the private key, can slash!");
-//         return true;
-//     } else {
-//         return false;
-//     }
 }
 
 function untrustedVerifySpam(proof, publicSignals, randomShare) {
@@ -679,7 +520,6 @@ async function spamTesting() {
     }
 };
 
-
-// TODO: Clean up this code comments
-
+//run();
+//voteTesting();
 spamTesting();
