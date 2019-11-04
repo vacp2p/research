@@ -6,6 +6,7 @@ const circomlib = require('circomlib');
 const web3Utils = require('web3-utils');
 const ethers = require('ethers');
 const SMT = require('semaphore-merkle-tree');
+const secrets = require("secrets.js");
 
 const {stringifyBigInts, unstringifyBigInts} = require("snarkjs/src/stringifybigint.js");
 const asciiToHex = web3Utils.asciiToHex;
@@ -368,7 +369,6 @@ function badRun() {
 
 // Need to think about this more
 
-
 // If this is a voting signal, how do we ensure voting only once? Fixed external nullifier
 
 // In voting, we restrict external nullifier to a constant
@@ -436,6 +436,7 @@ async function voteTesting() {
         assert(await votingExample(BigInt(12312), "I vote for A") == true);
         assert(await votingExample(BigInt(12319), "I vote for A") == false);
         // TODO: voteState - keep track of nullifier hashes seen between runs
+        // This ensures you can't signal twice with same external identifier
         //assert(await votingExample(BigInt(12312), "I vote for B") == false);
 
         // TODO: Bad identity, this requires constructing 'untrusted' tree and verifying
@@ -450,7 +451,7 @@ async function voteTesting() {
     }
 };
 
-voteTesting();
+//voteTesting();
 
 // // test merkle tree, untrusted pov
 // let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
@@ -460,3 +461,225 @@ voteTesting();
 // root = merkle_root
 // is_valid(proof)
 // enough to show that identity is part of merkle tree at some specific position
+
+
+// Rate limiting! Now we want some form of secret shamir sharing here.
+
+// > Firstly we have a smart contract that allows anyone to deposit some
+// > currency and join our group. At any point a users can be removed from the
+// > group if someone calls a function passing their private key as an input.
+// > Anyone who does this will receive 33% of the slashed stake the remainder is
+// > burned.
+
+// TODO: Clean up above and badRun
+
+// 1. Based on nullifier hash (hash of external nullifier / leaf private key), we
+// generate a private key
+// 2. Encrypt leaf private key based on this nullifier private key
+// 3. Use Shamir Secret Sharing to encode nullifier private key
+
+// ...etc, lets break
+
+// Code up shamir secret sharing?
+// What changes to ZKP does this require
+
+// If previously nullifier hash was hash(external_nullifier, leaf_private_key), wheres private key?
+
+// nullifiers_hash is uniquely derived from external_nullifier, identity_nullifier and identity_path_index. This ensures a user cannot broadcast a signal with the same external_nullifier more than once.
+// sow hat you mean? its hash of identity nullifier
+// commitment is just identity nullifier and trapdoor
+
+// Same external nullifier and different signal:
+// Generate same secret shares etc, but reveal different portion
+// 2/3 likely it'll pick another one. Then we can slash.
+// Lets mock
+// Doing in snarks is a bit too involved for now
+
+// TODO: Add to snark (GHI) fun experiment too, standalone ish
+
+// Assumption: same complexity ish
+
+function shamirSeed(pk, en) {
+    // XXX: probably more safe way to hash pk and en
+    const seed = sha1(pk + en);
+    const key = secrets.str2hex(seed);
+    console.log("Shamir key", key);
+    return key;
+}
+
+// Calculates a secret key that requires 2/3 shares to compute
+// Uses pk and en as seed and returns a random share.
+// If pk and en are the same, there's a 2/3 chance of reveal.
+// XXX: Share generation not deterministic, need to re-use
+// function shamirShare(key) {
+//    const shares = secrets.share(key, 3, 2);
+//     //const randIndex = Math.floor(Math.random()*Math.floor(3));
+//     //return {secretKey: key, randomShare: shares[randIndex]};
+//     return shares;
+// }
+
+// XXX This would be dealt with in Snarks
+// XXX: Ugly global
+let trustedKeysStore = new Set();
+let shamirSharesStore = new Map();
+
+// XXX: Ugly global, should be in local state
+// XXX: This seems like an issue actually, how are we supposed to do this efficently?
+// Having a hash for same external nullifier, different signals and same id would make detection easier
+let sharesStore = [];
+
+function foundShamirKey() {
+    log("foundShamirKey");
+
+    //console.log("sharesStore", sharesStore);
+    // TODO: This should be all combinations of selection
+    if (sharesStore.length < 2) {
+        return false;
+    }
+    let candidates = [];
+    for (let i = 0; i < sharesStore.length - 1; i++) {
+        for (let j = i+1; j<sharesStore.length - 1; j++) {
+            candidates.push([sharesStore[i], sharesStore[j]]);
+        }
+    }
+    //console.log("CANDIDATES:", candidates);
+
+    //console.log("trustedKeysStore", trustedKeysStore);
+    for (let k = 0; k < candidates.length; k++) {
+        let key_candidate = secrets.combine(candidates[k]);
+        //console.log("key candidate", key_candidate);
+        if (trustedKeysStore.has(key_candidate)) {
+            console.log("Found the private key, can slash!");
+            return true;
+        }
+    }
+
+    return false;
+
+    //let sel = [sharesStore[0], sharesStore[1]];
+    //let key_candidate = secrets.combine(sel);
+//     console.log("key candidate", key_candidate);
+//     console.log("trustedKeysStore", trustedKeysStore);
+//     if (trustedKeysStore.has(key_candidate)) {
+//         console.log("Found the private key, can slash!");
+//         return true;
+//     } else {
+//         return false;
+//     }
+}
+
+function untrustedVerifySpam(proof, publicSignals, randomShare) {
+    let merkle_root = publicSignals[0];
+    let nullifier_hash = publicSignals[1];
+    let signal_hash = publicSignals[2];
+    let external_nullifier = publicSignals[3];
+
+    // "With same external nullifier more than once"
+    // TODO: Restrict allow_en to be timestamp +- 20s, say
+    let allowed_en = external_nullifier;
+
+    // Add to seen shares;
+    sharesStore = sharesStore.concat(randomShare);
+    let slashable = foundShamirKey();
+
+    try {
+        //assert(external_nullifier == allowed_en, "Wrong token!");
+        assert(verifyProofWithKey(proof, publicSignals));
+        assert(slashable == false, "Slashable!");
+        console.log("All checks out!");
+        return true;
+    } catch(err) {
+        console.log("Assertions failed:", err.message);
+        return false;
+    };
+}
+
+
+function spamExample(external_nullifier, signal_str) {
+    let identity = loadIdentity("17939861921584559533262186509737425990469800861754459917147159747570381958900");
+    let tree = MakeMerkleTree();
+    let circuit = loadCircuit();
+
+    // Lets try Shamir secret etc here
+    // For every same external nullifier, generate shamir secret share
+    // Can we use as seed?
+
+    // QQQ
+    // XXX: This logic should be in snarks
+    let key = shamirSeed(identity.private_key, external_nullifier);
+    let shares;
+    if (shamirSharesStore.get(key)) {
+        console.log("Already used key, picking random share to reveal");
+    } else {
+        console.log("New key, getting secretKey and shares");
+        shares = secrets.share(key, 3, 2);
+        //console.log("Shares", shares);
+        // XXX: This doesn't deal with multiple keys, assumes one store
+        shamirSharesStore.set(key, shares);
+        //console.log("foo", shamirSharesStore);
+    }
+    // Picks a random share, assumes same key
+    const randIndex = Math.floor(Math.random()*Math.floor(3));
+    //console.log("shamirSharesStore", shamirSharesStore);
+    let allShares = shamirSharesStore.get(key);
+    //console.log("allShares", allShares);
+    let randomShare = allShares[randIndex];
+
+    console.log("spamExample", external_nullifier, signal_str);
+    //console.log("secretKey", key);
+    //console.log("shamirShares", shares);
+
+    // XXX: Adding secret key and shares store, this would be in snark
+    trustedKeysStore.add(key);
+
+    /// QQQ: I bet this logic is wrong
+
+    // Add identity to tree
+    let res = updateTreeAndGetPath(tree, 1, identity.identity_commitment)
+        .then((identity_path) => {
+            //console.log("identity_path", identity_path);
+
+            // Input, what we want to signal
+            let signal_hash = signal(signal_str);
+            //console.log("signal hash", signal_hash);
+
+            // Let's say external nullifier has to be this, if it isn't it should fail validation
+            let msg = message(external_nullifier, signal_hash);
+            //console.log("msg", msg);
+            let signature = sign(identity, msg);
+            //console.log("signature", signature);
+            checkSignature(msg, signature, getPublicKey(identity));
+            let inputs = makeInputs(signature, signal_hash, external_nullifier, identity, identity_path);
+            let witness = circuit.calculateWitness(inputs);
+            checkWitness(circuit, witness);
+            let {proof, publicSignals} = loadOrGenerateProofWithKey(witness);
+            return untrustedVerifySpam(proof, publicSignals, randomShare);
+        })
+        .catch((err) => {
+            console.log("error !", err);
+            return false;
+        });
+    return res;
+}
+
+async function spamTesting() {
+    try {
+        // XXX: Just using voting signals to avoid recomputing proofs
+        // XXX: Bad logic, should go through all and get probabilsitic falseCount
+        assert(await spamExample(BigInt(12312), "I vote for A") == true);
+        assert(await spamExample(BigInt(12312), "I vote for A") == (true || false));
+        assert(await spamExample(BigInt(12312), "I vote for A") == (true || false));
+        assert(await spamExample(BigInt(12312), "I vote for A") == (true || false));
+        assert(await spamExample(BigInt(12312), "I vote for A") == (true || false));
+        assert(await spamExample(BigInt(12312), "I vote for A") == (true || false));
+        assert(await spamExample(BigInt(12312), "I vote for A") == (true || false));
+        //assert(await spamExample(BigInt(12312), "I vote for B") == true);
+    } catch(err) {
+        console.log("Oops, no good", err);
+    }
+};
+
+
+// TODO: Clean up this code comments
+
+spamTesting();
