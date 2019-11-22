@@ -1,6 +1,9 @@
 (ns hello-abnf.core
   (:require [instaparse.core :as insta]))
 
+(defn parse-int [s]
+  (Integer. (re-find  #"\d+" s )))
+
 (def phone-uri-parser
   (insta/parser "https://raw.githubusercontent.com/Engelberg/instaparse/master/test/data/phone_uri.txt"
                 :input-format :abnf))
@@ -64,7 +67,7 @@ signature = 65*65bytes
 ;; XXX: This isn't going to work because we don't have RLP logic setup, in principle though
 (whisper-envelope-parser
 "f90111830186a01e8400000000b9010009090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909830f69b5")
-;; [:whisper-envelope [:expiry [:bytes [:OCTET "f"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "1"]]] [:ttl [:bytes [:OCTET "1"]] [:bytes [:OCTET "1"]] [:bytes [:OCTET "8"]] [:bytes [:OCTET "3"]]] [:topic [:bytes [:OCTET "0"]] [:bytes [:OCTET "1"]] [:bytes [:OCTET "8"]] [:bytes [:OCTET "6"]]] [:data [:bytes [:OCTET "a"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "1"]] [:bytes [:OCTET "e"]] [:bytes [:OCTET "8"]] [:bytes [:OCTET "4"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "b"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "1"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "9"]]] [:nonce [:bytes [:OCTET "8"]] [:bytes [:OCTET "3"]] [:bytes [:OCTET "0"]] [:bytes [:OCTET "f"]] [:bytes [:OCTET "6"]] [:bytes [:OCTET "9"]] [:bytes [:OCTET "b"]] [:bytes [:OCTET "5"]]]]
+;; [:whisper-envelope [:expiry [:bytes [:OCTET "f"]] ...and so on for a long time
 
 (def waku-parser
 
@@ -79,10 +82,17 @@ signature = 65*65bytes
 
 (comment
 
+  (
   (insta/parser "
-bytes = *OCTET
-packet-code = %x30-33
+packet-code = foobar
+;packet-code = %x30-33
+<foobar> = 'foobar'
+<bytes> = <*OCTET>
 " :input-format :abnf)
+   "foobar"
+   )
+
+
 
   bytes = OCTET*
   OCTET = #"[\u0000-\u00FF]"
@@ -139,3 +149,79 @@ use-peering     = ':C-ICANHAZ'
 
 (ex ":C-OHAI:S-OHAI-OK:C-ICANHAZ:S-CHEEZBURGER:C-HUGZ:S-HUGZ-OK")
 ;; [:nom-protocol [:open-peering ":C-OHAI" ":S-OHAI-OK"] [:use-peering ":C-ICANHAZ"] [:use-peering ":S-CHEEZBURGER"] [:use-peering ":C-HUGZ" ":S-HUGZ-OK"]]
+
+
+
+
+((insta/parser "
+packet = packet-code packet-type
+<packet-type> = 1*ALPHA
+<packet-code> = bytes
+<bytes> = *OCTET
+<ALPHA> = %x41-5A / %x61-7A
+<OCTET> = %x00-FF
+" :input-format :abnf)
+ "0 foobar")
+
+((insta/parser "
+packet = packet-code packet-type
+<packet-type> = ':packet-type'
+<packet-code> = bytes
+<bytes> = *OCTET
+<ALPHA> = %x41-5A / %x61-7A
+<OCTET> = %x00-FF
+" :input-format :abnf)
+ "0 :packet-type")
+
+OCTET = #"[\u0000-\u00FF]"
+
+(insta/parser "
+packet-code = foobar
+;packet-code = %x30-33
+<foobar> = 'foobar'
+<bytes> = <*OCTET>
+" :input-format :abnf)
+)
+
+
+;; whisper, high level, defer to rlp
+
+(def packet-parser
+  (insta/parser "
+packet        = packet-code packet-format
+packet-code     = *DIGIT
+<packet-format>   = 'foo'
+<DIGIT> = %x30-39
+" :input-format :abnf))
+
+(insta/transform
+ {:packet-code (fn [& strs] [:code (apply str strs)])}
+(packet-parser "123foo"))
+;; => [:packet [:code "123"] "foo"]
+
+
+;; Envelope parser with self-evaluting terminal
+
+(def envelope-parser
+(insta/parser "
+envelope          = <'[ '> expiry <', '> ttl <', '> topic <', '> data <', '> nonce <' ]'>
+expiry            = ':expiry' / 4*4bytes ; unix time in seconds
+ttl               = ':ttl'
+<topic>           = ':topic'
+<data>            = ':data'
+<nonce>           = ':nonce'
+<bytes>           = %x00-FF
+" :input-format :abnf))
+
+(defn prettify [tree]
+  (let [kw-or-concat (fn [& xs]
+                       (if (= (ffirst xs) \:)
+                         (keyword (subs (first xs) 1))
+                         (parse-int (apply str xs))))]
+    (insta/transform {:expiry kw-or-concat :ttl identity #_kw-or-concat} tree)))
+
+(prettify (envelope-parser "[ :expiry, :ttl, :topic, :data, :nonce ]"))
+;; => [:envelope :expiry :ttl ":topic" ":data" ":nonce"]
+
+(prettify (envelope-parser "[ 1234, :ttl, :topic, :data, :nonce ]"))
+;; => [:envelope 1234 :ttl ":topic" ":data" ":nonce"]
