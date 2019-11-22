@@ -1,16 +1,9 @@
 (ns hello-abnf.core
   (:require [instaparse.core :as insta]))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(def phone-uri-parser
+  (insta/parser "https://raw.githubusercontent.com/Engelberg/instaparse/master/test/data/phone_uri.txt"
+                :input-format :abnf))
 
-(def as-and-bs
-  (insta/parser
-   "S = AB*
-     AB = A B
-     A = 'a'+
-     B = 'b'+"))
-
-(as-and-bs "aaaaabbbaaaabb")
+(phone-uri-parser "tel:+1-201-555-0123")
+;; => [:telephone-uri "tel:" [:telephone-subscriber [:global-number [:global-number-digits "+" [:DIGIT "1"] [:phonedigit [:visual-separator "-"]] [:phonedigit [:DIGIT "2"]] [:phonedigit [:DIGIT "0"]] [:phonedigit [:DIGIT "1"]] [:phonedigit [:visual-separator "-"]] [:phonedigit [:DIGIT "5"]] [:phonedigit [:DIGIT "5"]] [:phonedigit [:DIGIT "5"]] [:phonedigit [:visual-separator "-"]] [:phonedigit [:DIGIT "0"]] [:phonedigit [:DIGIT "1"]] [:phonedigit [:DIGIT "2"]] [:phonedigit [:DIGIT "3"]]]]]]
