@@ -14,6 +14,8 @@ This repository contains experimental code related to research for the [vac prot
 
  - [zkSNARKs/Semaphore](./zksnarks/semaphore) - Feasability study for zkSnarks and [Semaphore](https://github.com/kobigurk/semaphore) to do anonymous signaling, including [rate limiting](https://ethresear.ch/t/semaphore-rln-rate-limiting-nullifier-for-spam-prevention-in-anonymous-p2p-setting/5009) in p2p networks (not everything in snarks).
 
+ - [abnf/hello-abnf](./abnf/hello-abnf) - Playing around with ABNF (context free grammar) for formal specifications through [Instaparse](https://github.com/Engelberg/instaparse). Also see [Panini ABNF editor](https://github.com/oskarth/panini).
+
 
 ## License
 
