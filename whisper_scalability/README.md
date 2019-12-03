@@ -2,5 +2,4 @@
 
 ![](whisper_scalability.png)
 
-See [report](report.html) for more details.
-
+See [write-up](https://vac.dev/fixing-whisper-with-waku) for more details.
