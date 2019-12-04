@@ -1,0 +1,41 @@
+@!@!@STARTMSG 2262:0 @!@!@
+TLC2 Version 2.13 of 18 July 2018
+@!@!@ENDMSG 2262 @!@!@
+@!@!@STARTMSG 2187:0 @!@!@
+Running breadth-first search Model-Checking with seed -500148975141361673 with 4 workers on 8 cores with 1154MB heap and 2594MB offheap memory (Linux 5.2.18-100.fc29.x86_64 amd64, Oracle Corporation 1.8.0_222 x86_64).
+@!@!@ENDMSG 2187 @!@!@
+@!@!@STARTMSG 2220:0 @!@!@
+Starting SANY...
+@!@!@ENDMSG 2220 @!@!@
+Parsing file /home/oskarth/git/vacp2p/research/tlaplus/gossip/gossip.toolbox/Model_1/MC.tla
+Parsing file /home/oskarth/git/vacp2p/research/tlaplus/gossip/gossip.toolbox/Model_1/gossip.tla
+Parsing file /home/oskarth/bin/tlaplus/toolbox/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/TLC.tla
+Parsing file /home/oskarth/bin/tlaplus/toolbox/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/Integers.tla
+Parsing file /home/oskarth/bin/tlaplus/toolbox/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/Naturals.tla
+Parsing file /home/oskarth/bin/tlaplus/toolbox/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/Sequences.tla
+Parsing file /home/oskarth/bin/tlaplus/toolbox/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/FiniteSets.tla
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module gossip
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module MC
+@!@!@STARTMSG 2219:0 @!@!@
+SANY finished.
+@!@!@ENDMSG 2219 @!@!@
+@!@!@STARTMSG 2185:0 @!@!@
+Starting... (2019-12-04 12:35:51)
+@!@!@ENDMSG 2185 @!@!@
+@!@!@STARTMSG 1000:1 @!@!@
+TLC threw an unexpected exception.
+This was probably caused by an error in the spec or model.
+See the User Output or TLC Console for clues to what happened.
+The exception was a java.lang.RuntimeException
+: @!@!@STARTMSG 2146:0 @!@!@
+The invariant inv_157543415066013000 is not a state predicate (one with no primes or temporal operators).
+@!@!@ENDMSG 2146 @!@!@
+@!@!@ENDMSG 1000 @!@!@
+@!@!@STARTMSG 2186:0 @!@!@
+Finished in 271ms at (2019-12-04 12:35:51)
+@!@!@ENDMSG 2186 @!@!@
