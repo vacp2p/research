@@ -1,5 +1,14 @@
-# This is just an example to get you started. A typical binary package
-# uses this file as the main entry point of the application.
+import
+  random, chronos, sequtils, chronicles, tables, stint, options,
+  eth/[keys, rlp], eth/p2p/enode, eth/trie/db,
+  eth/p2p/discoveryv5/[discovery_db, enr, node, types, routing_table, encoding],
+  eth/p2p/discoveryv5/protocol as discv5_protocol,
+  ./utils
 
 when isMainModule:
-  echo("Hello, World!")
+    let mainNode = initDiscoveryNode(newPrivateKey(), localAddress(20301), @[])
+
+    for i in 0..<1000:
+        mainNode.addNode(generateNode())
+
+    runForever()
