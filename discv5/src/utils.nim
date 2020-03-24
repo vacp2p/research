@@ -12,7 +12,7 @@ proc localAddress*(port: int): Address =
         ip: parseIpAddress("127.0.0.1")
     )
 
-proc initDiscoveryNode*(privKey: PrivateKey, address: Address,bootstrapRecords: seq[Record]): discv5_protocol.Protocol =
+proc initDiscoveryNode*(privKey: PrivateKey, address: Address, bootstrapRecords: seq[Record]): discv5_protocol.Protocol =
     var db = DiscoveryDB.init(newMemoryDB())
     result = newProtocol(privKey, db, parseIpAddress("127.0.0.1"), address.tcpPort, address.udpPort, bootstrapRecords)
     result.open()
