@@ -13,8 +13,7 @@ proc run() {.async.} =
     let node = generateNode()
 
     let test = await mainNode.lookup(node.id)
-    echo test.len
-    assert test.len > 0
+    debug "Found nodes", len = test.len
 
 when isMainModule:
     waitFor run()
