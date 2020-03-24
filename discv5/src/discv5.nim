@@ -11,8 +11,6 @@ when isMainModule:
     for i in 0..<1000:
         mainNode.addNode(generateNode())
 
-    mainNode.start()
-
     let peer = initDiscoveryNode(newPrivateKey(), localAddress(20302), @[mainNode.localNode.record])
     peer.start()
 
