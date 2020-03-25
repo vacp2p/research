@@ -17,14 +17,19 @@ proc run() {.async.} =
         let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
         node.start()
         nodes[i] = node
-        # if i > 0:
-        #    nodes[0].addNode(nodes[i].localNode.record)
 
-    let node = generateNode()
+    echo "Setup ", N, " nodes"
 
-    let test = await nodes[0].lookup(node.id)
-    debug "Found nodes", len = test.len
-    runForever()
+    echo "Sleeping for 50 seconds"
+    await sleepAsync(50.seconds)
+
+    let rand = 0
+    var peer = nodes[rand]
+
+    let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
+
+    let lookup = await node.findNode(peer, 10)
+    echo "Found ", lookup.len, " nodes"
 
 when isMainModule:
     waitFor run()
