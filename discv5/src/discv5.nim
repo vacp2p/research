@@ -24,11 +24,11 @@ proc run() {.async.} =
     await sleepAsync(50.seconds)
 
     let rand = 0
-    var peer = nodes[rand]
+    let peer = nodes[rand]
 
     let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
 
-    let lookup = await node.findNode(peer, 10)
+    let lookup = await node.findNode(peer.localNode.record, 50)
     echo "Found ", lookup.len, " nodes"
 
 when isMainModule:
