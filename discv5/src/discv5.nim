@@ -14,10 +14,11 @@ proc run() {.async.} =
         nodes: NodeArray
 
     for i in 0..<N:
-        # if i > 0: @[nodes[0].localNode.record] else: @[]
-        nodes[i] = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), @[])
-        if i > 0:
-            nodes[0].addNode(nodes[i].localNode.record)
+        let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
+        node.start()
+        nodes[i] = node
+        # if i > 0:
+        #    nodes[0].addNode(nodes[i].localNode.record)
 
     let node = generateNode()
 
