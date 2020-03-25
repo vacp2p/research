@@ -5,15 +5,26 @@ import
   eth/p2p/discoveryv5/protocol as discv5_protocol,
   ./utils
 
+const N = 100
+
 proc run() {.async.} =
-    let mainNode = initDiscoveryNode(newPrivateKey(), localAddress(20301), @[])
-    for i in 0..<1000:
-        mainNode.addNode(generateNode())
+    type
+        NodeArray = array[N, discv5_protocol.Protocol]
+    var
+        nodes: NodeArray
+
+    for i in 0..<N:
+        nodes[i] = initDiscoveryNode(
+            newPrivateKey(),
+            localAddress(20300 + i),
+            if i > 0: @[nodes[0].localNode.record] else: @[]
+        )
 
     let node = generateNode()
 
-    let test = await mainNode.lookup(node.id)
+    let test = await nodes[0].lookup(node.id)
     debug "Found nodes", len = test.len
+    runForever()
 
 when isMainModule:
     waitFor run()
