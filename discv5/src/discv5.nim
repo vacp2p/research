@@ -46,7 +46,7 @@ proc run() {.async.} =
     var peer = randNode(nodes)
     block outer:
         while true:
-            let lookup = await node.findNode(peer, 256)
+            let lookup = await node.findNode(peer, 256) # @TODO 256 should be replaced with distance between peer and target
 
             var closest = 256
             for n in items(lookup):
