@@ -6,12 +6,15 @@ import
   ./utils
 
 const N = 100
+type
+    NodeArray = array[N, discv5_protocol.Protocol]
+
+proc randNode(nodes: NodeArray): Node =
+    randomize()
+    result = nodes[rand(N - 1)].localNode
 
 proc run() {.async.} =
-    type
-        NodeArray = array[N, discv5_protocol.Protocol]
-    var
-        nodes: NodeArray
+    var nodes: NodeArray
 
     for i in 0..<N:
         let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
@@ -23,13 +26,17 @@ proc run() {.async.} =
     echo "Sleeping for 50 seconds"
     await sleepAsync(50.seconds)
 
-    let rand = 0
-    let peer = nodes[rand]
+    let target = randNode(nodes)
 
     let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
 
-    let lookup = await node.findNode(peer.localNode, 50)
-    echo "Found ", lookup.len, " nodes"
+    var peer = randNode(nodes)
+    while true:
+        let lookup = await node.findNode(peer, 50)
+        # @TODO CHECK IF NODE IS IN RETURN
+        # @TODO FIND CLOSEST NODE TO OUR TARGET
+        # REPEAT
+        echo "Found ", lookup.len, " nodes"
 
 when isMainModule:
     waitFor run()
