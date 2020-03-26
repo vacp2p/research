@@ -9,6 +9,8 @@ const N = 100
 type
     NodeArray = array[N, discv5_protocol.Protocol]
 
+proc distanceTo(n: Node, id: NodeId): UInt256 = n.id xor id
+
 proc randNode(nodes: NodeArray): Node =
     randomize()
     result = nodes[rand(N - 1)].localNode
@@ -31,11 +33,21 @@ proc run() {.async.} =
     let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
 
     var peer = randNode(nodes)
-    while true:
-        let lookup = await node.findNode(peer, 50)
-        # @TODO CHECK IF NODE IS IN RETURN
-        # @TODO FIND CLOSEST NODE TO OUR TARGET
-        # REPEAT
+    block outer:
+        while true:
+            let lookup = await node.findNode(peer, 256)
+
+            var closest = 256
+            for n in items(lookup):
+                if n == target:
+                    echo "Found ", n.toUri()
+                    break outer
+
+                let distance = distanceTo()
+                if distance < closest:
+                    peer = n
+                    closest = distance
+
         echo "Found ", lookup.len, " nodes"
 
 when isMainModule:
