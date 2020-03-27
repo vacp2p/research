@@ -8,7 +8,7 @@ import
 const
     N = 100
     MAX_LOOKUPS = 10
-    RUNS = 10
+    RUNS = 100
 
 type
     NodeArray = array[N, discv5_protocol.Protocol]
@@ -21,7 +21,12 @@ proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
     let target = randNode(nodes)
     let tid = recordToNodeID(target.record)
 
-    var peer = randNode(nodes)
+    var peer: Node
+    while true:
+        peer = randNode(nodes)
+        if peer.record.toUri() != target.record.toUri():
+            break
+
     var distance = distanceTo(recordToNodeID(peer.record), tid)
     var iterations = 0
 
@@ -35,7 +40,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
             for n in items(lookup):
                 let uri = n.record.toUri()
                 if uri == target.record.toUri():
-                    echo "Found target in ", iterations, " lookups"
+                    echo "Found target in ", i + 1, " lookups"
                     break outer
 
                 if containsNodeId(called, uri):
