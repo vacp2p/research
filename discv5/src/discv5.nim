@@ -25,21 +25,24 @@ proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
     var distance = distanceTo(recordToNodeID(peer.record), tid)
     var iterations = 0
 
+    var called = newSeq[string](0)
+
     block outer:
-        while true:
-            if iterations > MAX_LOOKUPS:
-                echo "Couldn't find node in max iterations"
-                break
+        while iterations < MAX_LOOKUPS:
 
             iterations = iterations + 1
             let lookup = await node.findNode(peer, distance)
+            called.add(peer.record.toUri())
             # echo "Found ", lookup.len, " nodes"
 
-            var closest = 256
             for n in items(lookup):
-                if n.record.toUri() == target.record.toUri():
-                    echo "Found ", target.record.toUri(), " in ", iterations, " lookups"
+                let uri = n.record.toUri()
+                if uri == target.record.toUri():
+                    echo "Found target in ", iterations, " lookups"
                     break outer
+
+                if containsNodeId(called, uri):
+                    break
 
                 let d = distanceTo(recordToNodeID(n.record), tid)
                 if d <= distance:
@@ -63,8 +66,8 @@ proc run() {.async.} =
     let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
 
     for i in 0..<RUNS:
-        waitFor runWith(node, nodes)
-
+        await runWith(node, nodes)
+        await sleepAsync(5.seconds)
 
 when isMainModule:
     waitFor run()

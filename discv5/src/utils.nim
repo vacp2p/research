@@ -30,6 +30,13 @@ proc recordToNodeID*(r: Record): NodeId =
 
     result = readUintBE[256](keccak256.digest(pk.getRaw()).data)
 
+proc containsNodeId*(s: seq[string], id: string): bool =
+    for n in s:
+        if n == id:
+            return true
+
+    return false
+
 proc distanceTo*(a, b: NodeId): uint32 =
     let a = a.toBytes
     let b = b.toBytes
