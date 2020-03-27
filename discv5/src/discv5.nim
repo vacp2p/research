@@ -44,7 +44,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
                     break outer
 
                 if containsNodeId(called, uri):
-                    break
+                    continue
 
                 let d = distanceTo(recordToNodeID(n.record), tid)
                 if d <= distance:
