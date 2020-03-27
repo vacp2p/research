@@ -8,7 +8,7 @@ import
 const
     N = 100
     MAX_LOOKUPS = 10
-    RUNS = 100
+    RUNS = 10
 
 type
     NodeArray = array[N, discv5_protocol.Protocol]
@@ -47,7 +47,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
                     continue
 
                 let d = distanceTo(recordToNodeID(n.record), tid)
-                if d <= distance:
+                if d < distance:
                     peer = n
                     distance = d
 
