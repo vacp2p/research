@@ -44,6 +44,7 @@ proc run() {.async.} =
             var closest = 256
             for n in items(lookup):
                 if n.record.toUri() == target.record.toUri():
+                    echo "Found ", target.record.toUri(), " in ", iterations, " lookups"
                     break outer
 
                 let d = distanceTo(recordToNodeID(n.record), tid)
@@ -51,8 +52,6 @@ proc run() {.async.} =
                     echo "Distance ", d
                     peer = n
                     distance = d
-
-    echo "Found ", target.record.toUri(), " in ", iterations, " lookups"
 
 when isMainModule:
     waitFor run()
