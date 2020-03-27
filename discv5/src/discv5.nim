@@ -5,7 +5,10 @@ import
   eth/p2p/discoveryv5/protocol as discv5_protocol,
   ./utils
 
-const N = 100
+const
+    N = 100
+    MAX_LOOKUPS = 10
+
 type
     NodeArray = array[N, discv5_protocol.Protocol]
 
@@ -37,6 +40,10 @@ proc run() {.async.} =
 
     block outer:
         while true:
+            if iterations > MAX_LOOKUPS:
+                echo "Couldn't find node in max iterations"
+                break
+
             iterations = iterations + 1
             let lookup = await node.findNode(peer, distance)
             echo "Found ", lookup.len, " nodes"
