@@ -41,7 +41,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
                 let uri = n.record.toUri()
                 if uri == target.record.toUri():
                     echo "Found target in ", i + 1, " lookups"
-                    break outer
+                    return
 
                 if containsNodeId(called, uri):
                     continue
