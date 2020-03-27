@@ -32,20 +32,21 @@ proc run() {.async.} =
     let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
 
     var peer = randNode(nodes)
-    var distance: uint32 = 256
+    var distance = distanceTo(recordToNodeID(peer.record), tid)
     block outer:
         while true:
-            let lookup = await node.findNode(peer, distance) # @TODO 256 should be replaced with distance between peer and target
+            let lookup = await node.findNode(peer, distance)
             echo "Found ", lookup.len, " nodes"
 
             var closest = 256
             for n in items(lookup):
-                if n == target:
+                if n.record.toUri() == target.record.toUri():
                     echo "Found ", n.record.toUri()
                     break outer
 
                 let d = distanceTo(recordToNodeID(n.record), tid)
-                if d < distance:
+                if d <= distance:
+                    echo "Distance ", d
                     peer = n
                     distance = d
 
