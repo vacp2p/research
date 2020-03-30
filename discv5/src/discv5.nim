@@ -29,7 +29,6 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             break
 
     var distance = distanceTo(recordToNodeID(peer.record), tid)
-    var iterations = 0
 
     var called = newSeq[string](0)
 
