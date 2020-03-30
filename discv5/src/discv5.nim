@@ -10,14 +10,11 @@ const
     MAX_LOOKUPS = 10
     RUNS = 10
 
-type
-    NodeArray = array[N, discv5_protocol.Protocol]
-
-proc randNode(nodes: NodeArray): Node =
+proc randNode(nodes: seq[discv5_protocol.Protocol]): Node =
     randomize()
     result = nodes[rand(N - 1)].localNode
 
-proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
+proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) {.async.} =
     let target = randNode(nodes)
     let tid = recordToNodeID(target.record)
 
@@ -47,19 +44,19 @@ proc runWith(node: discv5_protocol.Protocol, nodes: NodeArray) {.async.} =
                     continue
 
                 let d = distanceTo(recordToNodeID(n.record), tid)
-                if d < distance:
+                if d <= distance:
                     peer = n
                     distance = d
 
     echo "Not found in max iterations"
 
 proc run() {.async.} =
-    var nodes: NodeArray
+    var nodes = newSeq[discv5_protocol.Protocol](0)
 
     for i in 0..<N:
         let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
         node.start()
-        nodes[i] = node
+        nodes.add(node)
 
     echo "Setup ", N, " nodes"
 
