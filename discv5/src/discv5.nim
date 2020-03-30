@@ -32,32 +32,34 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
     var iterations = 0
 
     var called = newSeq[string](0)
-    var lookup: seq[Node]
 
-    block outer:
-        for i in 0..<MAX_LOOKUPS:
-            while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
-                if not containsNodeId(called, peer.record.toUri()):
-                    break
+    for i in 0..<MAX_LOOKUPS:
+        let lookup = await node.findNode(peer, distance)
+        called.add(peer.record.toUri())
 
-                peer = randNodeFromNodes(lookup)
+        for n in items(lookup):
+            let uri = n.record.toUri()
+            if uri == target.record.toUri():
+                echo "Found target in ", i + 1, " lookups"
+                return
 
-            lookup = await node.findNode(peer, distance)
-            called.add(peer.record.toUri())
+            if containsNodeId(called, uri):
+                continue
 
-            for n in items(lookup):
-                let uri = n.record.toUri()
-                if uri == target.record.toUri():
-                    echo "Found target in ", i + 1, " lookups"
-                    return
+            let d = distanceTo(recordToNodeID(n.record), tid)
+            if d < distance:
+                peer = n
+                distance = d
 
-                if containsNodeId(called, uri):
-                    continue
+        if lookup.len == 0:
+            distance = 256
+            continue
 
-                let d = distanceTo(recordToNodeID(n.record), tid)
-                if d < distance:
-                    peer = n
-                    distance = d
+        while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
+            if not containsNodeId(called, peer.record.toUri()):
+                break
+
+            peer = randNodeFromNodes(lookup)
 
     echo "Not found in max iterations"
 
