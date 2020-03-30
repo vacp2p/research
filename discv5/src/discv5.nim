@@ -14,6 +14,10 @@ proc randNode(nodes: seq[discv5_protocol.Protocol]): Node =
     randomize()
     result = nodes[rand(N - 1)].localNode
 
+proc randNodeFromNodes(nodes: seq[Node]): Node =
+    randomize()
+    result = nodes[rand(nodes.len - 1)]
+
 proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) {.async.} =
     let target = randNode(nodes)
     let tid = recordToNodeID(target.record)
@@ -28,10 +32,17 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
     var iterations = 0
 
     var called = newSeq[string](0)
+    var lookup: seq[Node]
 
     block outer:
         for i in 0..<MAX_LOOKUPS:
-            let lookup = await node.findNode(peer, distance)
+            while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
+                if not containsNodeId(called, peer.record.toUri()):
+                    break
+
+                peer = randNodeFromNodes(lookup)
+
+            lookup = await node.findNode(peer, distance)
             called.add(peer.record.toUri())
 
             for n in items(lookup):
@@ -44,7 +55,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
                     continue
 
                 let d = distanceTo(recordToNodeID(n.record), tid)
-                if d <= distance:
+                if d < distance:
                     peer = n
                     distance = d
 
