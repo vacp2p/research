@@ -36,6 +36,10 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
         let lookup = await node.findNode(peer, distance)
         called.add(peer.record.toUri())
 
+        if lookup.len == 0:
+            distance = 256
+            continue
+
         for n in items(lookup):
             let uri = n.record.toUri()
             if uri == target.record.toUri():
@@ -49,10 +53,6 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             if d < distance:
                 peer = n
                 distance = d
-
-        if lookup.len == 0:
-            distance = 256
-            continue
 
         while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
             if not containsNodeId(called, peer.record.toUri()):
