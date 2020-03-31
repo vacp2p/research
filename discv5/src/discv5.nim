@@ -57,6 +57,43 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
 
     echo "Not found in max iterations"
 
+proc runWithRandom(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) {.async.} =
+    randomize()
+
+    let target = sample(nodes).localNode
+    let tid = recordToNodeID(target.record)
+
+    var peer: Node
+    while true:
+        peer = sample(nodes).localNode
+        if peer.record.toUri() != target.record.toUri():
+            break
+
+    var distance = logDist(recordToNodeID(peer.record), tid)
+
+    var called = newSeq[string](0)
+
+    for i in 0..<MAX_LOOKUPS:
+        let lookup = await node.findNode(peer, distance)
+        called.add(peer.record.toUri())
+
+        if lookup.len == 0:
+            distance = 256
+            continue
+
+        for n in items(lookup):
+            if n.record.toUri() == target.record.toUri():
+                echo "Found target in ", i + 1, " lookups"
+                return
+
+        while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
+            if not called.contains(peer.record.toUri()):
+                break
+
+            peer = sample(lookup)
+
+    echo "Not found in max iterations"
+
 proc run() {.async.} =
     var nodes = newSeq[discv5_protocol.Protocol](0)
 
