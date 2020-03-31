@@ -6,7 +6,7 @@ import
   ./utils
 
 const
-    N = 48
+    N = 64
     MAX_LOOKUPS = 10
     RUNS = 10
     SLEEP = 50
@@ -47,7 +47,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
                 echo "Found target in ", i + 1, " lookups"
                 return
 
-            if containsNodeId(called, uri):
+            if called.contains(uri):
                 continue
 
             let d = logDist(recordToNodeID(n.record), tid)
@@ -56,7 +56,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
                 distance = d
 
         while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
-            if not containsNodeId(called, peer.record.toUri()):
+            if not called.contains(peer.record.toUri()):
                 break
 
             peer = randNodeFromNodes(lookup)

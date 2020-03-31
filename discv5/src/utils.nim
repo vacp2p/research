@@ -30,10 +30,3 @@ proc recordToNodeID*(r: Record): NodeId =
         raise newException(ToNodeIDError, "rip")
 
     result = readUintBE[256](keccak256.digest(pk.getRaw()).data)
-
-proc containsNodeId*(s: seq[string], id: string): bool =
-    for n in s:
-        if n == id:
-            return true
-
-    return false
