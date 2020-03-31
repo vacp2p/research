@@ -6,10 +6,10 @@ import
   ./utils
 
 const
-    N = 100
+    N = 48
     MAX_LOOKUPS = 10
     RUNS = 10
-    SLEEP = 600
+    SLEEP = 50
 
 proc randNode(nodes: seq[discv5_protocol.Protocol]): Node =
     randomize()
