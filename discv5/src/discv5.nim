@@ -11,21 +11,15 @@ const
     RUNS = 10
     SLEEP = 50
 
-proc randNode(nodes: seq[discv5_protocol.Protocol]): Node =
-    randomize()
-    result = nodes[rand(N - 1)].localNode
-
-proc randNodeFromNodes(nodes: seq[Node]): Node =
-    randomize()
-    result = nodes[rand(nodes.len - 1)]
-
 proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) {.async.} =
-    let target = randNode(nodes)
+    randomize()
+
+    let target = sample(nodes).localNode
     let tid = recordToNodeID(target.record)
 
     var peer: Node
     while true:
-        peer = randNode(nodes)
+        peer = sample(nodes).localNode
         if peer.record.toUri() != target.record.toUri():
             break
 
@@ -59,7 +53,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             if not called.contains(peer.record.toUri()):
                 break
 
-            peer = randNodeFromNodes(lookup)
+            peer = sample(lookup)
 
     echo "Not found in max iterations"
 
