@@ -28,7 +28,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
         if peer.record.toUri() != target.record.toUri():
             break
 
-    var distance = distanceTo(recordToNodeID(peer.record), tid)
+    var distance = logDist(recordToNodeID(peer.record), tid)
 
     var called = newSeq[string](0)
 
@@ -49,7 +49,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             if containsNodeId(called, uri):
                 continue
 
-            let d = distanceTo(recordToNodeID(n.record), tid)
+            let d = logDist(recordToNodeID(n.record), tid)
             if d < distance:
                 peer = n
                 distance = d
@@ -73,7 +73,7 @@ proc run() {.async.} =
     echo "Setup ", N, " nodes"
 
     echo "Sleeping for 50 seconds"
-    await sleepAsync(50.seconds)
+    await sleepAsync(300.seconds)
 
     let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
 

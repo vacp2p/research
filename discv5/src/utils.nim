@@ -36,16 +36,3 @@ proc containsNodeId*(s: seq[string], id: string): bool =
             return true
 
     return false
-
-proc distanceTo*(a, b: NodeId): uint32 =
-    let a = a.toBytes
-    let b = b.toBytes
-    var lz = 0
-    for i in countdown(a.len - 1, 0):
-        let x = a[i] xor b[i]
-        if x == 0:
-            lz += 8
-        else:
-            lz += bitops.countLeadingZeroBits(x)
-            break
-    return uint32(a.len * 8 - lz)
