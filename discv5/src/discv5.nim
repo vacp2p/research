@@ -6,7 +6,7 @@ import
   ./utils
 
 const
-    N = 64
+    N = 100
     MAX_LOOKUPS = 10
     RUNS = 10
     SLEEP = 50
@@ -19,6 +19,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
 
     var peer: Node
     while true:
+        randomize()
         peer = sample(nodes).localNode
         if peer.record.toUri() != target.record.toUri():
             break
