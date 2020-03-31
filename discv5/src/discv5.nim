@@ -68,7 +68,6 @@ proc run() {.async.} =
 
     for i in 0..<N:
         let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
-        node.start()
         nodes.add(node)
 
     echo "Setup ", N, " nodes"
