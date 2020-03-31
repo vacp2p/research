@@ -9,6 +9,7 @@ const
     N = 100
     MAX_LOOKUPS = 10
     RUNS = 10
+    SLEEP = 600
 
 proc randNode(nodes: seq[discv5_protocol.Protocol]): Node =
     randomize()
@@ -72,8 +73,8 @@ proc run() {.async.} =
 
     echo "Setup ", N, " nodes"
 
-    echo "Sleeping for 50 seconds"
-    await sleepAsync(300.seconds)
+    echo "Sleeping for ", SLEEP, " seconds"
+    await sleepAsync(SLEEP.seconds)
 
     let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
 
