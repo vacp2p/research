@@ -16,12 +16,12 @@ const
     COOLDOWN = 0
 
     # the sleep period before starting our runs.
-    SLEEP = 50
+    SLEEP = 0
     VERBOSE = true
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
     # otherwise we use discv5s native paring functionality letting each node find peers using the boostrap.
-    USE_MANUAL_PAIRING = false
+    USE_MANUAL_PAIRING = true
 
     # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
@@ -71,11 +71,20 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             echo "Found target in ", i + 1, " lookups"
             return
 
+        let lastPeer = peer
         for n in items(lookup):
             let d = logDist(recordToNodeID(n.record), tid)
-            if d < distance:
+            if d <= distance:
                 peer = n
                 distance = d
+
+        # This ensures we get a random node from the last lookup if we have already called the new peer.
+        # We let this run lookup*2 times, otherwise we could reach deadlock.
+        for i in 0..<(lookup.len*2):
+            if lastPeer.record.toUri() != peer.record.toUri():
+                break
+
+            peer = sample(lookup)
 
     echo "Not found in max iterations"
 
