@@ -18,7 +18,7 @@ proc initDiscoveryNode*(privKey: PrivateKey, address: Address, bootstrapRecords:
     var db = DiscoveryDB.init(newMemoryDB())
     result = newProtocol(privKey, db, parseIpAddress("127.0.0.1"), address.tcpPort, address.udpPort, bootstrapRecords)
     result.open()
-    result.start()
+    # result.start()
 
 proc generateNode*(privKey = newPrivateKey()): Node =
     let enr = enr.Record.init(1, privKey, none(Address))

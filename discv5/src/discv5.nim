@@ -9,7 +9,13 @@ const
     N = 100
     MAX_LOOKUPS = 10
     RUNS = 10
+    RUN_TIMEOUT = 0
     SLEEP = 50
+    VERBOSE = true
+
+proc write(str: string) =
+    if VERBOSE:
+        echo str
 
 proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) {.async.} =
     randomize()
@@ -33,8 +39,12 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
         called.add(peer.record.toUri())
 
         if lookup.len == 0:
-            distance = 256
-            continue
+            write("Lookup from node " & peer.record.toUri() & " found no results")
+            if distance != 256:
+                distance = 256
+                continue
+
+            return
 
         for n in items(lookup):
             let uri = n.record.toUri()
@@ -95,12 +105,20 @@ proc runWithRandom(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Pr
 
     echo "Not found in max iterations"
 
+proc pair(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) =
+    for _ in 0..<16:
+        randomize()
+        sample(nodes).addNode(node.localNode)
+
 proc run() {.async.} =
     var nodes = newSeq[discv5_protocol.Protocol](0)
 
     for i in 0..<N:
         let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
         nodes.add(node)
+
+    for n in nodes:
+        pair(n, nodes)
 
     echo "Setup ", N, " nodes"
 
@@ -111,7 +129,7 @@ proc run() {.async.} =
 
     for i in 0..<RUNS:
         await runWith(node, nodes)
-        await sleepAsync(5.seconds)
+        await sleepAsync(RUN_TIMEOUT.seconds)
 
 when isMainModule:
     waitFor run()
