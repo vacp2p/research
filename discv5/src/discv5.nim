@@ -7,12 +7,13 @@ import
 
 const
     N = 100
-    MAX_LOOKUPS = 10
-    RUNS = 10
-    RUN_TIMEOUT = 0
+    MAX_LOOKUPS = 100
+    RUNS = 100
+    COOLDOWN = 0
     SLEEP = 50
     VERBOSE = true
-    USE_MANUAL_PAIRING = true
+    USE_MANUAL_PAIRING = false
+    PEERS_PER_NODE = 16
 
 proc write(str: string) =
     if VERBOSE:
@@ -61,11 +62,12 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
                 peer = n
                 distance = d
 
-        while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
+        for i in 0..<lookup.len:
+            # This ensures we get a random node from the last lookup if we have already called the new peer.
             if not called.contains(peer.record.toUri()):
                 break
 
-            peer = sample(lookup)
+            peer = lookup[i]
 
     echo "Not found in max iterations"
 
@@ -107,7 +109,7 @@ proc runWithRandom(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Pr
     echo "Not found in max iterations"
 
 proc pair(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) =
-    for _ in 0..<20:
+    for _ in 0..<PEERS_PER_NODE:
         randomize()
         sample(nodes).addNode(node.localNode)
 
@@ -134,7 +136,7 @@ proc run() {.async.} =
 
     for i in 0..<RUNS:
         await runWith(node, nodes)
-        await sleepAsync(RUN_TIMEOUT.seconds)
+        await sleepAsync(COOLDOWN.seconds)
 
 when isMainModule:
     waitFor run()
