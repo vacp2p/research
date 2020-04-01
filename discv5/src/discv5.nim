@@ -9,8 +9,8 @@ const
     # the amount of nodes
     N = 100
 
-    MAX_LOOKUPS = 100
-    RUNS = 100
+    MAX_LOOKUPS = 10
+    RUNS = 10
 
     # the cooldown period between runs.
     COOLDOWN = 0
@@ -75,7 +75,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
 
         for i in 0..<lookup.len:
             # This ensures we get a random node from the last lookup if we have already called the new peer.
-            if not called.contains(peer.record.toUri()):
+            if not called.contains(peer.record.toUri()) and peer.record.toUri() != node.localNode.record.toUri():
                 break
 
             peer = lookup[i]
