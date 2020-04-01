@@ -1,5 +1,5 @@
 import
-  random, chronos, sequtils, chronicles, tables, stint, options, std/bitops,
+  random, chronos, sequtils, chronicles, tables, stint, options, std/bitops, sequtils,
   eth/[keys, rlp, async_utils], eth/p2p/enode, eth/trie/db,
   eth/p2p/discoveryv5/[discovery_db, enr, node, types, routing_table, encoding],
   eth/p2p/discoveryv5/protocol as discv5_protocol,
@@ -21,7 +21,7 @@ const
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
     # otherwise we use discv5s native paring functionality letting each node find peers using the boostrap.
-    USE_MANUAL_PAIRING = true
+    USE_MANUAL_PAIRING = false
 
     # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
@@ -48,8 +48,12 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
     var called = newSeq[string](0)
 
     for i in 0..<MAX_LOOKUPS:
-        let lookup = await node.findNode(peer, distance)
+        var lookup = await node.findNode(peer, distance)
         called.add(peer.record.toUri())
+
+        keepIf(lookup, proc (x: Node): bool =
+            x.record.toUri() != node.localNode.record.toUri() and not called.contains(x.record.toUri())
+        )
 
         if lookup.len == 0:
             if distance != 256:
@@ -59,26 +63,19 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             write("Lookup from node " & $((get peer.record.toTypedRecord()).udp.get()) & " found no results at 256")
             return
 
+        let findings = filter(lookup, proc (x: Node): bool =
+            x.record.toUri() == target.record.toUri()
+        )
+
+        if findings.len == 1:
+            echo "Found target in ", i + 1, " lookups"
+            return
+
         for n in items(lookup):
-            let uri = n.record.toUri()
-            if uri == target.record.toUri():
-                echo "Found target in ", i + 1, " lookups"
-                return
-
-            if called.contains(uri):
-                continue
-
             let d = logDist(recordToNodeID(n.record), tid)
             if d < distance:
                 peer = n
                 distance = d
-
-        for i in 0..<lookup.len:
-            # This ensures we get a random node from the last lookup if we have already called the new peer.
-            if not called.contains(peer.record.toUri()) and peer.record.toUri() != node.localNode.record.toUri():
-                break
-
-            peer = lookup[i]
 
     echo "Not found in max iterations"
 
