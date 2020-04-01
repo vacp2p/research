@@ -9,19 +9,19 @@ const
     # the amount of nodes
     N = 100
 
-    MAX_LOOKUPS = 10
+    MAX_LOOKUPS = 100
     RUNS = 10
 
     # the cooldown period between runs.
-    COOLDOWN = 0
+    COOLDOWN = 1
 
     # the sleep period before starting our runs.
-    SLEEP = 0
+    SLEEP = 60
     VERBOSE = true
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
     # otherwise we use discv5s native paring functionality letting each node find peers using the boostrap.
-    USE_MANUAL_PAIRING = true
+    USE_MANUAL_PAIRING = false
 
     # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
