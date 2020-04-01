@@ -39,11 +39,11 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
         called.add(peer.record.toUri())
 
         if lookup.len == 0:
-            write("Lookup from node " & peer.record.toUri() & " found no results")
             if distance != 256:
                 distance = 256
                 continue
 
+            write("Lookup from node " & peer.record.toUri() & " found no results at 256")
             return
 
         for n in items(lookup):
@@ -106,7 +106,7 @@ proc runWithRandom(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Pr
     echo "Not found in max iterations"
 
 proc pair(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) =
-    for _ in 0..<16:
+    for _ in 0..<20:
         randomize()
         sample(nodes).addNode(node.localNode)
 
@@ -116,6 +116,8 @@ proc run() {.async.} =
     for i in 0..<N:
         let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
         nodes.add(node)
+
+        if i == 0: node.start()
 
     for n in nodes:
         pair(n, nodes)
