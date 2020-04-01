@@ -12,6 +12,7 @@ const
     RUN_TIMEOUT = 0
     SLEEP = 50
     VERBOSE = true
+    USE_MANUAL_PAIRING = true
 
 proc write(str: string) =
     if VERBOSE:
@@ -113,16 +114,19 @@ proc pair(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) 
 proc run() {.async.} =
     var nodes = newSeq[discv5_protocol.Protocol](0)
 
+    echo "Setting up ", N, " nodes"
+
     for i in 0..<N:
         let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
         nodes.add(node)
 
-        if i == 0: node.start()
+        if (USE_MANUAL_PAIRING and i == 0) or not USE_MANUAL_PAIRING:
+            echo "start"
+            node.start()
 
-    for n in nodes:
-        pair(n, nodes)
-
-    echo "Setup ", N, " nodes"
+    if USE_MANUAL_PAIRING:
+        for n in nodes:
+            pair(n, nodes)
 
     echo "Sleeping for ", SLEEP, " seconds"
     await sleepAsync(SLEEP.seconds)
