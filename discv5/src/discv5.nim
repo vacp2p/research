@@ -121,7 +121,6 @@ proc run() {.async.} =
         nodes.add(node)
 
         if (USE_MANUAL_PAIRING and i == 0) or not USE_MANUAL_PAIRING:
-            echo "start"
             node.start()
 
     if USE_MANUAL_PAIRING:
