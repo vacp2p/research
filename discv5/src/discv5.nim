@@ -63,11 +63,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             write("Lookup from node " & $((get peer.record.toTypedRecord()).udp.get()) & " found no results at 256")
             return
 
-        let findings = filter(lookup, proc (x: Node): bool =
-            x.record.toUri() == target.record.toUri()
-        )
-
-        if findings.len == 1:
+        if count(lookup, proc (x: Node): bool = x.record.toUri() == target.record.toUri()) == 1:
             echo "Found target in ", i + 1, " lookups"
             return
 
