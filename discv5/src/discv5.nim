@@ -6,13 +6,24 @@ import
   ./utils
 
 const
+    # the amount of nodes
     N = 100
+
     MAX_LOOKUPS = 100
     RUNS = 100
+
+    # the cooldown period between runs.
     COOLDOWN = 0
+
+    # the sleep period before starting our runs.
     SLEEP = 50
     VERBOSE = true
-    USE_MANUAL_PAIRING = false
+
+    # if true, nodes are randomly added to other nodes using the `addNode` function.
+    # otherwise we use discv5s native paring functionality letting each node find peers using the boostrap.
+    USE_MANUAL_PAIRING = true
+
+    # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
 
 proc write(str: string) =
