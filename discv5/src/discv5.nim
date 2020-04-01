@@ -13,15 +13,15 @@ const
     RUNS = 10
 
     # the cooldown period between runs.
-    COOLDOWN = 1
+    COOLDOWN = 0
 
     # the sleep period before starting our runs.
-    SLEEP = 60
+    SLEEP = 0
     VERBOSE = true
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
     # otherwise we use discv5s native paring functionality letting each node find peers using the boostrap.
-    USE_MANUAL_PAIRING = false
+    USE_MANUAL_PAIRING = true
 
     # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
@@ -96,26 +96,32 @@ proc runWithRandom(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Pr
 
     var peer: Node
     while true:
+        randomize()
         peer = sample(nodes).localNode
         if peer.record.toUri() != target.record.toUri():
             break
 
-    var distance = logDist(recordToNodeID(peer.record), tid)
-
     var called = newSeq[string](0)
 
     for i in 0..<MAX_LOOKUPS:
-        let lookup = await node.findNode(peer, distance)
+        var lookup = await node.findNode(peer, 256)
         called.add(peer.record.toUri())
 
-        if lookup.len == 0:
-            distance = 256
-            continue
+        keepIf(lookup, proc (x: Node): bool =
+            x.record.toUri() != node.localNode.record.toUri() and not called.contains(x.record.toUri())
+        )
 
-        for n in items(lookup):
-            if n.record.toUri() == target.record.toUri():
-                echo "Found target in ", i + 1, " lookups"
-                return
+        if lookup.len == 0:
+            write("Lookup from node " & $((get peer.record.toTypedRecord()).udp.get()) & " found no results at 256")
+            return
+
+        let findings = filter(lookup, proc (x: Node): bool =
+            x.record.toUri() == target.record.toUri()
+        )
+
+        if findings.len == 1:
+            echo "Found target in ", i + 1, " lookups"
+            return
 
         while true: # This ensures we get a random node from the last lookup if we have already called the new peer.
             if not called.contains(peer.record.toUri()):
