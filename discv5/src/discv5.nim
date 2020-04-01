@@ -56,7 +56,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
                 distance = 256
                 continue
 
-            write("Lookup from node " & peer.record.toUri() & " found no results at 256")
+            write("Lookup from node " & $((get peer.record.toTypedRecord()).udp.get()) & " found no results at 256")
             return
 
         for n in items(lookup):
