@@ -47,3 +47,5 @@ proc recordToNodeID*(r: Record): NodeId =
         raise newException(ToNodeIDError, "rip")
 
     result = readUintBE[256](keccak256.digest(pk.getRaw()).data)
+
+proc distanceTo*(n: NodeId, id: NodeId): UInt256 = n xor id

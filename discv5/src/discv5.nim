@@ -13,15 +13,15 @@ const
     RUNS = 10
 
     # the cooldown period between runs.
-    COOLDOWN = 0
+    COOLDOWN = 2
 
     # the sleep period before starting our runs.
-    SLEEP = 0
+    SLEEP = 60
     VERBOSE = true
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
     # otherwise we use discv5s native paring functionality letting each node find peers using the boostrap.
-    USE_MANUAL_PAIRING = true
+    USE_MANUAL_PAIRING = false
 
     # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
@@ -43,12 +43,13 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
         if peer.record.toUri() != target.record.toUri():
             break
 
-    var distance = logDist(recordToNodeID(peer.record), tid)
+    var distanceTo = distanceTo(recordToNodeID(peer.record), tid)
+    var logDistance = logDist(recordToNodeID(peer.record), tid)
 
     var called = newSeq[string](0)
 
     for i in 0..<MAX_LOOKUPS:
-        var lookup = await node.findNode(peer, distance)
+        var lookup = await node.findNode(peer, logDistance)
         called.add(peer.record.toUri())
 
         keepIf(lookup, proc (x: Node): bool =
@@ -56,9 +57,10 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
         )
 
         if lookup.len == 0:
-            if distance != 256:
-                distance = 256
-                continue
+            if logDistance != 256:
+               logDistance = 256
+               distanceTo = u256(256)
+               continue
 
             write("Lookup from node " & $((get peer.record.toTypedRecord()).udp.get()) & " found no results at 256")
             return
@@ -69,10 +71,11 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
 
         let lastPeer = peer
         for n in items(lookup):
-            let d = logDist(recordToNodeID(n.record), tid)
-            if d <= distance:
+            let d = distanceTo(recordToNodeID(n.record), tid)
+            if d <= distanceTo:
                 peer = n
-                distance = d
+                logDistance = logDist(recordToNodeID(n.record), tid)
+                distanceTo = d
 
         # This ensures we get a random node from the last lookup if we have already called the new peer.
         # We let this run lookup*2 times, otherwise we could reach deadlock.
