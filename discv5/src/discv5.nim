@@ -10,13 +10,13 @@ const
     N = 100
 
     MAX_LOOKUPS = 100
-    RUNS = 10
+    RUNS = 100
 
     # the cooldown period between runs.
-    COOLDOWN = 2
+    COOLDOWN = 0
 
     # the sleep period before starting our runs.
-    SLEEP = 60
+    SLEEP = 600
     VERBOSE = true
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
@@ -66,7 +66,8 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             return
 
         if count(lookup, proc (x: Node): bool = x.record.toUri() == target.record.toUri()) == 1:
-            echo "Found target in ", i + 1, " lookups"
+            # echo "Found target in ", i + 1, " lookups"
+            echo i + 1
             return
 
         let lastPeer = peer
@@ -85,7 +86,8 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
 
             peer = sample(lookup)
 
-    echo "Not found in max iterations"
+    echo 100
+    # echo "Not found in max iterations"
 
 proc runWithRandom(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) {.async.} =
     randomize()
@@ -141,7 +143,7 @@ proc run() {.async.} =
     echo "Setting up ", N, " nodes"
 
     for i in 0..<N:
-        let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
+        let node = initDiscoveryNode(PrivateKey.random().get, localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
         nodes.add(node)
 
         if (USE_MANUAL_PAIRING and i == 0) or not USE_MANUAL_PAIRING:
@@ -154,7 +156,7 @@ proc run() {.async.} =
     echo "Sleeping for ", SLEEP, " seconds"
     await sleepAsync(SLEEP.seconds)
 
-    let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
+    let node = initDiscoveryNode(PrivateKey.random().get, localAddress(20300 + N), @[nodes[0].localNode.record])
 
     for i in 0..<RUNS:
         await runWith(node, nodes)
