@@ -16,12 +16,12 @@ const
     COOLDOWN = 0
 
     # the sleep period before starting our runs.
-    SLEEP = 0
+    SLEEP = 60
     VERBOSE = true
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
     # otherwise we use discv5s native paring functionality letting each node find peers using the boostrap.
-    USE_MANUAL_PAIRING = true
+    USE_MANUAL_PAIRING = false
 
     # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
@@ -138,7 +138,7 @@ proc run() {.async.} =
     echo "Setting up ", N, " nodes"
 
     for i in 0..<N:
-        let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
+        let node = initDiscoveryNode(PrivateKey.random().get, localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
         nodes.add(node)
 
         if (USE_MANUAL_PAIRING and i == 0) or not USE_MANUAL_PAIRING:
@@ -151,7 +151,7 @@ proc run() {.async.} =
     echo "Sleeping for ", SLEEP, " seconds"
     await sleepAsync(SLEEP.seconds)
 
-    let node = initDiscoveryNode(newPrivateKey(), localAddress(20300 + N), @[nodes[0].localNode.record])
+    let node = initDiscoveryNode(PrivateKey.random().get, localAddress(20300 + N), @[nodes[0].localNode.record])
 
     for i in 0..<RUNS:
         await runWith(node, nodes)

@@ -16,7 +16,7 @@ proc localAddress*(port: int): Address =
 
 proc initDiscoveryNode*(privKey: PrivateKey, address: Address, bootstrapRecords: seq[Record]): discv5_protocol.Protocol =
     var db = DiscoveryDB.init(newMemoryDB())
-    result = newProtocol(privKey, db, parseIpAddress("127.0.0.1"), address.tcpPort, address.udpPort, bootstrapRecords)
+    result = newProtocol(privKey, db, some(parseIpAddress("127.0.0.1")), address.tcpPort, address.udpPort, bootstrapRecords)
     result.open()
 
 proc count*[T](s: openArray[T], pred: proc(x: T): bool {.closure.}): int
@@ -37,13 +37,6 @@ proc count*[T](s: openArray[T], pred: proc(x: T): bool {.closure.}): int
         if pred(s[i]):
             result += 1
 
-proc generateNode*(privKey = newPrivateKey()): Node =
-    let enr = enr.Record.init(1, privKey, none(Address))
-    result = newNode(enr)
-
 proc recordToNodeID*(r: Record): NodeId =
-    var pk: PublicKey
-    if recoverPublicKey(r.get("secp256k1", seq[byte]), pk) != EthKeysStatus.Success:
-        raise newException(ToNodeIDError, "rip")
-
-    result = readUintBE[256](keccak256.digest(pk.getRaw()).data)
+    var pk = r.get(PublicKey)
+    result = readUintBE[256](keccak256.digest(pk.get.toRaw()).data)
