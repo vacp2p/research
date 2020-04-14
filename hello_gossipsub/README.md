@@ -5,3 +5,8 @@ Playing around with GossipSub in Nim to check feasibility of moving over Waku to
 Let's start small:
 - Node that broadcast message
 - Node that receives it
+
+
+## Running
+
+`nim c -r src/hello_gossipsub.nim`
