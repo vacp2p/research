@@ -30,7 +30,7 @@ const
     LOOK_FOR_FIELD = true
 
     # The amount of nodes that will have our specific field to look for
-    LOOKUP_FIELD_DISTRIBUTION = 100
+    LOOKUP_FIELD_DISTRIBUTION = 5
 
 proc write(str: string) =
     if VERBOSE:
