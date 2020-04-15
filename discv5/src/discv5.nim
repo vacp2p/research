@@ -10,13 +10,13 @@ const
     N = 100
 
     MAX_LOOKUPS = 100
-    RUNS = 10
+    RUNS = 100
 
     # the cooldown period between runs.
     COOLDOWN = 0
 
     # the sleep period before starting our runs.
-    SLEEP = 60
+    SLEEP = 600
     VERBOSE = true
 
     # if true, nodes are randomly added to other nodes using the `addNode` function.
@@ -25,6 +25,12 @@ const
 
     # when manual pairing is enabled this indicates the amount of nodes to pair with.
     PEERS_PER_NODE = 16
+
+    # True if looking for a node with field rather than a specific node
+    LOOK_FOR_FIELD = true
+
+    # The amount of nodes that will have our specific field to look for
+    LOOKUP_FIELD_DISTRIBUTION = 100
 
 proc write(str: string) =
     if VERBOSE:
@@ -64,7 +70,7 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
             return
 
         if count(lookup, proc (x: Node): bool = x.record.toUri() == target.record.toUri()) == 1:
-            echo "Found target in ", i + 1, " lookups"
+            echo i + 1
             return
 
         let lastPeer = peer
@@ -81,6 +87,36 @@ proc runWith(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol
                 break
 
             peer = sample(lookup)
+
+    echo "Not found in max iterations"
+
+proc runWithENR(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Protocol]) {.async.} =
+    randomize()
+
+    var peer = sample(nodes).localNode
+
+    let distance = uint32(256)
+
+    var called = newSeq[string](0)
+
+    for i in 0..<MAX_LOOKUPS:
+        var lookup = await node.findNode(peer, distance)
+        called.add(peer.record.toUri())
+
+        keepIf(lookup, proc (x: Node): bool =
+            x.record.toUri() != node.localNode.record.toUri() and not called.contains(x.record.toUri())
+        )
+
+        for x in lookup:
+            if x.record.tryGet("search", uint).isSome:
+                echo i + 1
+                return
+
+        if lookup.len == 0:
+            write("Lookup from node " & $((get peer.record.toTypedRecord()).udp.get()) & " found no results at 256")
+            return
+
+        peer = sample(lookup)
 
     echo "Not found in max iterations"
 
@@ -137,8 +173,15 @@ proc run() {.async.} =
 
     echo "Setting up ", N, " nodes"
 
+    let divisor = int(N / LOOKUP_FIELD_DISTRIBUTION)
+
     for i in 0..<N:
-        let node = initDiscoveryNode(PrivateKey.random().get, localAddress(20300 + i), if i > 0: @[nodes[0].localNode.record] else: @[])
+        let node = initDiscoveryNode(
+            PrivateKey.random().get,
+            localAddress(20300 + i),
+            if i > 0: @[nodes[0].localNode.record] else: @[],
+            if i mod divisor == 0: 1 else: 0
+        )
         nodes.add(node)
 
         if (USE_MANUAL_PAIRING and i == 0) or not USE_MANUAL_PAIRING:
@@ -148,13 +191,18 @@ proc run() {.async.} =
         for n in nodes:
             pair(n, nodes)
 
-    echo "Sleeping for ", SLEEP, " seconds"
-    await sleepAsync(SLEEP.seconds)
+    if not USE_MANUAL_PAIRING:
+        echo "Sleeping for ", SLEEP, " seconds"
+        await sleepAsync(SLEEP.seconds)
 
-    let node = initDiscoveryNode(PrivateKey.random().get, localAddress(20300 + N), @[nodes[0].localNode.record])
+    let node = initDiscoveryNode(PrivateKey.random().get, localAddress(20300 + N), @[nodes[0].localNode.record], 0)
 
     for i in 0..<RUNS:
-        await runWith(node, nodes)
+        if LOOK_FOR_FIELD:
+               await runWithENR(node, nodes)
+        else:
+           await runWith(node, nodes)
+
         await sleepAsync(COOLDOWN.seconds)
 
 when isMainModule:
