@@ -107,7 +107,7 @@ proc runWithENR(node: discv5_protocol.Protocol, nodes: seq[discv5_protocol.Proto
             x.record.toUri() != node.localNode.record.toUri() and not called.contains(x.record.toUri())
         )
 
-        if lookup.countIt(it.record.tryGet("search", uint).isSome) >= 1:
+        if lookup.countIt(it.record.tryGet("search", seq[byte]).isSome) >= 1:
             echo i + 1
             return
 
