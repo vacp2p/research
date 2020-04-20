@@ -1,5 +1,8 @@
 #import libp2p/protocols/pubsub/floodsub
 #import unittest, sequtils
+#import nimbus/rpc/waku
+## example.nim
+
 import chronos
 import libp2p/standard_setup
 import libp2p/[switch,
@@ -7,6 +10,7 @@ import libp2p/[switch,
                protocols/pubsub/pubsub,
                protocols/pubsub/rpc/messages,
                protocols/pubsub/rpc/message]
+import ../vendor/nimbus/waku/wakunode
 
 # From tests/pubsub/utils.nim
 proc generateNodes*(num: Natural, gossip: bool = false): seq[Switch] =

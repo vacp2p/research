@@ -10,3 +10,11 @@ Let's start small:
 ## Running
 
 `nim c -r src/hello_gossipsub.nim`
+
+
+## What I want to do
+
+Use Waku stuff from Nimbus here,
+Get quicksim working
+Then try to do similar with libp2p gossipsub
+

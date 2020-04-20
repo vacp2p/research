@@ -1,0 +1,15 @@
+[submodule "hello_gossipsub/vendor/nimbus"]
+	path = hello_gossipsub/vendor/nimbus
+	url = https://github.com/status-im/nimbus/
+[submodule "hello_gossipsub/vendor/nim-eth"]
+	path = hello_gossipsub/vendor/nim-eth
+	url = https://github.com/status-im/nim-eth
+[submodule "hello_gossipsub/vendor/nim-secp256k1"]
+	path = hello_gossipsub/vendor/nim-secp256k1
+	url = https://github.com/status-im/nim-secp256k1
+[submodule "hello_gossipsub/vendor/nim-libp2p"]
+	path = hello_gossipsub/vendor/nim-libp2p
+	url = https://github.com/status-im/nim-libp2p
+[submodule "hello_gossipsub/vendor/nim-stew"]
+	path = hello_gossipsub/vendor/nim-stew
+	url = https://github.com/status-im/nim-stew
