@@ -5,7 +5,7 @@ import
 const
   defaults ="--log-level:DEBUG --log-metrics --metrics-server --rpc"
   wakuNodeBin = "build" / "wakunode"
-  metricsDir = "waku" / "metrics"
+#  metricsDir = "waku" / "metrics"
   portOffset = 2
 
 type
@@ -187,10 +187,10 @@ when isMainModule:
       sleepDuration += 1
     count += 1
 
-  generatePrometheusConfig(nodes, metricsDir / "prometheus" / "prometheus.yml")
-  proccessGrafanaDashboard(nodes.len,
-    "waku" / "examples" / "waku-grafana-dashboard.json",
-    metricsDir / "waku-sim-all-nodes-grafana-dashboard.json")
+#  generatePrometheusConfig(nodes, metricsDir / "prometheus" / "prometheus.yml")
+#  proccessGrafanaDashboard(nodes.len,
+#    "waku" / "examples" / "waku-grafana-dashboard.json",
+#    metricsDir / "waku-sim-all-nodes-grafana-dashboard.json")
 
   let errorCode = execCmd(commandStr)
   if errorCode != 0:
