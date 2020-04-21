@@ -25,3 +25,5 @@ make start_network quicksim
 Use Waku stuff from Nimbus here,
 Get quicksim working
 Then try to do similar with libp2p gossipsub
+
+waku folder is Waku imported from Nimbus, not using right now (need to fix Nimbus links etc).
