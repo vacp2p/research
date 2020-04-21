@@ -7,11 +7,5 @@ license       = "MIT"
 srcDir        = "src"
 bin           = @["hello_gossipsub"]
 
-
-
 # Dependencies
-
 requires "nim >= 1.2.0"
-#requires "libp2p"
-#requires "nimbus"
-#requires "nim-eth"
