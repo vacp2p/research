@@ -161,6 +161,12 @@ proc runWithLibP2P(config: WakuNodeConf) =
     address = Address(ip: ip, tcpPort: tcpPort, udpPort: udpPort)
 
   # TODO: Here setup a libp2p node
+  # Essentially something like this in nbc/eth2_network:
+  # proc createEth2Node*(conf: BeaconNodeConf): Future[Eth2Node]
+  # TODO: Also see beacon_chain/beaconnode, RPC server etc
+  # Also probably start with floodsub for simplicity
+  # Slice it up only minimal parts here
+  # HERE ATM
 
   # Set-up node
 #  var node = newEthereumNode(config.nodekey, address, 1, nil, clientId,
