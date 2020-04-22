@@ -1,7 +1,10 @@
-all: start_network
+all: wakunode start_network quicksim
 
-start_network: src/start_network.nim
-	nim c -o:build/start_network src/start_network.nim
+start_network: waku/start_network.nim
+	nim c --threads:on -o:build/start_network waku/start_network.nim
 
-quicksim: src/quicksim.nim
-	nim c -o:build/quicksim src/quicksim.nim
+quicksim: waku/quicksim.nim
+	nim c --threads:on -o:build/quicksim waku/quicksim.nim
+
+wakunode: waku/wakunode.nim
+	nim c --threads:on -o:build/wakunode waku/wakunode.nim
