@@ -129,6 +129,11 @@ type
       defaultValue: false
       name: "log-metrics" }: bool
 
+    libp2p* {.
+      desc: "Use libp2p (GossipSub)."
+      defaultValue: false
+      name: "libp2p" }: bool
+
     # TODO:
     # - discv5 + topic register
     # - mailserver functionality

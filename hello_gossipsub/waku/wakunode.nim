@@ -61,7 +61,8 @@ proc setupNat(conf: WakuNodeConf): tuple[ip: IpAddress,
       if extPorts.isSome:
         (result.tcpPort, result.udpPort) = extPorts.get()
 
-proc run(config: WakuNodeConf) =
+proc runWithDevP2P(config: WakuNodeConf) =
+
   if config.logLevel != LogLevel.NONE:
     setLogLevel(config.logLevel)
 
@@ -147,6 +148,106 @@ proc run(config: WakuNodeConf) =
     addTimer(Moment.fromNow(2.seconds), logMetrics)
 
   runForever()
+
+proc runWithLibP2P(config: WakuNodeConf) =
+
+  info "libp2p support NYI"
+
+  if config.logLevel != LogLevel.NONE:
+    setLogLevel(config.logLevel)
+
+  let
+    (ip, tcpPort, udpPort) = setupNat(config)
+    address = Address(ip: ip, tcpPort: tcpPort, udpPort: udpPort)
+
+  # TODO: Here setup a libp2p node
+
+  # Set-up node
+#  var node = newEthereumNode(config.nodekey, address, 1, nil, clientId,
+#    addAllCapabilities = false)
+#  if not config.bootnodeOnly:
+#    node.addCapability Waku # Always enable Waku protocol
+#    var topicInterest: Option[seq[waku_protocol.Topic]]
+#    var bloom: Option[Bloom]
+#    if config.wakuTopicInterest:
+#      var topics: seq[waku_protocol.Topic]
+#      topicInterest = some(topics)
+#    else:
+#      bloom = some(fullBloom())
+#    let wakuConfig = WakuConfig(powRequirement: config.wakuPow,
+#                                bloom: bloom,
+#                                isLightNode: config.lightNode,
+#                                maxMsgSize: waku_protocol.defaultMaxMsgSize,
+#                                topics: topicInterest)
+#    node.configureWaku(wakuConfig)
+#    if config.whisper or config.whisperBridge:
+#      node.addCapability Whisper
+#      node.protocolState(Whisper).config.powRequirement = 0.002
+#    if config.whisperBridge:
+#      node.shareMessageQueue()
+#
+#  # TODO: Status fleet bootnodes are discv5? That will not work.
+#  let bootnodes = if config.bootnodes.len > 0: setBootNodes(config.bootnodes)
+#                  elif config.fleet == prod: setBootNodes(StatusBootNodes)
+#                  elif config.fleet == staging: setBootNodes(StatusBootNodesStaging)
+#                  elif config.fleet == test : setBootNodes(StatusBootNodesTest)
+#                  else: @[]
+#
+#  traceAsyncErrors node.connectToNetwork(bootnodes, not config.noListen,
+#    config.discovery)
+#
+#  if not config.bootnodeOnly:
+#    # Optionally direct connect with a set of nodes
+#    if config.staticnodes.len > 0: connectToNodes(node, config.staticnodes)
+#    elif config.fleet == prod: connectToNodes(node, WhisperNodes)
+#    elif config.fleet == staging: connectToNodes(node, WhisperNodesStaging)
+#    elif config.fleet == test: connectToNodes(node, WhisperNodesTest)
+#
+#  if config.rpc:
+#    let ta = initTAddress(config.rpcAddress,
+#      Port(config.rpcPort + config.portsShift))
+#    var rpcServer = newRpcHttpServer([ta])
+#    let keys = newKeyStorage()
+#    setupWakuRPC(node, keys, rpcServer)
+#    setupWakuSimRPC(node, rpcServer)
+#    rpcServer.start()
+#
+#  when defined(insecure):
+#    if config.metricsServer:
+#      let
+#        address = config.metricsServerAddress
+#        port = config.metricsServerPort + config.portsShift
+#      info "Starting metrics HTTP server", address, port
+#      metrics.startHttpServer($address, Port(port))
+#
+#  if config.logMetrics:
+#    proc logMetrics(udata: pointer) {.closure, gcsafe.} =
+#      {.gcsafe.}:
+#        let
+#          connectedPeers = connected_peers.value
+#          validEnvelopes = waku_protocol.valid_envelopes.value
+#          invalidEnvelopes = waku_protocol.dropped_expired_envelopes.value +
+#            waku_protocol.dropped_from_future_envelopes.value +
+#            waku_protocol.dropped_low_pow_envelopes.value +
+#            waku_protocol.dropped_too_large_envelopes.value +
+#            waku_protocol.dropped_bloom_filter_mismatch_envelopes.value +
+#            waku_protocol.dropped_topic_mismatch_envelopes.value +
+#            waku_protocol.dropped_benign_duplicate_envelopes.value +
+#            waku_protocol.dropped_duplicate_envelopes.value
+#
+#      info "Node metrics", connectedPeers, validEnvelopes, invalidEnvelopes
+#      addTimer(Moment.fromNow(2.seconds), logMetrics)
+#    addTimer(Moment.fromNow(2.seconds), logMetrics)
+#
+  runForever()
+
+proc run(config: WakuNodeConf) =
+  if config.libp2p:
+    info "Using libp2p (GossipSub)"
+    runWithLibP2P(config)
+  else:
+    info "Using devp2p"
+    runWithDevP2P(config)
 
 when isMainModule:
   let conf = WakuNodeConf.load()
