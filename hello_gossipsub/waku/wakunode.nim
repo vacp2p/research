@@ -4,8 +4,21 @@ import
   eth/[keys, p2p, async_utils], eth/common/utils, eth/net/nat,
   eth/p2p/[discovery, enode, peer_pool, bootnodes, whispernodes],
   eth/p2p/rlpx_protocols/[whisper_protocol, waku_protocol, waku_bridge],
-  # TODO: Better aliasing somehow?
-  ../vendor/nimbus/nimbus/rpc/[waku, wakusim, key_storage]
+  ../vendor/nimbus/nimbus/rpc/[waku, wakusim, key_storage],
+  ../vendor/nim-libp2p/libp2p/standard_setup,
+  ../vendor/nim-libp2p/libp2p/crypto/crypto
+
+# TODO: Better aliasing of vendor dirs
+
+# TODO: Something wrong with module imports, "invalid module name" with this
+#  ../vendor/nim-libp2p/libp2p/[switch, standard_setup, peerinfo, peer, connection,
+#          multiaddress, multicodec, crypto/crypto, protocols/identify, protocols/protocol]
+
+# key and crypto modules different
+type
+  KeyPair* = crypto.KeyPair
+  PublicKey* = crypto.PublicKey
+  PrivateKey* = crypto.PrivateKey
 
 const clientId = "Nimbus waku node"
 
@@ -24,6 +37,7 @@ proc connectToNodes(node: EthereumNode, nodes: openArray[string]) =
 
     traceAsyncErrors node.peerPool.connectToNode(newNode(whisperENode))
 
+# NOTE: Looks almost identical to beacon_chain/eth2_network.nim
 proc setupNat(conf: WakuNodeConf): tuple[ip: IpAddress,
                                            tcpPort: Port,
                                            udpPort: Port] =
@@ -157,8 +171,24 @@ proc runWithLibP2P(config: WakuNodeConf) =
     setLogLevel(config.logLevel)
 
   let
+    # External TCP and UDP ports
     (ip, tcpPort, udpPort) = setupNat(config)
     address = Address(ip: ip, tcpPort: tcpPort, udpPort: udpPort)
+
+    port = tcpPort
+    # Using this for now
+    DefaultAddr = "/ip4/127.0.0.1/tcp/55505"
+    hostAddress = MultiAddress.init(DefaultAddr)
+
+    # Difference between announced and host address relevant for running behind NAT, however doesn't seem like nim-libp2p supports this. GHI?
+    #
+    # TODO: Convert config.nodekey eth.key to libp2p.crypto key. Should work with Secp256k1, just need to ensure representation etc is the same. Using random now for spike.
+    #nodekey = config.nodekey
+    #keys = crypto.KeyPair(nodekey)
+    privKey = PrivateKey.random(Secp256k1)
+    keys = KeyPair(seckey: privKey, pubkey: privKey.getKey())
+
+  info "Initializing networking (host address and announced same)", address
 
   # TODO: Here setup a libp2p node
   # Essentially something like this in nbc/eth2_network:
@@ -167,6 +197,16 @@ proc runWithLibP2P(config: WakuNodeConf) =
   # Also probably start with floodsub for simplicity
   # Slice it up only minimal parts here
   # HERE ATM
+  # config.nodekey = KeyPair.random().tryGet()
+  # address = set above; ip, tcp and udp port (incl NAT)
+  # clientId = "Nimbus waku node"
+  #let network = await createLibP2PNode(conf) # doing in-line
+  # let rpcServer ...
+
+  var switch = newStandardSwitch(some keys.seckey, hostAddress, triggerSelf = true, gossip = true)
+  #
+  # After we have a switch...
+
 
   # Set-up node
 #  var node = newEthereumNode(config.nodekey, address, 1, nil, clientId,

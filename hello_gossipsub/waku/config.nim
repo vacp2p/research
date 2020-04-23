@@ -85,7 +85,7 @@ type
 
     nodekey* {.
       desc: "P2P node private key as hex.",
-      defaultValue: KeyPair.random().tryGet()
+      defaultValue: keys.KeyPair.random().tryGet()
       name: "nodekey" }: KeyPair
     # TODO: Add nodekey file option
 
