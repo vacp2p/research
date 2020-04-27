@@ -6,7 +6,8 @@ import
   eth/p2p/rlpx_protocols/[whisper_protocol, waku_protocol, waku_bridge],
   ../vendor/nimbus/nimbus/rpc/[waku, wakusim, key_storage],
   ../vendor/nim-libp2p/libp2p/standard_setup,
-  ../vendor/nim-libp2p/libp2p/crypto/crypto
+  ../vendor/nim-libp2p/libp2p/crypto/crypto,
+  ../vendor/nim-libp2p/libp2p/protocols/protocol
 
 # TODO: Better aliasing of vendor dirs
 
@@ -20,7 +21,16 @@ type
   PublicKey* = crypto.PublicKey
   PrivateKey* = crypto.PrivateKey
 
+  # handler defined in parent object
+type WakuProto = ref object of LPProtocol
+  switch: Switch
+  conn: Connection
+  connected: bool
+  started: bool
+
 const clientId = "Nimbus waku node"
+
+const WakuCodec = "/vac/waku/2.0.0-alpha0"
 
 let globalListeningAddr = parseIpAddress("0.0.0.0")
 
@@ -163,6 +173,17 @@ proc runWithDevP2P(config: WakuNodeConf) =
 
   runForever()
 
+proc newWakuProto(switch: Switch): WakuProto =
+  var wakuproto = WakuProto(switch: switch, codec: WakuCodec)
+
+  proc handle(conn: Connection, proto: string) {.async, gcsafe.} =
+    let msg = cast[string](await conn.readLp())
+    await conn.writeLp("Hello!")
+    await conn.close()
+
+  wakuproto.handler = handle
+  return wakuproto
+
 proc runWithLibP2P(config: WakuNodeConf) =
 
   info "libp2p support NYI"
@@ -203,9 +224,10 @@ proc runWithLibP2P(config: WakuNodeConf) =
   #let network = await createLibP2PNode(conf) # doing in-line
   # let rpcServer ...
 
+  # Is it a "Standard" Switch? Assume it is for now
   var switch = newStandardSwitch(some keys.seckey, hostAddress, triggerSelf = true, gossip = true)
-  #
-  # After we have a switch...
+  let wakuProto = newWakuProto(switch)
+  switch.mount(wakuProto)
 
 
   # Set-up node
