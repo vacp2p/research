@@ -7,7 +7,8 @@ import
   ../vendor/nimbus/nimbus/rpc/[waku, wakusim, key_storage],
   ../vendor/nim-libp2p/libp2p/standard_setup,
   ../vendor/nim-libp2p/libp2p/crypto/crypto,
-  ../vendor/nim-libp2p/libp2p/protocols/protocol
+  ../vendor/nim-libp2p/libp2p/protocols/protocol,
+  ../vendor/nim-libp2p/libp2p/peerinfo
 
 # TODO: Better aliasing of vendor dirs
 
@@ -208,8 +209,11 @@ proc runWithLibP2P(config: WakuNodeConf) =
     #keys = crypto.KeyPair(nodekey)
     privKey = PrivateKey.random(Secp256k1)
     keys = KeyPair(seckey: privKey, pubkey: privKey.getKey())
+    peerInfo = PeerInfo.init(privKey)
 
   info "Initializing networking (host address and announced same)", address
+
+  peerInfo.addrs.add(Multiaddress.init(DefaultAddr))
 
   # TODO: Here setup a libp2p node
   # Essentially something like this in nbc/eth2_network:
@@ -228,6 +232,16 @@ proc runWithLibP2P(config: WakuNodeConf) =
   var switch = newStandardSwitch(some keys.seckey, hostAddress, triggerSelf = true, gossip = true)
   let wakuProto = newWakuProto(switch)
   switch.mount(wakuProto)
+
+  # TODO: Make context async
+  #let fut = await switch.start()
+  discard switch.start()
+  wakuProto.started = true
+
+  let id = peerInfo.peerId.pretty
+  info "PeerInfo", id = id, addrs = peerInfo.addrs
+  let listenStr = $peerInfo.addrs[0] & "/ipfs/" & id
+  info "Listening on", full = listenStr
 
 
   # Set-up node
