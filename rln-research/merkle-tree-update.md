@@ -1,20 +1,19 @@
 # Solution Overview
-In a Merkle Tree with the capacity of `n` leaves , one can compute the root of the tree by maintaining the root nodes of log(n) number of complete Merkle trees. 
+> In a Merkle Tree with the capacity of `n` leaves , one can compute the root of the tree by maintaining the root nodes of log(n) number of complete Merkle trees. 
 
-We use this fact and define `F` to be an array of size log(n) holding the root of complete Merkle trees (all positioned on the left side of the tree) for levels `[0, d=log(n)+1]`. Each entry of `F` at position `i`  holds a pair `(index, H)` where H is the root of the complete subtree at level `i`, and  `index` indicates the index of the leaf node whose insertion resulted in `H`.
+We use the preciding  observation and define `F = [(L0,H0,index0), ..., (Ld,Hd,indexd)]` to be an array of size log(n)+1 holding the root of the complete Merkle trees (all positioned on the left side of the tree) for levels `[0, d=log(n)+1]`. Each entry of `F`  holds a tuple `(L,index, H)` `H`is the root of the complete subtree at level `L`, and  `index` indicates the index of the leaf node whose insertion resulted in `H`.
 
- `F = [(L0,H0,index0), ..., (Ld,Hd,indexd)]`
 For the Merkle Tree shown in Figure below, `F = [(L0, N12, leaf5), (L1, N6, leaf6), (L2, N2, leaf4), (L3, N1, leaf6)]` is highlighted in green. Note that none of the gray nodes are stored as part of `F`.
 
-![Tree](F.png =250x250)
+![Tree](F.png)
 
 
 
 
-## Deletion
+## Computing the root after deletion
 
-Consider the deletion of the `leafi` with the authentication path / (membership proof) of the follwoing form `authpath = [(L0,H0), ..., (Ld,Hd)]`. 
-The authentication path of `leaf2`  is illustrated in the following figure. `authpath2 = [(L0, N8), (L1,N5), (L2,N3), (L3,N1)]`.
+Consider the deletion of the `leafi` with the authentication path / (membership proof) of the follwoing form `authpath = [(L0,H0), ..., (Ld,Hd)]` where `H` values represent the value of the merkle tree nodes at the indicated level `L`. 
+The authentication path of `leaf2`  is illustrated in the following figure and consists of `authpath2 = [(L0, N8), (L1,N5), (L2,N3), (L3,N1)]`.
 
 ![authPath](authPath.png)
 
