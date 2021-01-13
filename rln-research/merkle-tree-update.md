@@ -9,7 +9,7 @@ In the current implementation of the rln, where the membership contract contains
 The dicussion above brings us to the second possible approach in which the tree construction, storage and maintenace will be delegated to the peers thus no tree gets stored on the chain. 
 The smart contract will only store an ordered list of existing members public keys i.e., pk. The member deletion happens by replacing the member's pk in the list with a special value like 0. Peers need to listen to the events on the chain to update their local const5ructed trees.
 
-In the off-chain tree storage, peers are responsible for the construction and maintenance of the membership tree. To do so, the peers must maintain enough number of nodes of the tree that enables them to update the tree in the case of deletion and insertion of members. While an optimal solution exists to efficiently support insertion (the solution imposes only O(logn) storage complexity where n is the total number of members), efficiently supporting deletion is still an unknown. 
+In the off-chain tree storage, peers are responsible for the construction and maintenance of the membership tree. To do so, the peers must maintain enough number of nodes of the tree that enables them to calculate the updated tree root in the case of deletion and insertion of members. While an optimal solution exists to efficiently support insertion (the solution imposes only O(logn) storage complexity where n is the total number of members), efficiently supporting deletion is still an unknown. 
 
 The immediate remedy is that the entire tree shall be stored by each peer, however, this solution is storage inefficient due to the size of the tree. This requires almost ... GB of storage at each peer. Provided that peers are resource constrained, such solution does not fit. 
 
@@ -24,7 +24,11 @@ We are seeking a solution in which a peer can perform the following operations b
 - recalculate the root after a member deletion
 - recalculcate an aithentication path for a given leaf index after an insertion
 - recalculcate an aithentication path for a given leaf index after a deletion
-
+  
+<!-- # Less efficient immediate approaches
+- The entire tree shall be stored by each peer, this solution is storage inefficient due to the size of the tree. At the PoC level, this solution might be acceptable (or may not). 
+- The entire tree gets stored on the chain (i.e., as part of the membership contract state), this solution would be costly for the peers as they have to pay around 100 dollars to perform a deletion (due to the gas price as well as the fact that deletion involves almost 2logn hash recomputations). The same problem applies to the insertion operation on the chain but the price shall be lower (almost the number of operations is half of a deletion).
+- **Open Problem**: A solution that -->
 
 # Solution Overview
 
@@ -113,8 +117,43 @@ HasCommAnc(i, j, lev) =
 
 # Updating authentication paths
 
-Lets index the tree nodes following the formula below, for each tree node with index `i`, its right and left child have index `2*i` and `2*i+1`, respectively. The root has index `1`. The sample tree is illustrated below.
 
-When a node gets deleted, 
+### Node labeling
+Consider the following labling procedure through which each node of the tree assigned a label `GID`. The labeling procedure is as follows. For each tree node with index `GID`, its right and left child have index `2*GID` and `2*GID+1`, respectively. The procedure starts by assigning `GID` of  `1` to the tree root. The sample labeled tree is illustrated below. This labeling mechanism allows to uniquely address each tree node through its GID. 
 
-While writing up the preceding solution, I came up with a simiplified version in which we do not need to store the the leaf indices, instead we can compute them on the fly. 
+![GID](GID.png)
+
+We utlize this labeling mechanism, to efficiently update peers authentication paths when new join or deletion occurs. The general idea is to additionally store the GID of the tree nodes in the authentication paths. As such, when an update occurs, the peer identifies the GID of the nodes of the tree that are altered as the result of the update operation, and checks whether any of them (based on the GIDs) are part of its own authentication path. If yes, then she updates the correspondign nodes in her authentication path. 
+
+The authentication path shall be of the following structure `authPath=[(H_0,GID_0), ..., (H_d, GID_d)]` where `H_i` indicates the hash value of the node, and `GID_i` signifies the GID of that node. The authentication path of leaf2 is depicted below and has the following values `authPath=[(h,8), (e,5), (c,3), (a,1)]`.
+
+![GIDauthPath](GIDauthPath.png)
+
+
+Below, we demonestrate how to update a peer's authentication path when a deletion operation occurs.
+Consider a peer with `leafIdex_peer` and the authentication path as `authPath_peer=[(H_0,GID_0), ..., (H_d, GID_d)]`
+The deleted peer's has the index `leafIndex_del` and the authentication path `authPath_del`
+
+- calculate the indices of the latered nodes. Note that all the ancestors of the deleted leaf node get altered as the result of the deletion of that node, so we calculate the GIDs of its ancestors at level `i = [0, ..., logn]`
+  - The GID of the deleted leaf is `GID_leaf_del = leafIndex_del + (2^d) - 1`
+  - The GID of the ancestor (of the deleted leaf) at level `i` is `GID_leaf_del_anc_i = floor( GID_leaf /(2^i))` (this is equivalent to shifting `GID_leaf ` to right by `i` bits)
+- Lets `A=[GID_leaf_del), ..., GID_leaf_del_anc_d]` where `d=logn`
+- Find the intersection of `A` and `authPath_peer` i.e.,  nodes on the peer's authentication path whose GIDs belong to `A`. Once found, replace their hash values with the updated ones.
+
+An example: 
+Consider a peer holding leaf 6, with  the authentication path `authPath_peer=[(l,11), (g,7), (b,2), (a,1)]`
+that recevies the deletion of `leafIndex_del:2` with the `authPath_del= [(h,8), (e,5), (c,3), (a,1)]`
+Calculate the GID of the latered nodes, `GID_leaf_del= leafIndex_del + (2^d) - 1 = 2 + 7 =9` thus `A=[9, floor(9/2)=4, floor(9/2^2)=2, floor(9/2^3)=1]`
+lets denote the altered hash values of by `i', d', b', a'`
+Among the latered node, `authPath_peer` contains GIDs `2` and `1` hence the corresponding hash values must be updated to `b'` and `a'`, respectively.
+
+### Simplification
+We do not have to store the GIDs of inside an authentication path. Insteadm we can follow the following formula to calculate them on the fly. We first calculte the ancestors of the leaf node as we did above, the  siblings of those the ancestors constitute the nodes on the authentication path, thus we shall find the GID of the ancestors.
+Here is the formula:
+`A[0], ..., A[d]`
+Siblings of `A[i]` is ` A[i]+1` if `A[i]` is even, otherwise `A[i]-1`.
+
+For a given leaf index, the GID of the nodes along its authentication path can be computed as:
+
+
+
