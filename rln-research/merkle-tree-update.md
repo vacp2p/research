@@ -118,23 +118,23 @@ HasCommAnc(i, j, lev) =
 # Updating authentication paths
 
 
-### Node labeling
+## Node labeling
 Consider the following labling procedure through which each node of the tree assigned a label `GID`. The labeling procedure is as follows. For each tree node with index `GID`, its right and left child have index `2*GID` and `2*GID+1`, respectively. The procedure starts by assigning `GID` of  `1` to the tree root. The sample labeled tree is illustrated below. This labeling mechanism allows to uniquely address each tree node through its GID. 
 
 ![GID](GID.png)
 
-We utlize this labeling mechanism, to efficiently update peers authentication paths when new join or deletion occurs. The general idea is to additionally store the GID of the tree nodes in the authentication paths. As such, when an update occurs, the peer identifies the GID of the nodes of the tree that are altered as the result of the update operation, and checks whether any of them (based on the GIDs) are part of its own authentication path. If yes, then she updates the correspondign nodes in her authentication path. 
+We utlize this labeling mechanism, to efficiently update peers authentication paths when new join or deletion occurs. The general idea is each peer stores the GID of the tree nodes along her authentication path (in addition to the hash values). As such, when an update occurs, the peer identifies the GID of the nodes of the tree that are altered as the result of the update operation, and checks whether any of them (based on the GIDs) are part of its own authentication path. If yes, then she updates the corresponding nodes in her authentication path. We will later in [Simplification section](###Simplification) see that `GID`s can be computed on the fly hence are not required to be stored as parth of authentication paths.
 
 The authentication path shall be of the following structure `authPath=[(H_0,GID_0), ..., (H_d, GID_d)]` where `H_i` indicates the hash value of the node, and `GID_i` signifies the GID of that node. The authentication path of leaf2 is depicted below and has the following values `authPath=[(h,8), (e,5), (c,3), (a,1)]`.
 
 ![GIDauthPath](GIDauthPath.png)
 
-
+## Updating authentication path after a deletion 
 Below, we demonestrate how to update a peer's authentication path when a deletion operation occurs.
-Consider a peer with `leafIdex_peer` and the authentication path as `authPath_peer=[(H_0,GID_0), ..., (H_d, GID_d)]`
-The deleted peer's has the index `leafIndex_del` and the authentication path `authPath_del`
+Consider a peer with `leafIdex_peer` and the authentication path as `authPath_peer=[(H_0,GID_0), ..., (H_d, GID_d)]`.  Also, assume a peer with the leaf index of `leafIndex_del` is going to be deleted and has the authentication path `authPath_del`.
 
-- calculate the indices of the latered nodes. Note that all the ancestors of the deleted leaf node get altered as the result of the deletion of that node, so we calculate the GIDs of its ancestors at level `i = [0, ..., logn]`
+The update procedure is as follows:
+- calculate the indices of the latered nodes. Note that all the ancestors of the deleted leaf node get altered as the result of the deletion of that node, so we calculate the GIDs of its ancestors at level `i = [0, ..., d=logn]`
   - The GID of the deleted leaf is `GID_leaf_del = leafIndex_del + (2^d) - 1`
   - The GID of the ancestor (of the deleted leaf) at level `i` is `GID_leaf_del_anc_i = floor( GID_leaf /(2^i))` (this is equivalent to shifting `GID_leaf ` to right by `i` bits)
 - Lets `A=[GID_leaf_del), ..., GID_leaf_del_anc_d]` where `d=logn`
@@ -143,15 +143,14 @@ The deleted peer's has the index `leafIndex_del` and the authentication path `au
 An example: 
 Consider a peer holding leaf 6, with  the authentication path `authPath_peer=[(l,11), (g,7), (b,2), (a,1)]`
 that recevies the deletion of `leafIndex_del:2` with the `authPath_del= [(h,8), (e,5), (c,3), (a,1)]`
-Calculate the GID of the latered nodes, `GID_leaf_del= leafIndex_del + (2^d) - 1 = 2 + 7 =9` thus `A=[9, floor(9/2)=4, floor(9/2^2)=2, floor(9/2^3)=1]`
-lets denote the altered hash values of by `i', d', b', a'`
-Among the latered node, `authPath_peer` contains GIDs `2` and `1` hence the corresponding hash values must be updated to `b'` and `a'`, respectively.
+- Calculate the GID of the latered nodes, `GID_leaf_del= leafIndex_del + (2^d) - 1 = 2 + 7 =9` thus `A=[9, floor(9/2)=4, floor(9/2^2)=2, floor(9/2^3)=1]`. Also assume the hash values corresponding to the GIDs in `A` are  `i', d', b', a'`, respectively.
+- Among the latered node, `authPath_peer` contains GIDs `2` and `1` hence the corresponding hash values must be updated to `b'` and `a'`, respectively. Thus the updated authenticaon path is `authPath_peer=[(l,11), (g,7), (b',2), (a',1)]`.
 
 ### Simplification
-We do not have to store the GIDs of inside an authentication path. Insteadm we can follow the following formula to calculate them on the fly. We first calculte the ancestors of the leaf node as we did above, the  siblings of those the ancestors constitute the nodes on the authentication path, thus we shall find the GID of the ancestors.
+We do not have to store the GIDs as part of the authentication paths. Instead, we can follow the following formula to calculate them on the fly. We first calculte the ancestors of the leaf node as we did before, the  siblings of the ancestors constitute the nodes on the authentication path of the leaf node, thus we shall find the GID of the siblings of the ancestors.
 Here is the formula:
-`A[0], ..., A[d]`
-Siblings of `A[i]` is ` A[i]+1` if `A[i]` is even, otherwise `A[i]-1`.
+Consider `A` holds the GID of the `d` ancestors: `A[0], ..., A[d]`
+The GID of the sibling of `A[i]` is ` A[i]+1` if `A[i]` is even, otherwise `A[i]-1`.
 
 For a given leaf index, the GID of the nodes along its authentication path can be computed as:
 
