@@ -18,6 +18,13 @@ For the sake of privacy and anonymity, peers need to update their authentication
 An immediate solution for this is to store the entire tree at each peer, which is not storage efficient and does not fit for the resource constrained peers. 
 
 
+# Formal Problem Definition
+We are seeking a solution in which a peer can perform the following operations by keeping the minimum number of tree nodes
+- recalculate the root after a member insertion
+- recalculate the root after a member deletion
+- recalculcate an aithentication path for a given leaf index after an insertion
+- recalculcate an aithentication path for a given leaf index after a deletion
+
 
 # Solution Overview
 
