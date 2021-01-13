@@ -1,3 +1,9 @@
+
+# Probelm Definition
+### On chain Tree storage
+In the current implementation of the rln, where the membership contract contains the membership tree, only the insertion of a new member is supported but the deletion operation is not part of the smart contract functionality. Note that performing tree insertion is a costly operation for the peers, since it involve O(log(n)) many expensive hashing which results in a huge gas consumption. It almost costs 50 dollars for one single insertion. This problem has been addressed through batch insertions, where the costs of insertion gets amortized over multiple sequential insertions hence each peer has to pay less (for further details read ...). 
+
+
 # Solution Overview
 
 In the solution explained below, we enable a peer to to perform the operations described in [Formal Problem Definition](#Formal-Problem-Definition) by only holding O(logn) many tree nodes (but not the entire tree).
