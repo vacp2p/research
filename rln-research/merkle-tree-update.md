@@ -13,6 +13,11 @@ In the off-chain tree storage, peers are responsible for the construction and ma
 
 The immediate remedy is that the entire tree shall be stored by each peer, however, this solution is storage inefficient due to the size of the tree. This requires almost ... GB of storage at each peer. Provided that peers are resource constrained, such solution does not fit. 
 
+### Updating authentication paths
+For the sake of privacy and anonymity, peers need to update their authentication path based on the recent list of members i.e., the authentication path must be updated after each insertion and deletion.
+An immediate solution for this is to store the entire tree at each peer, which is not storage efficient and does not fit for the resource constrained peers. 
+
+
 
 # Solution Overview
 
