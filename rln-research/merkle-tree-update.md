@@ -3,6 +3,16 @@
 ### On chain Tree storage
 In the current implementation of the rln, where the membership contract contains the membership tree, only the insertion of a new member is supported but the deletion operation is not part of the smart contract functionality. Note that performing tree insertion is a costly operation for the peers, since it involve O(log(n)) many expensive hashing which results in a huge gas consumption. It almost costs 50 dollars for one single insertion. This problem has been addressed through batch insertions, where the costs of insertion gets amortized over multiple sequential insertions hence each peer has to pay less (for further details read ...). 
 
+**Cons**: While batch insertion can address the cost of tree insertion, yet no clear solution exists for a single deletion operation and it would be still costly (around 100 dollars for each deletion). The batch deletion can not be applied since the deleted nodes are scattered accross the tree leaves.
+
+### Off-chain Tree storage
+The dicussion above brings us to the second possible approach in which the tree construction, storage and maintenace will be delegated to the peers thus no tree gets stored on the chain. 
+The smart contract will only store an ordered list of existing members public keys i.e., pk. The member deletion happens by replacing the member's pk in the list with a special value like 0. Peers need to listen to the events on the chain to update their local const5ructed trees.
+
+In the off-chain tree storage, peers are responsible for the construction and maintenance of the membership tree. To do so, the peers must maintain enough number of nodes of the tree that enables them to update the tree in the case of deletion and insertion of members. While an optimal solution exists to efficiently support insertion (the solution imposes only O(logn) storage complexity where n is the total number of members), efficiently supporting deletion is still an unknown. 
+
+The immediate remedy is that the entire tree shall be stored by each peer, however, this solution is storage inefficient due to the size of the tree. This requires almost ... GB of storage at each peer. Provided that peers are resource constrained, such solution does not fit. 
+
 
 # Solution Overview
 
