@@ -8,7 +8,7 @@ In the current implementation of the rln, where the membership contract contains
 
 ## Off-chain Tree storage
 The discussion above brings us to the second possible approach in which the tree construction, storage, and maintenance will be delegated to the peers thus no tree gets stored on the chain. 
-The smart contract will only store an ordered list of existing members' public keys i.e., pk. In the list representation, when a member is deleted its pk is replaced with a special value like 0. Peers need to listen to the events on the chain (i.e., insertion and deletion) to update their local constructed trees.
+The smart contract will only store an ordered list of existing members' public keys i.e., pk. In the list representation, when a member is deleted its pk is replaced with a special value. Peers need to listen to the events on the chain (i.e., insertion and deletion) to update their local constructed trees.
 
 In the off-chain tree storage, peers are responsible for the construction and maintenance of the membership tree (specifically the root). To do so, the peers must maintain enough number of nodes of the tree that enables them to calculate the updated tree root in the case of deletion and insertion of members. While an optimal solution exists to efficiently support insertion (the solution imposes only O(log(N)) storage complexity where n is the total number of members), efficiently supporting deletion is still an unknown. 
 
