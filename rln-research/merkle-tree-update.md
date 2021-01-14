@@ -1,12 +1,12 @@
 
 # Probelm Definition
-## On-chain Tree storage
+## On-chain tree storage
 In the current implementation of the rln, where the membership contract contains a Merkle tree holding the list of current members, the contract only supports the insertion of a new leaf, but not deletion. In addition to the lack of deletion support on the contract, it seems that even the most efficient scenario with logarithmic complexity would not be cost-efficient (since it involves almost 2.log(N) many expensive hashing which results in huge gas consumption.)
 
 
 **Hint**: While batch insertion can address the cost associated with insertion, the idea of batch deletion can not be applied since the deleted nodes are scattered across the tree (leaves).
 
-## Off-chain Tree storage
+## Off-chain tree storage
 The discussion above brings us to the second possible approach in which the tree construction, storage, and maintenance will be delegated to the peers thus no tree gets stored on the chain. 
 The smart contract will only store an ordered list of existing members' public keys i.e., pk. In the list representation, when a member is deleted its pk is replaced with a special value. Peers need to listen to the events on the chain (i.e., insertion and deletion) to update their local constructed trees.
 
@@ -61,7 +61,7 @@ Let's clarify it with the help of an example. Consider `leafIndex:2`, the deleti
 ![Deletion](del.png)
 
 
-To do so, we determine whether, for each tuple `(L, leafIndex, H)` in `F`,  the `leafIndex` and the deleted leaf node have the same ancestor at level `L`. We use `HasCommAnc(i,j,lev)` method to perform this check, it is later defined in [Common ancestor](###Common-Ancestor ) subsection. For example, `leaf2` and `leaf4` have the same ancestor at level 2, which is `N2`, thus `HasCommAnc(2,4,2)` returns true.
+To do so, we determine whether, for each tuple `(L, leafIndex, H)` in `F`,  the `leafIndex` and the deleted leaf node have the same ancestor at level `L`. We use `HasCommAnc(i,j,lev)` method to perform this check, it is later defined in [Common Ancestor](###common-ancestor) subsection. For example, `leaf2` and `leaf4` have the same ancestor at level 2, which is `N2`, thus `HasCommAnc(2,4,2)` returns true.
 
 Following our previous example, in order to find out whether `N9, N4, N2` or `N1` belong to `F` we proceed as follows.
 - inputs: 
