@@ -145,6 +145,10 @@ We do not have to store the GIDs as part of the authentication paths. Instead, w
 For a given leaf, we first calculate the GIDs of its ancestors (as we did before), then the siblings of the ancestors constitute the nodes on the authentication path of the leaf node, thus we shall find the GID of the siblings of the ancestors.
 Here is the formula:
 
-For a given leaf, consider `A[0], ..., A[d]` to be  the GIDs of its ancestors. The GID of the sibling of `A[i]` is 
-- ` A[i]+1` if `A[i]` is even
-- otherwise `A[i]-1`.
+For a given leaf, consider `A[0], ..., A[d]` to be  the GIDs of its ancestors. The GID of the sibling of `A[i]` (excpet for `i=d`)is 
+- ` A[i]+1`, if `A[i]` is even
+- otherwise, `A[i]-1`
+
+The sibling of `A[d]` is itself since it is the root
+  
+For example, for leaf2, its ancestors GIDs are `A[0]=9, A[1]=4, A[2]=2, A[3]=1` and the GIDs of the nodes along its authentication path are `9-1=8, 4+1=5, 2+1=3,` and `1`.
