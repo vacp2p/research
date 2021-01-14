@@ -61,7 +61,7 @@ Let's clarify it with the help of an example. Consider `leafIndex:2`, the deleti
 ![Deletion](del.png)
 
 
-To do so, we determine whether, for each tuple `(L, leafIndex, H)` in `F`,  the `leafIndex` and the deleted leaf node have the same ancestor at level `L`. We use `HasCommAnc(i,j,lev)` method to perform this check, it is later defined in [Common Ancestor](###common-ancestor) subsection. For example, `leaf2` and `leaf4` have the same ancestor at level 2, which is `N2`, thus `HasCommAnc(2,4,2)` returns true.
+To do so, we determine whether, for each tuple `(L, leafIndex, H)` in `F`,  the `leafIndex` and the deleted leaf node have the same ancestor at level `L`. We use `HasCommAnc(i,j,lev)` method to perform this check, it is later defined in [Common Ancestor](#Common-Ancestor ) subsection. For example, `leaf2` and `leaf4` have the same ancestor at level 2, which is `N2`, thus `HasCommAnc(2,4,2)` returns true.
 
 Following our previous example, in order to find out whether `N9, N4, N2` or `N1` belong to `F` we proceed as follows.
 - inputs: 
@@ -118,7 +118,7 @@ Consider the following labeling procedure that assigns a label `GID` to each nod
 
 ![GID](GID.png)
 
-We utilize this labeling mechanism, to efficiently update peers' authentication paths when a new join or deletion occurs. The general idea is each peer stores the GID of the tree nodes along her authentication path (in addition to the hash values). As such, when an update occurs, the peer identifies the GID of the nodes of the tree that are altered as the result of the update operation and checks whether any of them (based on the GIDs) are part of its authentication path. If yes, then she updates the corresponding nodes in her authentication path. We will later see in [Simplification section](###Simplification) that `GID`s can be computed on the fly hence are not required to be stored as part of authentication paths.
+We utilize this labeling mechanism, to efficiently update peers' authentication paths when a new join or deletion occurs. The general idea is each peer stores the GID of the tree nodes along her authentication path (in addition to the hash values). As such, when an update occurs, the peer identifies the GID of the nodes of the tree that are altered as the result of the update operation and checks whether any of them (based on the GIDs) are part of its authentication path. If yes, then she updates the corresponding nodes in her authentication path. We will later see in [Simplification section](#Simplification) that `GID`s can be computed on the fly hence are not required to be stored as part of authentication paths.
 
 The authentication path shall be of the following structure `authPath=[(H_0, GID_0), ..., (H_d, GID_d)]` where `H_i` indicates the hash value of the node, and `GID_i` signifies the GID of that node. The authentication path of leaf2 is depicted below and has the following values `authPath=[(h,8), (e,5), (c,3), (a,1)]`. 
 
