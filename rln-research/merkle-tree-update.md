@@ -16,7 +16,7 @@ One immediate solution is that the entire tree shall be stored by each peer, how
 
 ## Updating authentication paths
 In addition to the calculation of tree root, peers also need to update their authentication path based on the recent list of members i.e., the authentication path must be updated after each insertion and deletion. This is essential for peers' anonymity.
-An immediate solution for this is to store the entire tree at each peer, which, as we mentioned before, is not storage efficient and does not fit for the resource-constrained peers. 
+An immediate solution for this is to store the entire tree on each peer, which, as we mentioned before, is not storage efficient and does not fit for the resource-constrained peers. 
 
 
 ## Formal Problem Definition
