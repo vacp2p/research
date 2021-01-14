@@ -29,7 +29,7 @@ We are seeking a solution in which a peer can perform the following operations b
 
 # Solution Overview
 
-In the solution explained below, we enable a peer to perform the operations described in [Formal Problem Definition](#Formal-Problem-Definition) by only holding O(log N) many tree nodes (but not the entire tree).
+In the solution explained below, we enable a peer to perform the operations described in [Formal Problem Definition](#Formal-Problem-Definition) by only holding O(log N) many tree nodes (but not the entire tree). Our focus is on supporting the deletion operation (the insertion will be similar).
 
 
 ## Computing the root after deletion
