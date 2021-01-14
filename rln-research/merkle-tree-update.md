@@ -37,7 +37,7 @@ In the solution explained below, we enable a peer to perform the operations desc
 The solution relies on the following statement:
 > In a Merkle Tree with the capacity of `N` leaves, one can compute the root of the tree by maintaining the root nodes of log(N) number of complete Merkle trees. 
 
-We use the preceding  observation and define `F = [(L:0, H0, leafIndex0), ..., (L:d, Hd, leafIndexd)]` to be an array of size log(N)+1 holding the root of the complete (left) sub-trees for levels `[0, ..., d=log(N)]`. Each entry of `F`  is a tuple `(L, leafIndex, H)` in which `H` is the root of the complete subtree at level `L`, and  `leafIndex` indicates the index of the leaf node whose insertion resulted in `H`. The storage of `leafIndex` in each tuple will later enables the efficient support of deletion operation.  Each peer shall store `F` locally.
+We use the preceding  observation and define `F = [(L:0, H0, leafIndex0), ..., (L:d, Hd, leafIndexd)]` to be an array of size log(N)+1 holding the root of the complete (left) sub-trees for levels `[0, ..., d=log(N)]`. Each entry of `F`  is a tuple `(L, H, leafIndex)` in which `H` is the root of the complete subtree at level `L`, and  `leafIndex` indicates the index of the leaf node whose insertion resulted in `H`. The storage of `leafIndex` in each tuple will later enables the efficient support of deletion operation.  Each peer shall store `F` locally.
 
 For the Merkle Tree (with 6 leaves) shown in Figure below, `F` is highlighted in green and has the following value  `F = [(L:0, N12, leafIndex:5), (L:1, N6, leafIndex:6), (L:2, N2, leafIndex:4), (L:3, N1, leafIndex:6)]`. Note that `F` only contains the green nodes but none of the gray nodes.
 
