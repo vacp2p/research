@@ -4,7 +4,7 @@
 
 > Thinking in code.
 
-This repository contains experimental code related to research for the [vac protocol](https://vac.dev). Some of the proof-of-concepts in this repository may later make it into the protocol as fundamental components.
+This repository contains experimental code related to research for [vac](https://vac.dev) and its protocols. Some of the proof-of-concepts in this repository may later make it into the protocol as fundamental components.
 
 ## Projects
 
