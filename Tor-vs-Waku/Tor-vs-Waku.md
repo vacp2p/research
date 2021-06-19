@@ -105,13 +105,12 @@ The data that goes inside the payload may still have revealing information, like
 
 You need to use **protocol-specific support software** if you don't want the sites you visit to see your identifying information. This exists in Tor browser, For example, you can use Tor Browser while browsing the web to withhold some information about your computer's configuration.
 
-No **end-to-end timing attack**: There is no destination in waku if topics are used deliberately and wisely.
-
-In waku, the traffic pattern at all the relay nodes that are subscribed to the same topic is identical. However, we should be aware of the fact that the number of messages that a sender sends will be evident which I believe is the same in Tor. See this from Tor.
-
 - If your attacker can watch the traffic coming out of your computer, and also the traffic arriving at your chosen destination, he can use statistical analysis to discover that they are part of the same circuit.
 
 # Waku advantages
 One potential advantage of using waku is that it is computationally lighter than Tor and does not require multiple encryption and decryption. Thi would also lower the message transmission delay.
 
 Another advantage is the lighter key management where  the sender does not have to establish shared keys with all the intermediate routers (as apposed to the Tor).
+
+
+No **end-to-end timing attack**: There is no destination in waku if topics are used deliberately and wisely. In waku, the traffic pattern at all the relay nodes that are subscribed to the same topic is identical. However, we should be aware of the fact that the number of messages that a sender sends will be evident which I believe is the same in Tor. 
