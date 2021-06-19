@@ -17,11 +17,9 @@ It comes in 3 main steps:
   - No header is added to the message, otherwise it would be lot easier that how far the message is from its destination. 
 
 - Tor's users employ this network by connecting through a series of **virtual tunnels** rather than making a direct connection, thus allowing both organizations and individuals to share information over public networks without compromising their privacy.
-- 
-- 
 - Tor is the implementation of Onion routing which enables us to communicate anonymously over the internet
 - The more people use the Tor network the stronger it gets. As it is easier to hide in a crowd of people that look exactly the same
-- 
+
 
 Tor Messages are called cells, and are each 512 bytes long 
 
