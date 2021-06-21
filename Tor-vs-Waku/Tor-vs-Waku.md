@@ -76,7 +76,7 @@ Tor routers may be distant and you may get delay till your message get to the de
 - [ ] An empirical analysis of this is needed to make a fair comparison with waku.
 
 # Anonymity levels
-Anonymity can be analyzed from various levels. Below is a broad classification of such: 
+Anonymity can be analyzed in various levels. Below is a broad classification of such: 
 - Communication anonymity against a third person, in this anonymity level, the communication must stay anonymous in the eyes of a third person. Neverthelss, the sender and receiver may know each other and have no concern in this regard.
 - Sender anonymity (against the network and the receiver):  For example when you want to hide the fact you are visiting a website
 <!-- You need to use **protocol-specific support software** if you don't want the sites you visit to see your identifying information. This exists in Tor browser, For example, you can use Tor Browser while browsing the web to withhold some information about your computer's configuration. -->
