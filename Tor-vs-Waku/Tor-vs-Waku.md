@@ -64,11 +64,12 @@ They control these nodes with the hope that they eventually control A and B
 That is why they are called the guard nodes, because you trust them and you don't pick them randomly
  -->
 
-- Weakness of Tor that is unsolvable: If the adversary is the front node and the exit node on the circuit, then it can figure out what is going on. - Weakness 2,end to end timing attack: Tor does not provide protection against end-to-end timing attacks: If your attacker can watch the traffic coming out of your computer, and also the traffic arriving at your chosen destination, he can use statistical analysis to discover that they are part of the same circuit.
+- If the adversary is the front node and the exit node on the circuit, then it can figure out what is going on. 
 
-- Weakness 2, traffic analysis: imagine you have got the time signature of the messages sent by a single client. The incomming ttraffic to the destination server will be a mess of lots of messages. But imagine that you can find the key points that match up with what I sent in. Then it can be used to deanonymize people
-If messages are of the certain size with a certain tempo, and figure out that the same messages came out another side of the network
+- End to end timing attack: Tor does not provide protection against end-to-end timing attacks: If your attacker can watch the traffic coming out of your computer, and also the traffic arriving at your chosen destination, he can use statistical analysis to discover that they are part of the same circuit.
 
+- Traffic analysis: imagine you have got the time signature of the messages sent by a single client. The incomming ttraffic to the destination server will be a mess of lots of messages. But imagine that you can find the key points that match up with what the client sent in. Then it can be used to deanonymize that client.
+  
 ## Performance Concerns
 
 Tor routers may be distant and you may get delay till your message get to the destination.
