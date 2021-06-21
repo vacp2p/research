@@ -165,7 +165,7 @@ This may sound like getting back to the same set of security issues as when pubs
 #### Asymmetric content topics
 Now, to provide anonymity we need to find a way to hide the link between a publisher and his content topic.
 Lets take a different perspective, instead of hiding who is publishing to which content topic, lets focus on making the content topics look different from the sender to the receiver i.e., using asymmetric content topics. For example, Alice uses content topic `A` to send message to Bob whereas Bob replies to Alice using content topic `B`. In this example, both Alice and Bob know that they should expect and listen to content topics `B` and `A`, respectively.  
-This is just a proposal, but a concrete solution on such asymmetrical topic generation needs more research. Just for the intuition, you can think of the double ratchet algorithm and how it yields unique message key per send and receive. The message keys can be used as the content topic in the waku messaging scenario.
+- [ ] This is just a proposal, but a concrete solution on such asymmetrical topic generation needs more research. Just for the intuition, you can think of the double ratchet algorithm and how it yields unique message key per send and receive. The message keys can be used as the content topic in the waku messaging scenario.
 
 
 # Waku advantages over the Tor
