@@ -54,7 +54,7 @@ Protecting against traffic analysis results means no one knows who you are talki
 
 
 ## Security Vulnerabilities
-The tor network does load sharing: to protect against DoS attack. To load a single router and anyone talking to that router will have a problem.The circuits are restablished about every 10 minutes
+<!-- The tor network does load sharing: to protect against DoS attack. To load a single router and anyone talking to that router will have a problem.The circuits are restablished about every 10 minutes
 It is adaptive and can take a different tour
 
 
@@ -62,7 +62,7 @@ What if some of the third parties are controlling these nodes:
 Maybe government agencies want to know what is going on
 They control these nodes with the hope that they eventually control A and B
 That is why they are called the guard nodes, because you trust them and you don't pick them randomly
-
+ -->
 
 - Weakness of Tor that is unsolvable: If the adversary is the front node and the exit node on the circuit, then it can figure out what is going on. - Weakness 2,end to end timing attack: Tor does not provide protection against end-to-end timing attacks: If your attacker can watch the traffic coming out of your computer, and also the traffic arriving at your chosen destination, he can use statistical analysis to discover that they are part of the same circuit.
 
@@ -118,6 +118,7 @@ The inclusion in the topic mesh reveals being the receiver of messages in that m
 
 ## Topic sharding
 Topic sharding is to blend multiple group of participants into one i.e., mixing multiple meshes into one. As such, if lets say K1 ... KN topics are all in the same shard, then the relay nodes in K1 are indistinguishable from K2 and... KN. This is also known as K-anonymity when a group of k users look identical w.r.t. some attributes.
+Another way to look at topic sharding is that we are asking nodes to aid relaying irrelevant topics in order to confuse the attacker and make the topics less specific.
 
 Is this level of a anonymity sufficient? How does it compare to the Tor? It ties to the sharing algorithm as well as the adversary background knowledge. 
  
@@ -139,9 +140,13 @@ In waku there are two ways to spot the two ends of communication:
 The act of publishing to a topic is theoretically protected and is anonymous, That is by hijacking a link and getting to see message m is set from node A to B, cannot jusge the author of the message. Nevertheless, a more powerful adversary can analyze the delay  by which the message arrives at other nodes of the netwrok. The one with minimum delay is potentially the owner of the message. 
 For example in the chanin of nodes A->B->C->D, if A publishes and owns a messages, then B is the first one the receives it and D is the last one. Such time difference can help identifying the owner of the message. Likewise, the other part of the communocation can be spot. Hence, the anonymity gets violated.
 
-Neverthelss, this is an application layer concern and not directly related to the waku protocol stack. A topic generation method that provides forward secrecy and randmozes the topic for each message transmission can solve the issue in a 1:1 chat. 
+Nevertheless, this is an application layer concern and not directly related to the waku protocol stack. A topic generation method that provides forward secrecy and randmozes the topic for each message transmission can solve the issue in a 1:1 chat. 
 
-## Topic randmization
+## Growing the mesh with random volunteered relay nodes
+One way to preserve anonymity is to encourage more nodes to participate in relaying random pubsub topics i.e., topics that might not be of their interest. This way the true participants will enjoy higher level of anonymity. However, it comes with the cost of bandwidth for the volunteered relay nodes.
+
+## Single global pubsub topic
+The ultimate and the maximum anonymity level that can be achieved by topic sharding is when all the topics are shared into one single topic i.e., all the nodes relay all the topics. As the result, being a relay node of that single topic conveys no useful information about the true interest of the relayer. 
 In the light of this observation, we need to have a large number of relay nodes involved in the pubsub topic over which nodes communicate. This means we need to have a  single topic that would result in many relay nodes. It is somewhat similar to what Tor requires, it says that the more Tor realyers would result in better anonymity. As such, I suggest to use waku content topic to manage direct or group messaging. 
 
 One way is to confuse the attacker about the actual particpants of a pubsub topic.
