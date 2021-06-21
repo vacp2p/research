@@ -79,8 +79,12 @@ Anonymity can be analyzed from various levels. Below is a broad classification o
 - Sender anonymity (against the network and the receiver):  For example when you want to hide the fact you are visiting a website
 - Receiver anonymity, where there is a publisher  with public identity lets say broadcasting political news, and the subscribers want to hide their interest in that topic yet be able to have access to the news
 
+In the following, the focus will be providing anonymity against a third party as the base line. The other two levels
+
+<!-- # Attack types -->
+<!-- Targeted attacks, when the attacker is interested in the communication of two specific nodes -->
 # Waku
-In waku, the relay protocol constitutes the transport layer. The objective would be to protect anonymity in this layer isolated from other available protocols. That is, we rule out the anonymity concerns related to the filter or store protocols. As in those protocols, some level of trust between the service provider and consumer is expected. Further on the anonymity and trust requirement of the store and the filter protocol can be found in their respective specs. 
+In waku, the relay protocol constitutes the transport layer. The objective would be to protect anonymity in this layer isolated from other available protocols. That is, we rule out the anonymity concerns related to the filter or store protocols. As in those protocols, some level of trust is expected between the two participating peers as the service provider and the consumer. Further on the anonymity and trust requirement of the store and the filter protocol can be found in their respective specs. 
 
 In the following, I am considering nodes with relay protocol mounted and involve both as relayer and as publisher. Later, we can extend the security analysis for other types of the nodes like light nodes and also consider inclusion of other protocols.
 
@@ -100,21 +104,27 @@ The waku message then resides inside the `data` field of a pubsub message with t
 - from
 - sign
 - key
-In order to preserve anonymity, the relay-protocol follow strict no sign policy which means the `seq#`, `from`, `sign` and `key` fields are omitted as they indicate info related to the sender of the message.
 
-### Open questions
-The use of IP addresses in the GossipSub protocol is not clear to me, I need to make sure that the sender's IP of the sender does not get shared/used during the routing process.
 
+**No Sign Plocy**: In order to preserve anonymity, the relay-protocol follow strict no sign policy which means the `seq#`, `from`, `sign` and `key` fields are omitted as they indicate info related to the sender of the message.
+
+**Payload Encryption** The payload field contains the content of the message either in clear or encrypted. Having it encrypted has twow benfitis, one is data confidentiality and the other is that it prevents unintentional disclosure of personally identifiable information e.g., the payload may contain the sender's email address. 
+
+**Topic**
 There are two other fields of `ContentTopic` and `topic` used in GossipSub routing which can cause anonymity issues. Why so?
-In order to address anonymity, we should understand how the two ends of communication find each other? 
-The current approach is that two end of communications (more precisely the publishers and subscribers) find each other through pubsub topics i.e, the `topic` field. AFAIK, in the Status app also relies on the pubsub topics to distinguish between different 1:1 or group chats. That is each 1:! chat is associated with a distinct chat id used as the pubsub topic. 
+Currently, the two end of communication i.e., the publishers and the subscribers find each other through pubsub topics i.e, the `topic` field. Also, AFAIK, the Status app relies on the pubsub topics to distinguish between different 1:1 or group chats. That is each 1:1 chat is associated with a distinct chat id used as the pubsub topic. Having unique pubsub topics enables the attacker to spot the sender and the receiver. How?   Lets say an attacker eavesdrops the network traffic of two targeted nodes and realises that they are actively relaying messages of the pubsub topic X, then it can infer they are communicating which each other. 
 
-This means in order to preserve anonymity we need to hide the relation between the topics and their publishers and subscribers i.e., to preserve publisher-topic anonymity and subscriber-topic anonymity.
-However, consider the case that we use distinct pubsub topics for each 1:1 or private group chats. For those specific pubsub topics, there will be a limited number of relay nodes subscribed to that pubsub topic hence identifying them would be easy. Moreover, that would be easy to find out whether there is an active conversation between two parties. Lets say if an attacker eavesdrops the network traffic of two victim nodes and realises that they are actively relaying messages of pubsub topic X, then it can infer they are communicating which each other. 
+The inclusion in the topic mesh reveals being the receiver of messages in that mesh i.e., one end of communication gets disclosed.
 
-In the light of this observation, we need to have a large number of relay nodes involved in the pubsub topic over which nodes communicate. This means we need to have a  single topic that would result in many relay nodes. It is somewhat similar to what Tor requires, it says that the more Tor realyers would result in better anonymity. As such, I suggest to use waku content topic to manage direct or group messaging. 
+## Topic sharding
+Topic sharding is to blend multiple group of participants into one i.e., mixing multiple meshes into one. As such, if lets say K1 ... KN topics are all in the same shard, then the relay nodes in K1 are indistinguishable from K2 and... KN. This is also known as K-anonymity when a group of k users look identical w.r.t. some attributes.
 
-## No payload protection
+Is this level of a anonymity sufficient? How does it compare to the Tor? It ties to the sharing algorithm as well as the adversary background knowledge. 
+ 
+<!-- This means in order to preserve anonymity we need to hide the relation between the topics and their publishers and subscribers i.e., to preserve publisher-topic anonymity and subscriber-topic anonymity. -->
+<!-- However, consider the case that we use distinct pubsub topics for each 1:1 or private group chats. For those specific pubsub topics, there will be a limited number of relay nodes subscribed to that pubsub topic hence identifying them would be easy. Moreover, that would be easy to find out whether there is an active conversation between two parties. Lets say if an attacker eavesdrops the network traffic of two victim nodes and realises that they are actively relaying messages of pubsub topic X, then it can infer they are communicating which each other.  -->
+
+
 
 You need to use **protocol-specific support software** if you don't want the sites you visit to see your identifying information. This exists in Tor browser, For example, you can use Tor Browser while browsing the web to withhold some information about your computer's configuration.
 
@@ -132,13 +142,16 @@ For example in the chanin of nodes A->B->C->D, if A publishes and owns a message
 Neverthelss, this is an application layer concern and not directly related to the waku protocol stack. A topic generation method that provides forward secrecy and randmozes the topic for each message transmission can solve the issue in a 1:1 chat. 
 
 ## Topic randmization
-## Topic sharding 
+In the light of this observation, we need to have a large number of relay nodes involved in the pubsub topic over which nodes communicate. This means we need to have a  single topic that would result in many relay nodes. It is somewhat similar to what Tor requires, it says that the more Tor realyers would result in better anonymity. As such, I suggest to use waku content topic to manage direct or group messaging. 
+
 One way is to confuse the attacker about the actual particpants of a pubsub topic.
 
-# Waku advantages
-One potential advantage of using waku is that it is computationally lighter than Tor and does not require multiple encryption and decryption. Thi would also lower the message transmission delay.
+# Waku advantages over the Tor
+One potential advantage of using waku is that it is computationally lighter than Tor and does not require multiple encryption and decryption. This would also lower the message transmission delay.
 
 Another advantage is the lighter key management where  the sender does not have to establish shared keys with all the intermediate routers (as apposed to the Tor).
 
-
 No **end-to-end timing attack**: There is no destination in waku if topics are used deliberately and wisely. In waku, the traffic pattern at all the relay nodes that are subscribed to the same topic is identical. However, we should be aware of the fact that the number of messages that a sender sends will be evident which I believe is the same in Tor. 
+
+### Open questions and Future investigation
+The use of IP addresses in the GossipSub protocol is not clear to me, I need to make sure that the sender's IP of the sender does not get shared/used during the routing process.
