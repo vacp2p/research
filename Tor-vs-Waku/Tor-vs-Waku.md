@@ -21,28 +21,27 @@ It comes in 3 main steps:
 - The more people use the Tor network the stronger it gets. As it is easier to hide in a crowd of people that look exactly the same
 
 
-Tor Messages are called cells, and are each 512 bytes long 
+<!-- Tor Messages are called cells, and are each 512 bytes long 
 
-Routers are talking to many users and as an intermediary for the conversation, like the first node, second nodes, the thrid node, the exit node, and it does not really know which one it is. 
-
-So it is a not an easy job to correlate the traffics and figure out what someone did job to
-
+Routers are talking to many users and as an intermediary for the conversation, like the first node, second nodes, the thrid node, the exit node, and it does not really know which one it is.  So it is a not an easy job to correlate the traffics and figure out what someone did job to
+ -->
 
 ## Security consideration
-Tor is all about **Transport Security** and there is no anonymity gaurantee about the data that is sent by the user over Tor e.g., an attacker may sniff the last connection in thr Tor circuit to the destination server, and sees someone's username and password in clear. It is up to the user to use TLS or HTTPS for the connection. What is transported is exactly a https request and reply that goes through Tor instead of the ISP router.
+Tor is all about **Transport Security** and there is no anonymity gaurantee about the data that is sent by the user over Tor e.g., an attacker may eavesdrop the last connection in thr Tor circuit to the destination server, and sees someone's username and password in clear. It is up to the user to use TLS or HTTPS for the connection. What is transported is exactly a https request and reply that goes through Tor instead of the ISP router.
 
 
 ## security features
 Below is the the list of  the security features that Tor provides, however, the essence of all these features are two things:
-1.  Tor hides (or make it difficult to know) the two end of communication i.e., who is talking to whom
-2. It preserves meta data protection that include - Users Real identity
+1. Tor hides (or make it difficult to know) the two end of communication i.e., who is talking to whom
+2. It preserves meta data protection that include 
+   - Users Real identity
    - Precise location 
    - OS
    - The browser used to surf the web
 This means, to make a fair comparison with waku, we need to know whether we can achieve these two major features or not and how.
 
-- Protects against Traffic analysis by concealing headers of Internet data packets:
-How does traffic analysis work? Internet data packets have two parts: a data payload and a header used for routing. The data payload is whatever is being sent, whether that's an email message, a web page, or an audio file. Even if you encrypt the data payload of your communications, traffic analysis still reveals a great deal about what you're doing and, possibly, what you're saying. That's because it focuses on the header, which discloses source, destination, size, timing, and so on.
+Further on the features of the Tor:
+- Protects against Traffic analysis by concealing headers of Internet data packets: How does traffic analysis work? Internet data packets have two parts: a data payload and a header used for routing. The data payload is whatever is being sent, whether that's an email message, a web page, or an audio file. Even if you encrypt the data payload of your communications, traffic analysis still reveals a great deal about what you're doing and, possibly, what you're saying. That's because it focuses on the header, which discloses source, destination, size, timing, and so on.
 
 Protecting against traffic analysis results means no one knows who you are talking to. This means:
 - **BROWSE FREELY** Tor is a censorship circumvention tool, allowing its users to reach otherwise blocked destinations or content. One reason for that is the pool of volunteer-run servers known as Tor relays.
@@ -110,7 +109,7 @@ The waku message then resides inside the `data` field of a pubsub message with t
 - key
 
 
-## No Sign Plocy
+## No Sign Policy
 In order to preserve anonymity, the relay-protocol follow strict no sign policy which means the `seq#`, `from`, `sign` and `key` fields are omitted as they indicate info related to the sender of the message.
 
 - [ ] The use of IP addresses in the GossipSub protocol is not clear to me, I need to make sure that the sender's IP of the sender does not get shared/used during the routing process.
