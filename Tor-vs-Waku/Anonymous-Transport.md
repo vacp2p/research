@@ -275,7 +275,7 @@ Asynchronous messaging protocol with store-and-forward model: Store nodes are us
   The high level idea in deniability in a messaging system is to resemble the day to day conversation.
   ### Message repudiation: 
   A messaging system is repuriable/deniable if no one can provably attribute a message to its sender.
-- ### Participation repudiation
+  ### Participation repudiation
    No one can prove one's participation in a conversion with some other party. 
 No sign policy has been adopted by waku to achieve repudiability. 
 <!-- TODO: We do not have to preclude signature usage entirely,  if the sginatures are not tied to partipants long-term keys, that should not harm anonymity. Though, inclusion of this field would require extra care at the application layer and the perceived anonymity relies on the upper level decisions. Deniable encryption can be a solution.-->
