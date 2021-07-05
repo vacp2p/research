@@ -250,22 +250,14 @@ Another possibility is to set light nodes to listen to all the network traffic a
 Provides asynchronous communication by dedicated and online server (Tor hidden server) for each user.
 
 -----------------------------------------
-# Solution ideas
-How to provide sender anonymity in waku as a broadcast system:
-Querying nodes publish their request on a pubsub topic, and store nodes reply to that request with that given request id. 
-Publisher nodes must be relay nodes, otherwise it is evident that they are the origin of the messages they publish but not relaying. Maybe it is good to dedicate a network for querying nodes i.e., light nodes combined with the store nodes. A query layer just handle queries for light nodes that is comprised of light nodes.
 
-Every x minutes, each node drops its current connections and re-establishes new one. So that not eny pair of connections in the graph last longer than x minutes and preclude traffic analysis. It does not have to happen for the store nodes, those are system's backbone. 
-There should be a directory service for all the available nodes. Each node id gets expired after x minutes automatically. New IDs get registered every x minute4s or even longer, the new ids differ from the past ids. 
-
------------------------------------------
 # Threat Models
 Based on domain of knowledge, the following non-exclusive categories of adversary exist. Any collusion among the adversaries is perceivable. 
-## Local adversary (passive (HbC), active (malicious)): 
+## Local adversary (passive (HbC), active (malicious))
 An adversary with the control of local network
-## Global adversary (passive (HbC), active (malicious)):
+## Global adversary (passive (HbC), active (malicious))
 An adversary with the control of a larger portion of the network e.g., ISPs.
-## Service Providers: 
+## Service Providers
 Any centralized service operator and aid the messaging system e.g., public key directories.
 
 The end-point security is assumed, hence malware or hardware attacks are precluded.
@@ -289,7 +281,15 @@ Human end users need to understand how to use the system securely and the effort
 Requirements imposed by the underlying technology
 
 -----------------------------------------
+# Solution ideas
+How to provide sender anonymity in waku as a broadcast system:
+Querying nodes publish their request on a pubsub topic, and store nodes reply to that request with that given request id. 
+Publisher nodes must be relay nodes, otherwise it is evident that they are the origin of the messages they publish but not relaying. Maybe it is good to dedicate a network for querying nodes i.e., light nodes combined with the store nodes. A query layer just handle queries for light nodes that is comprised of light nodes.
 
+Every x minutes, each node drops its current connections and re-establishes new one. So that not eny pair of connections in the graph last longer than x minutes and preclude traffic analysis. It does not have to happen for the store nodes, those are system's backbone. 
+There should be a directory service for all the available nodes. Each node id gets expired after x minutes automatically. New IDs get registered every x minutes or even longer, the new ids differ from the past ids. 
+
+-----------------------------------------
 # Resources
 
 Sharing some relevant resources for the record:
