@@ -261,9 +261,13 @@ There should be a directory service for all the available nodes. Each node id ge
 -----------------------------------------
 # Threat Models
 Based on domain of knowledge, the following non-exclusive categories of adversary exist. Any collusion among the adversaries is perceivable. 
-Local adversary (passive (HbC), active (malicious)): An adversary with the control of local network
-Global adversary (passive (HbC), active (malicious)): An adversary with the control of a larger portion of the network e.g., ISPs.
-Service Providers: Any centralized service operator and aid the messaging system e.g., public key directories.
+## Local adversary (passive (HbC), active (malicious)): 
+An adversary with the control of local network
+## Global adversary (passive (HbC), active (malicious)):
+An adversary with the control of a larger portion of the network e.g., ISPs.
+## Service Providers: 
+Any centralized service operator and aid the messaging system e.g., public key directories.
+
 The end-point security is assumed, hence malware or hardware attacks are precluded.
 
 -----------------------------------------
@@ -273,7 +277,7 @@ The end-point security is assumed, hence malware or hardware attacks are preclud
 Asynchronous messaging protocol with store-and-forward model: Store nodes are used to buffer messages for the offline recipients. As such, the receiver does not have to be online at the same time as the sender. 
 ## Deniability/repudiability:  
   The high level idea in deniability in a messaging system is to resemble the day to day conversation.
-  ### Message repudiation: 
+  ### Message repudiation 
   A messaging system is repuriable/deniable if no one can provably attribute a message to its sender.
   ### Participation repudiation
    No one can prove one's participation in a conversion with some other party. 
