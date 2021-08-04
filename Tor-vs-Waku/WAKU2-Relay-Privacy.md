@@ -52,3 +52,8 @@ The same analysis as above applies to **Participation Anonymity**.
   - Transmission direction
   - counts
   - timing
+
+For example:
+- End-to-end timing attack: Tor does not protect against end-to-end timing attacks; If the attacker can watch the traffic coming out of your computer, and also the traffic arriving at your chosen destination, he can use statistical analysis to discover that they are part of the same circuit.
+
+- Traffic analysis: imagine you have got the time signature of the messages sent by a single client. The incoming traffic to the destination server will be a mess of lots of messages. But imagine that you can find the key points that match up with what the client sent in. Then it can be used to deanonymize that client.
