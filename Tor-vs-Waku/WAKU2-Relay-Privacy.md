@@ -18,13 +18,14 @@ Also, the adversary has **NO** **Auxiliary** **Information** (background about u
 
 # WAKU2 Relay analysis
 
-**Recipient Anonymity and Participation Anonymity**: No global entity except the receiver knows which entity received the message
+**Recipient Anonymity**: No global entity except the receiver knows which entity received the message 
 - Level of privacy: K-anonymity
 - Adversarial model: it holds against a global adversary 
 - Details: The number of topics transported within the same mesh determines recipient anonymity, e.g., if the mesh is used to transport k topics then the recipient anonymity of all the nodes within that mesh is k-Anonymity. That is, every message in that mesh belongs to a participant with 1/k probability.
   - The anonymity level can be increased by generalizing the topics hence supporting more topics within a single mesh
   - Increasing anonymity of recipient comes with the bandwidth penalty for all the participants i.e., nodes have to spend their bandwidth to relay messages not within their interests
 
+The same analysis as above applies to **Participation Anonymity**.
 
 **Sender anonymity:** No global entity except the sender knows which entity owns the message
 - Adversarial model: local and global 
