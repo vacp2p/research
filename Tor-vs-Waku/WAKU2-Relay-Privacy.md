@@ -39,3 +39,16 @@ The same analysis as above applies to **Participation Anonymity**.
 - The number of topics transported within the same mesh determines unlinkability level, e.g., if the mesh is used to transport k topics then for every two messages m1 and m2 transported within that mesh, the probability that these two belong to the same conversation is 1/k 
   - The anonymity level can be increased by generalizing the topics hence supporting more topics within a single mesh
   - Increasing anonymity of recipient comes with the bandwidth penalty for all the participants i.e., nodes have to spent their bandwidth to relay messages, not within their interests 
+
+
+# Comparison with Tor
+ Tor protocol provides the following privacy properties, however against an attacker with limited scope.
+  - sender anonymity 
+  - participation anonymity
+  - unlinkability 
+ 
+ A global adversary can break anonymity by statistical analysis based on 
+  - content size
+  - Transmission direction
+  - counts
+  - timing
