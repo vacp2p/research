@@ -41,7 +41,7 @@ The same analysis as above applies to **Participation Anonymity**.
   - Increasing anonymity of recipient comes with the bandwidth penalty for all the participants i.e., nodes have to spent their bandwidth to relay messages, not within their interests 
 
 
-# Comparison with Tor
+# Tor
  Tor protocol provides the following privacy properties, however against an attacker with limited scope.
   - sender anonymity 
   - participation anonymity
