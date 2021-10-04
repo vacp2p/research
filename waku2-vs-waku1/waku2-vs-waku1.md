@@ -80,7 +80,7 @@ Let's summarize average bandwidth growth against network growth for a constant m
 
 ![](https://i.imgur.com/cX6jwQr.png)
 
-Extrapolation is a dangerous game, but it's safe to deduce that the divergence will only grow for even larger network topologies. Although control signalling contributes more towards overall bandwidth for Waku v2 networks, this effect becomes less noticeable for larger networks. For network segments with more than ~18 densely connected nodes, the advantage of using Waku v2 above Waku v2 becomes clear.
+Extrapolation is a dangerous game, but it's safe to deduce that the divergence will only grow for even larger network topologies. Although control signalling contributes more towards overall bandwidth for Waku v2 networks, this effect becomes less noticeable for larger networks. For network segments with more than ~18 densely connected nodes, the advantage of using Waku v2 above Waku v1 becomes clear.
 
 ## Network traffic comparison
 
