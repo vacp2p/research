@@ -66,13 +66,21 @@ We already see a clear trend in the bandwidth comparisons above, so let's confir
 
 ![](https://i.imgur.com/3W9E7l8.png)
 
-### Scenarios 1 - 4: Analysis
+### Scenario 5: 150 nodes
 
-Let's summarize average bandwidth growth against network growth for a constant message propagation rate.
+Finally, we simulate message propagation in a network of 150 nodes. Due to local resource constraints, we run this simulation at a lower rate - 35 messages per second - and for a shorter amount of time. 
 
-![](https://i.imgur.com/vBMhZZ1.png)
+![](https://i.imgur.com/KW48ufF.png)
 
-Extrapolation is a dangerous game, but it's safe to deduce that the divergence will only grow for even larger network topologies. In fact, for the given propagation rate of 50 messages per second, Waku v2 maintains more or less constant average bandwidth usage for networks of any size. Although control signalling contributes more towards overall bandwidth for Waku v2 networks, this effect becomes less noticeable for larger networks. For network segments with more than ~18 densely connected nodes, the advantage of using Waku v2 above Waku v2 becomes clear.
+Notice how the Waku v1 bandwidth usage is now more than 10 times worse than that of Waku v2. This is to be expected, as each Waku v1 node will try to flood each new message to 149 other peers, while the Waku v2 nodes limit their full-message peerings to no more than 12.
+
+### Scenarios 1 - 5: Analysis
+
+Let's summarize average bandwidth growth against network growth for a constant message propagation rate. Since we are particularly interested in how Waku v1 compares to Waku v2 in terms of bandwidth usage, the results are normalised to the Waku v2 average bandwidth usage for each network size.
+
+![](https://i.imgur.com/cX6jwQr.png)
+
+Extrapolation is a dangerous game, but it's safe to deduce that the divergence will only grow for even larger network topologies. Although control signalling contributes more towards overall bandwidth for Waku v2 networks, this effect becomes less noticeable for larger networks. For network segments with more than ~18 densely connected nodes, the advantage of using Waku v2 above Waku v2 becomes clear.
 
 ## Network traffic comparison
 
@@ -84,10 +92,9 @@ The _rate_ of increase in bandwidth for Waku v2 is slower than that for Waku v1 
 
 ## Conclusions
 
-- For smaller network sizes (less than 18 densely connected nodes), the bandwidth requirements for Waku v1 and Waku v2 are similar. In fact, Waku v1 has a slightly better bandwidth usage profile, likely due to the effect of control messages in Waku v2.
-- For larger networks, bandwidth usage remains more or less constant in Waku v2 if the message propagation rate does not increase (an unlikely scenario in practice). Waku v1 networks will require significantly more bandwidth for each node added to the network: in our scenario roughly 100kbps per added node.
-- Waku v2 is less affected by increased message rates than Waku v1. For a network of 30 densely-connected nodes, average bandwidth usage in Waku v2 only increases at about 57% the Waku v1 rate for a similar increase in message propagation rate.
-- Waku v2 scales significantly better than Waku v1 in terms of average bandwidth usage, especially for densely connected networks. It is more resilient than Waku v1 against network growth, both in absolute terms (number of nodes) and in network traffic (message rates).
+- Waku v2 scales significantly better than Waku v1 in terms of average bandwidth usage, especially for densely connected networks.
+- E.g. for a network consisting of **150** or more densely connected nodes, Waku v2 provides more than **10x** better average bandwidth usage rates than Waku v1.
+- As the network continues to scale, both in absolute terms (number of nodes) and in network traffic (message rates) the disparity between Waku v2 and Waku v1 becomes even larger.
 
 ## References
 
