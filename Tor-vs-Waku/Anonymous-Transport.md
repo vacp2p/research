@@ -1,6 +1,6 @@
 Below is the summary of my findings up until now. 
 
-# Probelm Definition
+# Problem Definition
 
 This document is going to provide a comparison between  Tor and Waku. The ["What is Tor"](#what-is-tor) section presents a quick overview of the Tor and can be skipped for those that are already familiar.  
 
