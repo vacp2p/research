@@ -1,0 +1,9 @@
+#!/bin/bash
+CIRCOM_BASE=~/circom2
+rm -rf $CIRCOM_BASE/powersoftau
+mkdir -p $CIRCOM_BASE/powersoftau
+cd $CIRCOM_BASE/powersoftau
+snarkjs powersoftau new bn128 12 pot12_0000.ptau
+openssl rand -base64 64 > rand.input
+snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau --name="First contribution" < rand.input
+rm rand.input

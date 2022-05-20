@@ -1,0 +1,12 @@
+#!/bin/bash
+CIRCOM_BASE=~/circom2
+DEFAULT_FILENAME=$1
+rm -rf $CIRCOM_BASE/$1
+mkdir -p $CIRCOM_BASE/$1/src
+mkdir -p $CIRCOM_BASE/$1/witness
+mkdir -p $CIRCOM_BASE/$1/build
+mkdir -p $CIRCOM_BASE/$1/keys
+mkdir -p $CIRCOM_BASE/$1/proofs
+cp $CIRCOM_BASE/template/Makefile.tmpl $CIRCOM_BASE/$1/Makefile
+cp $CIRCOM_BASE/template/main.circom.tmpl $CIRCOM_BASE/$1/src/$DEFAULT_FILENAME.circom
+cp $CIRCOM_BASE/template/input.json.tmpl $CIRCOM_BASE/$1/input.json
