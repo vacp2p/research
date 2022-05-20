@@ -10,7 +10,7 @@
 
 `./create project_name`
 
-- To build a project (circuit compilation + witness generation + Phase 2 + proof generation + proof verification), `cd` into the project folde, update `input.json` with a correct input for the circuit and 
+- To build a project (circuit compilation + witness generation + Phase 2 + proof generation + proof verification), `cd` into the project folder, update `input.json` with a correct input for the circuit and 
 
 ```
 make
@@ -22,7 +22,7 @@ make
 make witness
 ```
 
-- To generate a proof and verify it (witness for  `input.json` is recomputed):
+- To generate a proof and verify it (witness for  `input.json` will be recomputed):
 
 ```
 make proof
