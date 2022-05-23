@@ -1,5 +1,5 @@
 #!/bin/bash
-CIRCOM_BASE=~/circom2
+CIRCOM_BASE=./
 rm -rf $CIRCOM_BASE/powersoftau
 mkdir -p $CIRCOM_BASE/powersoftau
 cd $CIRCOM_BASE/powersoftau
