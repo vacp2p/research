@@ -1,5 +1,5 @@
 #!/bin/bash
-CIRCOM_BASE=~/circom2
+CIRCOM_BASE=./
 DEFAULT_FILENAME=$1
 rm -rf $CIRCOM_BASE/$1
 mkdir -p $CIRCOM_BASE/$1/src

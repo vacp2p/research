@@ -1,0 +1,56 @@
+PROJECT_NAME := $(notdir $(PWD))
+DEFAULT_FILENAME=$(PROJECT_NAME)
+PROJECT_DIR := $(PWD)
+BUILD_DIR=$(PROJECT_DIR)/build
+WITNESS_DIR=$(PROJECT_DIR)/witness
+KEYS_DIR=$(PROJECT_DIR)/keys
+POT_DIR=$(PROJECT_DIR)/../powersoftau
+PROOFS_DIR=$(PROJECT_DIR)/proofs
+POT_CONTR=$(POT_DIR)/pot12_0001.ptau $(POT_DIR)/pot12_final.ptau
+POT_VERBOSE= #-v
+
+all: js
+
+clean:
+	@rm -rf $(PROJECT_DIR)/build/*
+	@rm -rf $(PROJECT_DIR)/keys/*
+	@rm -rf $(PROJECT_DIR)/proofs/*
+	@rm -rf $(PROJECT_DIR)/witness/*
+
+js:
+	@circom $(PROJECT_DIR)/src/$(DEFAULT_FILENAME).circom --r1cs --wasm --sym -o $(BUILD_DIR)
+	@node $(BUILD_DIR)/$(DEFAULT_FILENAME)_js/generate_witness.js $(BUILD_DIR)/$(DEFAULT_FILENAME)_js/$(DEFAULT_FILENAME).wasm $(PROJECT_DIR)/input.json $(WITNESS_DIR)/witness.wtns
+	@snarkjs powersoftau prepare phase2 $(POT_CONTR) $(POT_VERBOSE)
+	@snarkjs groth16 setup $(BUILD_DIR)/$(DEFAULT_FILENAME).r1cs $(POT_DIR)/pot12_final.ptau $(KEYS_DIR)/$(DEFAULT_FILENAME)_0000.zkey
+	@openssl rand -base64 64 > $(BUILD_DIR)/rand.input
+	@snarkjs zkey contribute $(KEYS_DIR)/$(DEFAULT_FILENAME)_0000.zkey $(KEYS_DIR)/$(DEFAULT_FILENAME)_0001.zkey --name="1st Contributor" < $(BUILD_DIR)/rand.input
+	@rm -f $(BUILD_DIR)/rand.input
+	@snarkjs zkey export verificationkey $(KEYS_DIR)/$(DEFAULT_FILENAME)_0001.zkey $(KEYS_DIR)/verification_key.json
+	@snarkjs groth16 prove $(KEYS_DIR)/$(DEFAULT_FILENAME)_0001.zkey $(WITNESS_DIR)/witness.wtns $(PROOFS_DIR)/proof.json $(PROOFS_DIR)/public.json
+	@snarkjs groth16 verify $(KEYS_DIR)/verification_key.json $(PROOFS_DIR)/public.json $(PROOFS_DIR)/proof.json
+
+c:
+	@circom $(PROJECT_DIR)/src/$(DEFAULT_FILENAME).circom --r1cs --sym --c -o $(BUILD_DIR)/
+	@make -C $(BUILD_DIR)/$(DEFAULT_FILENAME)_cpp/
+	@$(BUILD_DIR)/$(DEFAULT_FILENAME)_cpp/$(DEFAULT_FILENAME) $(PROJECT_DIR)/input.json $(WITNESS_DIR)/witness.wtns
+	@snarkjs powersoftau prepare phase2 $(POT_CONTR) $(POT_VERBOSE)
+	@snarkjs groth16 setup $(BUILD_DIR)/$(DEFAULT_FILENAME).r1cs $(POT_DIR)/pot12_final.ptau $(KEYS_DIR)/$(DEFAULT_FILENAME)_0000.zkey
+	@openssl rand -base64 64 > $(BUILD_DIR)/rand.input
+	@snarkjs zkey contribute $(KEYS_DIR)/$(DEFAULT_FILENAME)_0000.zkey $(KEYS_DIR)/$(DEFAULT_FILENAME)_0001.zkey --name="1st Contributor" < $(BUILD_DIR)/rand.input
+	@rm -f $(BUILD_DIR)/rand.input
+	@snarkjs zkey export verificationkey $(KEYS_DIR)/$(DEFAULT_FILENAME)_0001.zkey $(KEYS_DIR)/verification_key.json
+	@snarkjs groth16 prove $(KEYS_DIR)/$(DEFAULT_FILENAME)_0001.zkey $(WITNESS_DIR)/witness.wtns $(PROOFS_DIR)/proof.json $(PROOFS_DIR)/public.json
+	@snarkjs groth16 verify $(KEYS_DIR)/verification_key.json $(PROOFS_DIR)/public.json $(PROOFS_DIR)/proof.json
+
+circuit:
+	@circom $(PROJECT_DIR)/src/$(DEFAULT_FILENAME).circom --r1cs --wasm --sym -o $(BUILD_DIR)
+
+witness:
+	@node $(BUILD_DIR)/$(DEFAULT_FILENAME)_js/generate_witness.js $(BUILD_DIR)/$(DEFAULT_FILENAME)_js/$(DEFAULT_FILENAME).wasm $(PROJECT_DIR)/input.json $(WITNESS_DIR)/witness.wtns
+	
+proof:
+	@node $(BUILD_DIR)/$(DEFAULT_FILENAME)_js/generate_witness.js $(BUILD_DIR)/$(DEFAULT_FILENAME)_js/$(DEFAULT_FILENAME).wasm $(PROJECT_DIR)/input.json $(WITNESS_DIR)/witness.wtns
+	@snarkjs groth16 prove $(KEYS_DIR)/$(DEFAULT_FILENAME)_0001.zkey $(WITNESS_DIR)/witness.wtns $(PROOFS_DIR)/proof.json $(PROOFS_DIR)/public.json
+	@snarkjs groth16 verify $(KEYS_DIR)/verification_key.json $(PROOFS_DIR)/public.json $(PROOFS_DIR)/proof.json
+	
+.PHONY: all clean js c witness proof
