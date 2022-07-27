@@ -31,3 +31,6 @@
 - name: track:rln
   description: RLN track (Secure Messaging/Applied ZK)
   color: C89BC6
+- name: track:anonymity
+  description: Anonymity track (Secure Messaging)
+  color: 06B6C8
