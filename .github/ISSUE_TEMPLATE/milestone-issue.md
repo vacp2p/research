@@ -25,9 +25,9 @@ List of issues:
 
 ## Risks and uncertainty
 
-Briefly on what the main risks and points of uncertainty.
+Briefly on what the main risks and points of uncertainty are.
 
-Briefly on expected timeline.
+(Optional) Briefly on expected timeline.
 
 ## Acceptance criteria
 
