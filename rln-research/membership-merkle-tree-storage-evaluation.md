@@ -12,7 +12,7 @@ In the current design of the Waku-RLN-Relay protocol, the membership Merkle tree
 
 ## Storage Overhead Analysis
  
-**Per-app memory cap**: Before starting the analysis, it is worth reviewing the per-app memory cap on Android and iOS devices which are more resource-restricted compared to desktop nodes. Note that these values are not accurate and not evaluated by us, and merely just to give some intuition on memory space limitation:
+**Per-app memory cap**: Before starting the analysis, it is worth reviewing the per-app memory cap on mobile devices (Android and iOS) which are more resource-restricted compared to desktop nodes. Note that these values are not accurate and not evaluated by us, and merely to give some intuition on per-app memory contraints:
 >  Early Android devices had a per-app memory cap of 16MB. Later this cap increased to 24MB or 32MB. 
 > iPhone 5s (iOS 10, debug mode, 1GB memory): 600MB can be allocated
 > iPad Air 2 (iOS 11.4, 2GB memory): 1.3GB can be allocated
