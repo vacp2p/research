@@ -29,8 +29,6 @@ Assuming that the MT is going to be loaded in memory, then we are facing the lim
 
 The hash function used in the simulations is the Poseidon hash function with the output size of `256` bits/ `32` bytes. The Poseidon hasher parameters are `rf:8, rp:55, t:3`.
 
-<!--  The storage complexity of this algorithm is exponential in the depth of the tree i.e., `O(2^d)` where `d` is the depth of the tree. -->
-
 
 ### Full Merkle Tree Algorithm (FMT)
 The FMT algorithm uses an array with `2*(2^d)-1` entries to represent a Merkle tree with depth `d`. Each entry represents a Merkle tree node of size `32` bytes (corresponding to the`256` bits hash value). The entire array is allocated upfront. The storage complexity of FMT is exponential in the depth of the tree i.e., `O(2^d)`.
