@@ -93,7 +93,7 @@ It brings us to another conclusion that OMT outperforms FMT when group size is l
 | Algorithm\Tree depth | d=10      | d=20      |
 | -------------------- | --------- | --------- |
 | FMT                  | 0.065  MB | 67.10 MB  |
-| OMT                  | 0.097  MB | 100.66 MB |
+| OMT                  | 0.098  MB | 100.66 MB |
 
 However, the MT storage overhead may not be reasonable for mobile devices especially if we plan to load the MT in memory in which case we will/may face the per-app memory cap of `32 MB` on Android phones.
 
