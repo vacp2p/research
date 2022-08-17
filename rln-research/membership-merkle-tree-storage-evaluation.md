@@ -76,7 +76,7 @@ Comparing the max storage overhead of FMT and OMT, as depicted in the figure bel
 ![Max relative](https://i.imgur.com/G8COahY.png)
 
 But, this worst-case scenario does not always hold, instead, in most states of the system, the group size is much less than the tree capacity. In the following figure, we take a snapshot of the system at group size `1000`. In this snapshot, we compare the storage overhead incurred by FMT and OMT for `d=[10..20]`.
-![group 1000](https://i.imgur.com/NuIDALV.png)
+![group 1000](pics/fmt-vs-omt-g-1000.png)
 
 As you can see, in this more realistic scenario, OMT shows better performance than FMT. For example, for `d=20`, persisting a group of `1000` members using OMT requires  `0.097 MB` whereas it requires `67.1 MB` when using FMT, which is `700` times more than OMT.
 
