@@ -1,7 +1,7 @@
 # Waku-RLN-Relay: Evaluating Storage Overhead of Membership Merkle Tree   
 ## Introduction
 
-In the current design of the Waku-RLN-Relay protocol, the membership Merkle tree (MT) is locally persisted by each peer. This incurs some storage overhead which may or may not fit resource-limited devices. This overhead also depends on the algorithm used to represent the Merkle tree. So far, we are aware of two algorithms namely, Full Merkle tree (FMT) and Optimal Merkle tree (OMT), and in this post, we would like
+In the current design of the Waku-RLN-Relay protocol, the membership Merkle tree (MT) is locally persisted by peers. This incurs some storage overhead which may or may not fit resource-limited devices. This overhead also depends on the algorithm used to represent the Merkle tree. So far, we are aware of two algorithms namely, Full Merkle tree (FMT) and Optimal Merkle tree (OMT), and in this post, we would like
 1) to compare the two existing MT algorithms and clarify their differences in terms of storage requirements.
 2) to determine whether the storage overhead of the membership MT fits the resource-limited devices. 
 3) depending on the second item, then we can decide on whether more research on the MT storage optimization is required or not.
@@ -78,7 +78,7 @@ Comparing the max storage overhead of FMT and OMT, as depicted in the figure bel
 But, this worst-case scenario does not always hold, instead, in most states of the system, the group size is much less than the tree capacity. In the following figure, we take a snapshot of the system at group size `1000`. In this snapshot, we compare the storage overhead incurred by FMT and OMT for `d=[10..20]`.
 ![group 1000](https://i.imgur.com/NuIDALV.png)
 
-As you can see, in this more realistic scenario, FMT shows better performance than OMT. For example, for `d=20`, persisting a group of `1000` members using OMT requires  `0.097 MB` whereas it requires `67.1 MB` when using FMT, `700` times more than OMT.
+As you can see, in this more realistic scenario, OMT shows better performance than FMT. For example, for `d=20`, persisting a group of `1000` members using OMT requires  `0.097 MB` whereas it requires `67.1 MB` when using FMT, which is `700` times more than OMT.
 
 It brings us to another conclusion that OMT outperforms FMT when group size is less than the tree capacity. However, the exact point at which this relationship changed needs more investigation.
 
@@ -92,8 +92,8 @@ It brings us to another conclusion that OMT outperforms FMT when group size is l
 
 | Algorithm\Tree depth | d=10      | d=20      |
 | -------------------- | --------- | --------- |
-| FMT                  | 33.55  MB | 67.10 MB  |
-| OMT                  | 50.33  MB | 100.66 MB |
+| FMT                  | 0.065  MB | 67.10 MB  |
+| OMT                  | 0.097  MB | 100.66 MB |
 
 However, the MT storage overhead may not be reasonable for mobile devices especially if we plan to load the MT in memory in which case we will/may face the per-app memory cap of `32 MB` on Android phones.
 
