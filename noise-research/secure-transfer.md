@@ -3,13 +3,17 @@
 
 ## Overview (sketch)
 
-The information/session transfer among multiple devices happens in two independent phases:
+Two devices exchange sensitive information in two independent phases:
 
-- [Device Pairing](#Device-Pairing): two devices exchange their long term device ID static keys
-- [Secure Transfer](#Secure-Transfer): information is securely exchanged in encrypted form using key material obtained after a successful Pairing phase.
+- [Device Pairing](#Device-Pairing): two devices exchange their long term device ID static keys;
+- [Secure Transfer](#Secure-Transfer): information is securely exchanged in encrypted form using key material obtained during a successful Pairing phase.
 
 ## Device Pairing
 
+In the pairing phase, a device `B` requests to be paired to a device `A`.
+
+The requests is made by exposing a QR code that has to be scanned by device `A`. 
+If device `A` doesn't have a camera but device `B` does, [it is possible](#Rationale) to execute a slightly different pairing with same security guarantees but where `A` exposes a QR code instead.
 
 ### Employed Cryptographic Primitives
 
@@ -94,7 +98,7 @@ Beside the ephemeral key, all the information embedded in the QR code should be 
     - Computes `H(sA||s)` and checks if this value corresponds to the commitment obtained in step 6. If not, the protocol is aborted.
     - Calls Split() and obtains two cipher states to encrypt inbound and outbound messages.
 
-## Security considerations (sketch)
+## Security Analysis (sketch)
 
 ### Assumptions
 - The attacker is active, i.e. can interact with both devices `A` and `B` by sending messages over `contentTopic`.
@@ -106,17 +110,39 @@ Beside the ephemeral key, all the information embedded in the QR code should be 
 - As common for Noise, we assume that ephemeral keys cannot be compromised, while static keys might be later compromised. However, we enforce in the pairing some security mechanisms (i.e. static key commitments) that will prevent some attacks which are possible when ephemeral keys are weak or get compromised.
  
 ### Rationale
-- The QR is exposed by device `B` and not by `A` because:
-    - device `B` locally stores no relevant cryptographic material, so an active local attacker that scans the QR code first, would only be able to transfer *his own* session information and get nothing from `A`. 
+- The QR is by default exposed by device `B` and not by `A` because:
+    - device `B` locally stores no relevant cryptographic material, so an active local attacker that scans the QR code first would only be able to transfer *his own* session information and get nothing from `A`. However,
+    - since the user confirms at the end of message `1` that the authorization code is the same on both devices, the role of handhsake initiator and responder can be safely swapped in message `0` and `1`. **This allows pairing in case device `A` does not have a camera to scan a QR (e.g. a desktop client) while device `B` has.** The resulting handshake would be:
+```
+WakuPairing2:
+0.   -> eA              {H(sA||s), contentTopic}
+     ...
+1.   <- eB, eAeB        {H(sB||r)}   [auth_code]
+2.   <- sB, eAsB        {r}
+3.   -> sA, sAeB, sAsB  {s}
 
-- The device `B` exposes out-of-band in the QR a commitment to its static key `sB` because:
-    - if the private key of `eB` is weak or gets compromised, an attacker can impersonate `B` by sending in message 2. to device `A` his own static key and successfully complete the pairing (assumptions: `eB`, `contentTopic` known). Note that being able to compromise `eB` is outside our security assumptions.
-    - `B` cannot adaptively chose a static key based on the state of the Noise handshake at the end of 
+{}: payload,    []: user interaction
+```
+
+- The device `B` exposes a commitment to its static key `sB` because:
+    - if the private key of `eB` is weak or gets compromised, an attacker can impersonate `B` by sending in message `2` to device `A` his own static key and successfully complete the pairing. Note that being able to compromise `eB` is not contemplated by our security assumptions.
+    - `B` cannot adaptively chose a static key based on the state of the Noise handshake at the end of message `1`, i.e. after the authentication code is confirmed. Note that device `B` is trusted in our security assumptions.
+    - Confirming the authentication code after processing message `1` will ensure that no MitM can send a static key different than `sB`.
+
+
+- The device `A` sends a commitment to its static key `sA` because:
+    - `A` cannot adaptively chose a static key based on the state of the Noise handshake at the end of message `1`, i.e. after the authentication code is confirmed. Note that device `A` is trusted in our security assumptions.
+    - Confirming the authentication code after processing message `1` will ensure that no MitM can send a static key different than `sA`.
+
+- The authorization code is shown and has to be confirmed at the end of message `1` because:
+    - an attacker that frontruns device `A` by sending faster his own ephemeral key, will be detected before  he's able to know device `B` static key `sB`;
+    - it ensures that no MitM attacks will happen during *the whole* pairing handshake, since commitments to the (later exchanged) device static keys will be implicitly acknowledged by the authorization code confirmation;
+    - it enables to safely swap the role of handshake initiator and responder (see above);
+
+- Device `B` sends his static key first because:
+    - by being the pairing requester, it cannot probe device `A` identity without revealing its own (static key) first. Note that device `B` static key and its commitment can be binded to other cryptographic material (e.g. seed phrase).
+  
  
-- In order to trick device `A` an attacker has to MitM the QR code. We assume the device to be secure, otherwise an attacker can just wait the transfer to be complete and exfiltrate the session rather than doing MitM
-- The authentication code authenticates both devices before any static key is shared, thus preserving device privacy in case of an active MitM attack. 
-
-- Thanks to the authentication code, an attacker cannot impersonate device `A` by sending a message to `contentTopic` faster with his own keys (in case a QR is secretly scanned). However, this again would allow an attacker to transfer *his own* session and that's why the auth code logic is optional. Once the authentication code is confirmed, the handshake proceeds with no risk of MitM, since each step correctness is enforced by Noise rule (i.e., encryption keys are computed and decrypted payloads have to match previous commitments)
 
 
 # Secure Transfer (sketch)
@@ -142,3 +168,9 @@ In order to do so:
 - she pairs device `A` with `B` in order to have a Noise session between them; 
 - she securely transfers within such session the 170 bytes serializing the active session with Bob;
 - she manually instantiates in `B` a Noise session with Bob from the received session serialization.
+
+
+# Open problems and future work
+The above protocol pairs a single device `A` with `B`, however we have scenarios (e.g. the [NM](https://rfc.vac.dev/spec/37/#the-nm-session-management-mechanism) session managment mechanism) where we need to pair device `B` with multiple devices `A1, A2, ..., An`, which are already paired two-by-two. A naive approach requires `B` to be paired with each of such devices, but exposing/scanning `n` QRs is clearly impractical for a large number of devices. 
+
+As a future work we need to desing a n-to-1 pairing protocol, where only one out of `n` devices scans the QR exposed by the pairing requester device and the latter can efficiently (in term of exchanged messages) be securely paired to all of them. A possible approach consists in sharing among all already paired devices a list of key bundles that device `B` can get from the device with which is executing the pairing, that can allow it to be paired in 0.5 RTT.
