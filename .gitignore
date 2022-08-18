@@ -6,4 +6,5 @@ build
 node_modules
 .DS_Store
 circom-tests/ark-circom/poseidon/target/
+circom-tests/ark-circom/rln/target/
 circom-tests/circom2/powersoftau/
