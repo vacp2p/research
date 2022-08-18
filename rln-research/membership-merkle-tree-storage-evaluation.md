@@ -1,7 +1,7 @@
 # Waku-RLN-Relay: Evaluating Storage Overhead of Membership Merkle Tree   
 ## Introduction
 
-In the current design of the Waku-RLN-Relay protocol, the membership Merkle tree (MT) is locally persisted by peers. This incurs some storage overhead which may or may not fit resource-limited devices. This overhead also depends on the algorithm used to represent the Merkle tree. So far, we are aware of two algorithms namely, Full Merkle tree (FMT) and Optimal Merkle tree (OMT), and in this post, we would like
+In the current design of the Waku-RLN-Relay protocol, the membership Merkle tree (MT) is locally persisted by all peers being relayer or message publisher. Message publishers require the MT to be able to generate valid proofs with respect to the latest state of the membership group whereas the relayers need the knowledge of MT to be able to verify the rate-limit proofs of the Waku messages. This incurs some storage overhead which may or may not fit resource-limited devices. This overhead also depends on the algorithm used to represent the Merkle tree. So far, we are aware of two algorithms namely, Full Merkle tree (FMT) and Optimal Merkle tree (OMT), and in this post, we would like
 1) to compare the two existing MT algorithms and clarify their differences in terms of storage requirements.
 2) to determine whether the storage overhead of the membership MT fits the resource-limited devices. 
 3) depending on the second item, then we can decide on whether more research on the MT storage optimization is required or not.
