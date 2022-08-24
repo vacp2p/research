@@ -1,4 +1,3 @@
-# Waku-RLN-Relay: Evaluating Storage Overhead of Membership Merkle Tree   
 ## Introduction
 
 In the current design of the Waku-RLN-Relay protocol, the membership Merkle tree (MT) is locally persisted by all peers being relayer or message publisher. Message publishers require the MT to be able to generate valid proofs with respect to the latest state of the membership group whereas the relayers need the knowledge of MT to be able to verify the rate-limit proofs of the Waku messages. This incurs some storage overhead which may or may not fit resource-limited devices. This overhead also depends on the algorithm used to represent the Merkle tree. So far, we are aware of two algorithms namely, Full Merkle tree (FMT) and Hash-Map Merkle tree (HMMT), and in this post, we would like
@@ -12,15 +11,17 @@ In the current design of the Waku-RLN-Relay protocol, the membership Merkle tree
 
 ## Storage Overhead Analysis
  
-**Per-app memory cap**: Before starting the analysis, it is worth reviewing the per-app memory cap on mobile devices (Android and iOS) which are more resource-restricted compared to desktop nodes. Note that these values are not accurate and not evaluated by us, and merely to give some intuition on per-app memory contraints:
+**Per-app memory cap**: Before starting the analysis, it is worth reviewing the per-app memory cap on mobile devices (Android and iOS) which are more resource-restricted compared to desktop nodes. Note that these values are not accurate and not evaluated by us, and merely to give some intuition on per-app memory limitations:
 >  Early Android devices had a per-app memory cap of 16MB. Later this cap increased to 24MB or 32MB. 
 > iPhone 5s (iOS 10, debug mode, 1GB memory): 600MB can be allocated
 > iPad Air 2 (iOS 11.4, 2GB memory): 1.3GB can be allocated
 > iPhone X (iOS 11.4, 3GB memory): 1.2GB can be allocated
 > iPhone 7 Plus (iOS 12.1, 3GB memory): 1.8GB can be allocated
 > iPad 13-inch (iOS 11.4, 4GB memory): 3GB can be allocated
+> 64-bit Chrome browsers are known to have a 4Gb per-tab memory limit (this may vary depending on the OS)
 
-Assuming that the MT is going to be loaded in memory, then we are facing the limit of `32MB` on Android devices and `600MB` on iOS devices.
+Assuming that the MT is going to be loaded in memory, then we are facing the most constraining values of `32MB` on Android devices and `600MB` on iOS devices.
+
 
 **Terminologies**: In this analysis, we use the following terminologies:
 - Tree depth denoted by `d`: The binary logarithm of the maximum number of leaves in a Merkle tree
@@ -100,8 +101,6 @@ However, the MT storage overhead may not be reasonable for mobile devices especi
 2) If we can not predict the maximum group size (hence the max tree depth), then it is more efficient to use the HMMT algorithm. This is because the storage overhead of HMMT is proportional to the group size and less affected by the tree depth.  For instance, consider a tree with a depth of `20` and with `1000` active leaves. MT storage using HMMT requires  `0.097 MB` whereas  `67.1 MB` when using FMT, `700` times more than HMMT.  However, the exact point at which this relationship may change needs more investigation.
 3) If the maximum group size is known, then it would be more efficient to use FMT.
 
-
 ## Next Steps
-The results presented in this post so far suggest that no further MT storage optimization is needed. However, this conclusion is not necessarily extendable to the computational overhead of MT. Hence, evaluating the computational overhead can be considered the next step.
-
+- For scalable production usage, we would like to look into some disk-based tweaks for Merkle tree storage management to account for OOM possibility in worst case scenarios. 
 
