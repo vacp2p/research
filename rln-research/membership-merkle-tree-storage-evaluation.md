@@ -102,5 +102,4 @@ However, the MT storage overhead may not be reasonable for mobile devices especi
 3) If the maximum group size is known, then it would be more efficient to use FMT.
 
 ## Next Steps
-- For scalable production usage, we would like to look into some disk-based tweaks for Merkle tree storage management to account for OOM possibility in worst case scenarios. 
-
+In light of the approximate per-app memory cap provided in this post and according to our experimentation result, the in-memory storage of the membership Merkle tree for a large group of size 1,000,000 members is feasible for almost all known devices. Nevertheless, for scalable production usage and as future work, we would still like to look into some disk-based tweaks for Merkle tree storage management.
