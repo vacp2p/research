@@ -21,13 +21,18 @@ If device `A` doesn't have a camera while device `B` does, [it is possible](#Rat
 - `Curve25519`: the underlying elliptic curve for Diffie-Hellman (DH) operations.
 
 ### The `WakuPairing` Noise Handshake
-The devices execute a custom handshake derived from `X1X1`, where they mutually exchange and authenticate their device static keys, i.e.
+The devices execute a custom handshake derived from `X1X1`, where they mutually exchange and authenticate their device static keys by exchanging messages over the content topic
+```
+contentTopic = /{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/proto
+```
+
+The handshake, detailed in next section, can be summarized as:
 
 ```
 WakuPairing:
-0.   <- eB              {H(sB||r), contentTopic}
+0.   <- eB              {H(sB||r), contentTopicParams, messageNametag}
      ...
-1.   -> eA, eAeB        {H(sA||s)}   [auth_code]
+1.   -> eA, eAeB        {H(sA||s)}   [authcode]
 2.   <- sB, eAsB        {r}
 3.   -> sA, sAeB, sAsB  {s}
 
@@ -35,35 +40,37 @@ WakuPairing:
 ```
 
 
-Beside the ephemeral key, all the information embedded in the QR code should be passed to the prologue of the Noise handshake (e.g. `H(sB||r)`, `contentTopic`, etc.).
+Beside the ephemeral key, all the information embedded in the QR code should be passed to the prologue of the Noise handshake (e.g. `H(sB||r)`, `contentTopic`, `message_nametag`, etc.).
 
 
 ### Protocol Flow
 1. The device `B` exposes through a QR code a Base64 serialization of:
     - An ephemeral public key `eB`;
-    - A `contentTopic` where the information exchange will take place. `contentTopic` follows [23/WAKU2-TOPICS](https://rfc.vac.dev/spec/23/#content-topics) specifications and is then of the form `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/{random-message-id}/proto` for a randomly generated `random-message-id`. `contentTopic` can be then serialized in compressed form as `{application-name}:{application-version}:{shard-id}:{random-message-id}`.
+    - The content topic parameters `contentTopicParams = {application-name}, {application-version}, {shard-id}`.
+    -  A randomly generated 8-bytes long `messageNametag`. 
     - A commitment `H(sB||r)` for its static key `sB` where `r` is a random fixed-lenght value.
 
 2. The device `A`:
     - scans the QR code;
-    - obtains `eB`, `contentTopic`, `Hash(sB|r)`;
-    - initializes the Noise handshake by passing `contentTopic` and `Hash(sB||r)` to the handshake prologue;
+    - obtains `eB`, `contentTopicParams`, `messageNametag`, `Hash(sB|r)`;
+    - checks if `{application-name}` and `{application-version}` from `contentTopicParams` match the local application name and version: if not, aborts the pairing. 
+    - initializes the Noise handshake by passing `contentTopicParams`, `messageNametag` and `Hash(sB||r)` to the handshake prologue;
     - executes the pre-handshake message, i.e. processes the key `eB`;
     - executes the first handshake message over `contentTopic`, i.e. 
         - processes and sends a Waku message containing an ephemeral key `eA`; 
         - performs `DH(eA,eB)` (which computes a symmetric encryption key);
         - attach as payload to the handshake message a commitment `H(sA|s)` for `A`'s static key `sA`, where `s` is a random fixed-lenght value;
-    - an 8-digits authorization code `auth_code` obtained as `HKDF(h) mod 10^8` is displayed on the device, where `h`is the handshake value obtained once the first handshake message is processed.
+    - an 8-digits authorization code `authcode` obtained as `HKDF(h) mod 10^8` is displayed on the device, where `h`is the handshake value obtained once the first handshake message is processed.
 
 3. The device `B`:
-    - listens to any message sent to `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/*` and locally filters only messages sent to `contentTopic`. If any, continues.
-    - initializes the Noise handshake by passing `contentTopic` and `Hash(sB||r)` to the handshake prologue;
+    - listens to messages sent to `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/proto` and locally filters only those with [Waku payload](https://rfc.vac.dev/spec/35/#abnf) starting with `messageNametag`. If any, continues.
+    - initializes the Noise handshake by passing `contentTopicParams`, `messageNametag` and `Hash(sB||r)` to the handshake prologue;
     - executes the pre-handshake message, i.e. processes its static key `eB`;
     - executes the first handshake message, i.e.
         - obtains from the received message a public key `eA`. If `eA` is not a valid public key, the protocol is aborted.
         - performs `DH(eA,eB)` (which computes a symmetric encryption key);
         - decrypts the commitment `H(sA||s)` for `A`'s static key `sA`.
-    - an 8-digits authorization code `auth_code` obtained as `HKDF(h) mod 10^8` is displayed on the device, where `h`is the handshake value obtained once the first handshake message is processed.
+    - an 8-digits authorization code `authcode` obtained as `HKDF(h) mod 10^8` is displayed on the device, where `h`is the handshake value obtained once the first handshake message is processed.
 
 4. Device `A` and `B` wait the user to confirm with an interaction (button press) that the authorization code displayed on both devices are the same. If not, the protocol is aborted.
     
@@ -74,7 +81,7 @@ Beside the ephemeral key, all the information embedded in the QR code should be 
         - attaches as payload the (encrypted) commitment randomness `r` used to compute `H(sB||r)`.
 
 6. The device `A`:
-    - listens to any message sent to `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/*` and locally filters only messages sent to `contentTopic`. If any, continues.
+    - listens to messages sent to `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/proto` and locally filters only those with Waku payload starting with `messageNametag`. If any, continues.
     - obtains from decrypting the received message a public key `sB`. If `sB` is not a valid public key, the protocol is aborted.
     - performs `DH(eA,sB)` (which updates a symmetric encryption key);
     - decrypts the payload to obtain the randomness `r`. 
@@ -89,7 +96,7 @@ Beside the ephemeral key, all the information embedded in the QR code should be 
 
 7. The device `B`:
 
-    - locally filters new messages addressed to `contentTopic`. If any, continues.
+    - listens to messages sent to `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/proto` and locally filters only those with Waku payload starting with `messageNametag`. If any, continues.
     - obtains from decrypting the received message a public key `sA`. If `sA` is not a valid public key, the protocol is aborted.
     - performs `DH(sA,eB)` (which updates a symmetric encryption key);
     - performs `DH(sA,sB)` (which updates a symmetric encryption key);
@@ -107,16 +114,16 @@ This allows pairing in case device `A` does not have a camera to scan a QR (e.g.
 The resulting handshake would then be:
 ```
 WakuPairing2:
-0.   -> eA              {H(sA||s), contentTopic}
+0.   -> eA              {H(sB||r), contentTopicParams, messageNametag}
      ...
-1.   <- eB, eAeB        {H(sB||r)}   [auth_code]
+1.   <- eB, eAeB        {H(sB||r)}   [authcode]
 2.   <- sB, eAsB        {r}
 3.   -> sA, sAeB, sAsB  {s}
 
 {}: payload,    []: user interaction
 ```
 
-## Security Analysis (sketch)
+## Security Analysis
 
 ### Assumptions
 - The attacker is active, i.e. can interact with both devices `A` and `B` by sending messages over `contentTopic`.
@@ -148,16 +155,13 @@ WakuPairing2:
     - by being the pairing requester, it cannot probe device `A` identity without revealing its own (static key) first. Note that device `B` static key and its commitment can be binded to other cryptographic material (e.g., seed phrase).
 
 - Device `B` opens a commitment to its static key at message `2.` because:
-    - if device `A` replies concluding the handshake according to the protocol, device `B` acknowledges that device `A` correctly received his static key `sB`, since `r` was encrypted under an encryption key derived from the static key `sB` and the genuine (due to the previous `auth_code` verification) ephemeral keys `eA` and `eB`.
+    - if device `A` replies concluding the handshake according to the protocol, device `B` acknowledges that device `A` correctly received his static key `sB`, since `r` was encrypted under an encryption key derived from the static key `sB` and the genuine (due to the previous `authcode` verification) ephemeral keys `eA` and `eB`.
 
 - Device `A` opens a commitment to its static key at message `3.` because:
-    - if device `B` doesn't abort the pairing, device `A` acknowledges that device `B` correctly received his static key `sA`, since `s` was encrypted under an encryption key derived from the static keys `sA` and `sB` and the genuine (due to the previous `auth_code` verification) ephemeral keys `eA` and `eB`.
-
-- Device `A` and `B` listens to `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/*` and not to `contentTopic` because:
-    - in this way they don't leak to store nodes their interest for encrypted messages sent to `contentTopic`.
+    - if device `B` doesn't abort the pairing, device `A` acknowledges that device `B` correctly received his static key `sA`, since `s` was encrypted under an encryption key derived from the static keys `sA` and `sB` and the genuine (due to the previous `authcode` verification) ephemeral keys `eA` and `eB`.
 
 
-# Secure Transfer (sketch)
+# Secure Transfer
 
 Once the handshake is concluded, sensitive information can be exchanged using the encryption keys agreed during the pairing phase. If stronger security guarantees are required, some [additional tweaks](#Additional-Possible-Tweaks) are possible.
 
@@ -208,27 +212,24 @@ TransferPhase:
 {}: payload
 ```
 
-## Content Topic Derivation
+## Messages Nametag Derivation
 
-To reduce metadata leakages and increase devices's anonymity over the p2p network, [35/WAKU2-NOISE](https://rfc.vac.dev/spec/37/#session-states) suggests to use some common secrets `ctsInbound, ctsOutbound` (e.g. `ctsInbound, ctsOutbound = HKDF(h)` where `h` is the handshake hash value of the Handshake State at some point of the pairing phase) in order to frequently and deterministically change `contentTopic` of messages exchanged during the pairing and transfer phase - ideally, at each message or round trip communication. 
+To reduce metadata leakages and increase devices's anonymity over the p2p network, [35/WAKU2-NOISE](https://rfc.vac.dev/spec/37/#session-states) suggests to use some common secrets `ctsInbound, ctsOutbound` (e.g. `ctsInbound, ctsOutbound = HKDF(h)` where `h` is the handshake hash value of the Handshake State at some point of the pairing phase) in order to frequently and deterministically change the `messageNametag` of messages exchanged during the pairing and transfer phase - ideally, at each message exchanged. 
 
-Given the proposed content topic format
-```
-/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/{random-message-id}/proto
-```
-the `ctsInbound` and `ctsOutbound` secrets can be used to iteratively generate the `{random-message-id}` field of content topics for inbound and outbound messages, respectively. 
+Given the proposed construction,
+the `ctsInbound` and `ctsOutbound` secrets can be used to iteratively generate the `messageNametag` field of Waku payloads for inbound and outbound messages, respectively. 
 
-The derivation of `{random-message-id}` should be deterministic only for communicating devices and independent from message content, otherwise lost messages will prevent computing the next content topic. A possible approach consists in computing the `n`-th `{random-message-id}` as `H( ctsInbound || n)`, where `n` is serialized as `uint64`.
+The derivation of `messageNametag` should be deterministic only for communicating devices and independent from message content, otherwise lost messages will prevent computing the next message nametag. A possible approach consists in computing the `n`-th `messageNametag` as `H( ctsInbound || n)`, where `n` is serialized as `uint64`.
 
-In this way, sender's and recipient's devices can keep updated a buffer of `random-message-id` to sieve while listening to `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/*` (i.e., the next 50 not yet seen), and become then able to further identify if one or more messages were eventually lost/not-yet-delivered during the communication.
+In this way, sender's and recipient's devices can keep updated a buffer of `messageNametag` to sieve while listening to messages sent over `/{application-name}/{application-version}/wakunoise/1/sessions-{shard-id}/` (i.e., the next 50 not yet seen), and become then able to further identify if one or more messages were eventually lost/not-yet-delivered during the communication.
 This approach brings also the advantage that communicating devices can efficiently identify encrypted messages addressed to them.
 
-We note that since the `ChaChaPoly` cipher used to encrypt messages supports *additional data*, an encrypted payload can be further authenticated by passing the `contentTopic` as additional data to the encryption/decryption routine. In this way, an attacker would be unable to craft an authenticated Waku message sent to a content topic agreed during the pairing phase.
+We note that since the `ChaChaPoly` cipher used to encrypt messages supports *additional data*, an encrypted payload can be further authenticated by passing the `messageNametag` as additional data to the encryption/decryption routine. In this way, an attacker would be unable to craft an authenticated Waku message even in case the currently used symmetric encryption key is compromised, unless `ctsInbound`, `ctsOutbound` or the `messageNametag` buffer lists were compromised too.
 
 
-# Future work: n-to-1 pairing
-The above protocol pairs a single device `A` with `B`, creating the conditions for a secure transfer. However, we would like to efficiently address scenarios (e.g. the [NM](https://rfc.vac.dev/spec/37/#the-nm-session-management-mechanism) session management mechanism) where a device `B` is paired with multiple devices `A1, A2, ..., An`, which were, in turn, already paired two-by-two. A naive approach requires `B` to be paired with each of such devices, but exposing/scanning `n` QRs is clearly impractical for a large number of devices. 
+# Future Work: `n-to-1` Device Pairing
+The above protocol pairs a single device `A` with `B`, creating the conditions for a secure transfer. However, we would like to efficiently address scenarios (e.g. the [NM](https://rfc.vac.dev/spec/37/#the-nm-session-management-mechanism) session management mechanism) where a device `B` is paired with multiple devices `A1, A2, ..., An`, which were, in turn, already paired two-by-two. A naive approach requires `B` to be paired with each of such devices, but exposing/scanning `n` QRs would quickly become impractical as the number of devices increases. 
 
-As a future work we wish to design a n-to-1 pairing protocol, where only one out of `n` devices scans the QR exposed by the pairing requester device and the latter can efficiently (in term of exchanged messages) be securely paired to all of them. 
+As a future work, we wish to design a `n-to-1` pairing protocol, where only one out of `n` devices scans the QR exposed by the pairing requester device and the latter can efficiently (in term of exchanged messages) be securely paired to all of them. 
 
 A possible approach requires that all already paired devices share a list of *pairing key bundles*, that device `B` can securely receive from the device it has been paired with and use to complete multiple pairings, in a similarly fashion as X3DH.
