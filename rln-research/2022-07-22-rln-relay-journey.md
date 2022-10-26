@@ -75,11 +75,11 @@ However, not every node gets to find a spammer and be rewarded for that.
 Indeed, due to the cryptographically solid economic punishment in place, fewer spam activities are expected to be observed.
 This led us to introduce the service fee option to the RLN membership contract to compensate relayers for their spam-protection service (regardless of whether they spot any spamming activity or not).
 That is, a portion of the membership registration fee goes towards a non-refundable service fee.
-The distribution of the collected service fee is still a work in progress and its current state can be seen in the [rln contract repository](https://github.com/vacp2p/rln-contract).
+The distribution of the collected service fee is still a work in progress and its current state can be seen in the [rln contract](https://github.com/vacp2p/rln-contract) GitHub repository.
 
 **Support for ERC20 tokens as RLN membership fee**: It is conceivable that many applications desire to have their tokens and want their RLN group membership fee to be paid in that token.
 To enable this, we are working towards updating the RLN contract interface to support the ERC20 token for the membership fee. 
-The ERC20 support is in progress and its current state can be tracked in the [rln contract GitHub repository](https://github.com/vacp2p/rln-contract).
+The ERC20 support is in progress and its current state can be tracked in the [rln contract](https://github.com/vacp2p/rln-contract) GitHub repository.
 
 **Evaluating storage overhead of membership Merkle tree**:
 In WAKU-RLN-RELAY, the relayers construct and maintain the membership Merkle tree locally.
