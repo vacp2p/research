@@ -53,13 +53,13 @@ They are accessible at https://arxiv.org/pdf/2207.00117.pdf and https://ieeexplo
 - Testnet1: In this testnet, we implemented the PoC of WAKU-RLN-RELAY in Nim and integrated it into a sample chat application. More on this can be found in [testnet1 tutorial](https://github.com/status-im/nwaku/blob/master/docs/tutorial/rln-chat2-live-testnet.md).
 The testnet launched successfully and we got great feedback from the participants to improve upon user experience and resolved identified concerns and comments. 
 
-- Testnet2: This testnet aimed to integrate WAKU-RLN-RELAY into all 3 waku clients namely, Nim-waku (nwaku), Go-Waku, and js-Waku and test their interoperability over the waku network. 
+- Testnet2: This testnet aimed to integrate WAKU-RLN-RELAY into all 3 Waku clients namely, Nim-Waku (nwaku), Go-Waku, and js-Waku and test their interoperability over the Waku network. 
 All three clients consumed the [Zerokit RLN module](https://github.com/vacp2p/zerokit/tree/master/rln) to handle the zkSNARKs proof generation and verification logic. 
 This testnet is still up and running and instructions on the participation can be found in the following tutorial: [WAKU-RLN-RELAY testnet2: cross-client](https://github.com/status-im/nwaku/blob/master/docs/tutorial/rln-chat-cross-client.md).
 Should you be interested in taking part in the testnet, or have any questions, let us know in our dedicated discord channel [WAKU-RLN-RELAY dogfooding](https://discord.com/channels/864066763682218004/945761301156753448).
 
 **Zerokit**: The use of zero-knowledge proofs and zkSNARKs to provide privacy-enhanced service is not limited to the WAKU-RLN-RELAY protocol. 
-The design and development of all the waku protocols are centered around privacy protection and anonymity. 
+The design and development of all the Waku protocols are centered around privacy protection and anonymity. 
 This made us realize the need to develop our zero-knowledge toolings to embrace this need.
 The [Zerokit library](https://github.com/vacp2p/zerokit) was born out of this desire to build a self-hosted library to do research and exploration in the zkp field.
 Zerokit currently comprises the RLN module and is going to be extended by other novel relevant constructs.
