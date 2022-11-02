@@ -17,7 +17,7 @@ In this post, we would like to shed light on the current state of the research a
 
 # WAKU-RLN-RELAY: Why and How
 
-**Why**: The WAKU-RLN-RELAY project was started more than two years ago to protect the open p2p messaging protocol of [WAKU-RELAY](https://rfc.vac.dev/spec/11/) against spam and DDoS attacks.
+**Why**: The WAKU-RLN-RELAY project was started more than two years ago ([Privacy-preserving p2p economic spam protection in Waku v2](https://vac.dev/rln-relay)) to protect the open p2p messaging protocol of [WAKU-RELAY](https://rfc.vac.dev/spec/11/) against spam and DDoS attacks.
 However, the use case of WAKU-RLN-RELAY is not limited to the WAKU-RELAY protocol and can be adopted by any open p2p routing system.
 It is worth mentioning that WAKU-RELAY is a minor extension of [Libp2p Gossipsub protocol](https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/README.md), hence the spam protection property of WAKU-RLN-RELAY is directly applicable to the libp2p Gossipsub protocol too. 
 In a nutshell, spam protection is achieved by limiting the messaging rate of every network participant so that no user can flood the network with a large number of messages and congest/DDoS relayers.
