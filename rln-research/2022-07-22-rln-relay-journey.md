@@ -46,7 +46,7 @@ In a separate effort, as part of a collaboration with the PSE group, the specifi
 
 
 **Academic publications**: The results of this project are published as 2 academic research articles in two prestigious conferences, namely, [ICDCS](https://icdcs2022.icdcs.org/programs/) and [DINPS](https://research.protocol.ai/sites/dinps/programme/) 2022.
-They are accessible at https://arxiv.org/pdf/2207.00117.pdf and https://ieeexplore.ieee.org/abstract/document/9912176/. 
+They are accessible at [WAKU-RLN-RELAY: Privacy-Preserving Peer-to-Peer Economic Spam Protection (full paper)](https://arxiv.org/pdf/2207.00117.pdf) and [Privacy-Preserving Spam-Protected Gossip-Based Routing (poster)](https://ieeexplore.ieee.org/abstract/document/9912176/). 
 
 
 **Testnets**: Two testnets are launched so far:
