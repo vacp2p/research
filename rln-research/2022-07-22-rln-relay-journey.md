@@ -7,7 +7,7 @@ author: sanaztaheri
 published: true
 permalink: /waku-rln-relay-journey
 categories: research
-summary: The current state of the research and development of the WAKU-RLN-RELAY project.
+summary: Private spam-protected gossip-based routing of WAKU-RLN-RELAY: academic publications, PoC implementation, cross-client testnet, technical specs, and future state.
 image: 
 discuss: 
 _includes: [math]
