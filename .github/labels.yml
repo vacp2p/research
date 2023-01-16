@@ -50,14 +50,17 @@
 - name: track:rln
   description: RLN Track - (Secure Messaging/Applied ZK), relay and applications
   color: C89BC6
+- name: track:secure-scaling
+  description: Secure Scaling track (Secure Messaging)
+  color: 08C6D8
 - name: track:anonymity
   description: Anonymity track (Secure Messaging)
   color: 06B6C8
 - name: track:operator-outreach
   description: Operator outreach track (Secure Messaging/Waku Product)
   color: B888AB
-- name: track:ft-store
-  description: FT-Store track (Secure Messaging)
+- name: track:data-sync
+  description: Data Synchronization track (Secure Messaging)
   color: F5FD62
 - name: track:discovery
   description: Discovery track (Secure Messaging/Waku Product)
