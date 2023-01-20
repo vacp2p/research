@@ -53,6 +53,9 @@
 - name: track:secure-scaling
   description: Secure Scaling track (Secure Messaging)
   color: 08C6D8
+- name: track:app-protocols
+  description: Application Protocols track (Secure Messaging)
+  color: 07A648
 - name: track:anonymity
   description: Anonymity track (Secure Messaging)
   color: 06B6C8
