@@ -1,4 +1,4 @@
-name: Add new issues and PRs to Vac Research project board
+name: Add new issues and PRs to Vac Research project boards
 
 on:
   issues:
@@ -11,12 +11,20 @@ jobs:
     name: Add issue to project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@v0.3.0
+      - uses: actions/add-to-project@v0.4.0
         with:
-          # You can target a repository in a different organization
-          # to the issue
-          project-url: https://github.com/orgs/vacp2p/projects/6
+          # You can target a repository in a different organization to the issue
+          project-url: https://github.com/orgs/vacp2p/projects/7 # SeM board
+          column: New
+          github-token: ${{ secrets.ADD_TO_PROJECT_SEM_PAT }}
+          labeled: ${{env.SEM_TRACK_LABELS}}
+          label-operator: OR
+      - uses: actions/add-to-project@v0.4.0
+        with:
+          # You can target a repository in a different organization to the issue
+          project-url: https://github.com/orgs/vacp2p/projects/6 # general VaC board
+          column: New
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
-          # NOTE Currently all issues are added, might want to limit this
-          #labeled: bug, needs-triage
-          #label-operator: OR
+          labeled: ${{env.SEM_TRACK_LABELS}}
+          label-operator: NOT # catch all lables not added to specific boards
+
