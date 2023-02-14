@@ -15,7 +15,6 @@ jobs:
         with:
           # You can target a repository in a different organization to the issue
           project-url: https://github.com/orgs/vacp2p/projects/7 # SeM board
-          column: New
           github-token: ${{ secrets.ADD_TO_PROJECT_SEM_PAT }}
           labeled: ${{env.SEM_TRACK_LABELS}}
           label-operator: OR
@@ -23,7 +22,6 @@ jobs:
         with:
           # You can target a repository in a different organization to the issue
           project-url: https://github.com/orgs/vacp2p/projects/6 # general VaC board
-          column: New
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
           labeled: ${{env.SEM_TRACK_LABELS}}
           label-operator: NOT # catch all lables not added to specific boards
