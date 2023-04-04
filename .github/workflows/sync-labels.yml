@@ -13,6 +13,6 @@ jobs:
       - uses: micnncim/action-label-syncer@v1
         with:
           manifest: .github/labels.yml
-        reposiory: ${{ RESEARCH_LABEL_SYNC_REPOS }}
+        repository: ${{ RESEARCH_LABEL_SYNC_REPOS }}
         token: ${{ secrets.SYNC_LABELS_PAT }}
 
