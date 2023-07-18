@@ -6,6 +6,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import typher
 
 # Util and format functions
 #-----------------------------------------------------------
@@ -364,7 +365,30 @@ def plot_load_sharding():
   plt.savefig("waku_scaling_multi_shard_plot.png", dpi=300, orientation="landscape")
 
 
+def _config_file_callback(ctx: typer.Context, param: typer.CallbackParam, cfile: str):
+    if cfile:
+        typer.echo(f"Loading config file: {os.path.basename(cfile)}")
+        ctx.default_map = ctx.default_map or {}  # Init the default map
+        try:
+            with open(cfile, 'r') as f:  # Load config file
+                conf = json.load(f)
+                if "network" not in conf:
+                    print(
+                        f"Network configuration not found in {cfile}. Skipping the analysis.")
+                    sys.exit(0)
+            ctx.default_map.update(conf["network"])  # Merge config and default_map
+        except Exception as ex:
+            raise typer.BadParameter(str(ex))
+    return cfile
 
-plot_load()
-plot_load_sharding()
-
+def main(ctx: typer.Context,
+         num_nodes: int = typer.Option(4,
+             help="Set the number of nodes"),
+         fanout: int = typer.Option(6,
+             help="Set the arity"),
+         network_type: networkType = typer.Option(networkType.REGULAR.value,
+             help="Set the network type"),
+         config_file: str = typer.Option("", callback=_config_file_callback, is_eager=True,
+             help="Set the input config file (JSON)")):
+    plot_load()
+    plot_load_sharding()
