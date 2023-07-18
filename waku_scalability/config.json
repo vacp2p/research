@@ -1,0 +1,19 @@
+{
+  "config": {
+    "prng_seed": 1,
+    "output_dir": "network_data",
+    "benchmark": "False",
+    "networks" : {
+      "net-0": {
+        "num_nodes": 5,
+        "fanout": 3,
+        "network_type": "newmanwattsstrogatz"
+       },
+       "net-0": {
+        "num_nodes": 5,
+        "fanout": 3,
+        "network_type": "newmanwattsstrogatz"
+       }
+    }
+  }
+}
