@@ -6,7 +6,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+
 import typer
+from enum import Enum, EnumMeta
+
+class networkType(Enum):
+    NEWMANWATTSSTROGATZ = "newmanwattsstrogatz"  # mesh, smallworld
+    REGULAR = "regular"  # libp2p
+
 
 # Util and format functions
 #-----------------------------------------------------------
