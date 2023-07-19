@@ -9,6 +9,7 @@ import math
 from pathlib import Path
 
 
+import sys
 import typer
 from enum import Enum, EnumMeta
 
@@ -21,7 +22,7 @@ GENLOAD="wls"
 CONFIG="config"
 
 class Config:
-    def __init__(self):
+    def __init__(self):         # the defaults
         self.num_nodes = 4
         self.fanout = 6
         self.network_type = networkType.REGULAR.value
@@ -34,7 +35,10 @@ class Config:
         self.shards_per_node = 3
         self.per_hop_delay = 0.1
 
-    def __init__(self, num_nodes, fanout, network_type, msg_size, gossip_msg_size, cache, gossip__to_reply_ratio, nodes_per_shard, shards_per_node, per_hop_delay):
+    def __init__(self, num_nodes, fanout,
+            network_type, msg_size, gossip_msg_size,
+            cache, gossip_to_reply_ratio, nodes_per_shard,
+            shards_per_node, per_hop_delay):
         self.num_nodes = num_nodes
         self.fanout = fanout
         self.network_type = network_type
@@ -303,23 +307,6 @@ def print_latency_case1():
     print("------------------------------------------------------------")
 
 
-# Run cases
-#-----------------------------------------------------------
-
-# Print goals
-print("")
-print(bcolors.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + bcolors.ENDC)
-
-print_load_case1()
-print_load_case2()
-print_load_case3()
-print_load_case4()
-
-print_load_sharding_case1()
-print_load_sharding_case2()
-print_load_sharding_case3()
-
-print_latency_case1()
 
 # Plot
 #-----------------------------------------------------------
@@ -405,23 +392,8 @@ def plot_load_sharding():
   plt.savefig("waku_scaling_multi_shard_plot.png", dpi=300, orientation="landscape")
 
 
-def _config_file_callback(ctx: typer.Context, param: typer.CallbackParam, cfile: str):
-    if cfile:
-        typer.echo(f"Loading config file: {os.path.basename(cfile)}")
-        ctx.default_map = ctx.default_map or {}  # Init the default map
-        try:
-            with open(cfile, 'r') as f:  # Load config file
-                conf = json.load(f)
-                if "config" not in conf:
-                    print(
-                        f"Configuration not found in {cfile}. Skipping the analysis.")
-                    sys.exit(0)
-            ctx.default_map.update(conf["network"])  # Merge config and default_map
-        except Exception as ex:
-            raise typer.BadParameter(str(ex))
-    return cfile
-
 def _sanity_check(fname, keys, ftype="json"):
+    print(f'sanity check: {fname}, {keys}, {ftype}')
     if not fname.exists():
         log.error(f'The file "{fname}" does not exist')
         sys.exit(0)
@@ -439,20 +411,22 @@ def _sanity_check(fname, keys, ftype="json"):
     except Exception as ex:
         raise typer.BadParameter(str(ex))
 
-
 app = typer.Typer()
 
 @app.command()
 def kurtosis(ctx: typer.Context, config_file: Path):
-    _sanity_check(fname, "json", [GENNET, GENLOAD])
+    _sanity_check(config_file, "json", [GENNET, GENLOAD])
+    print("kurtosis: done")
 
 @app.command()
 def batch(ctx: typer.Context, batch_file: Path):
-    _sanity_check(fname, "json", [CONFIG])
+    _sanity_check(batch_file, "json", [CONFIG])
+    print("batch: done")
 
 @app.command()
-def shadow(ctx: typer.Context, batch_file: Path):
-    _sanity_check(fname, "yaml", [])
+def shadow(ctx: typer.Context, config_file: Path):
+    _sanity_check(config_file, "yaml", [])
+    print("shadow: done")
 
 @app.command()
 def cli(ctx: typer.Context,
@@ -478,8 +452,26 @@ def cli(ctx: typer.Context,
              help="Set the number of shards a node is part of"),
          per_hop_delay: float = typer.Option(0.1,
              help="Set the delay per hop")):
+    # Run cases
+    #-----------------------------------------------------------
+
+    # Print goals
+    print("")
+    print(bcolors.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + bcolors.ENDC)
+
+    print_load_case1()
+    print_load_case2()
+    print_load_case3()
+    print_load_case4()
+
+    print_load_sharding_case1()
+    print_load_sharding_case2()
+    print_load_sharding_case3()
+
+    print_latency_case1()
     plot_load()
     plot_load_sharding()
+    print("cli: done")
 
 if __name__ == "__main__":
     app()
