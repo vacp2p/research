@@ -6,6 +6,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from pathlib import Path
+
 
 import typer
 from enum import Enum, EnumMeta
@@ -451,6 +453,9 @@ def cli(ctx: typer.Context,
              help="Set the delay per hop")):
     plot_load()
     plot_load_sharding()
+
+if __name__ == "__main__":
+    app()
 
 """
 # general / topology
