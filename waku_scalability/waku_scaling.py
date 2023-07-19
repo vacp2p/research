@@ -9,6 +9,7 @@ import math
 from pathlib import Path
 
 import sys
+import json
 import typer
 import logging as log
 from enum import Enum, EnumMeta
@@ -23,6 +24,8 @@ class Keys:
     GENNET="gennet"
     GENLOAD="wls"
     CONFIG="config"
+    JSON="json"
+    YAML="yaml"
 
 
 class Config:
@@ -34,7 +37,7 @@ class Config:
         self.msg_size = 0.002           # msg size in MBytes
         self.msgpsec = 0.00139          # msgs per sec in single pubsub topic/shard = 5 msgs/hr
         self.gossip_msg_size = 0.05     # gossip message size in KBytes = 50 bytes
-        self.hwindow = 3                # the history window for gossips = 3
+        self.gossip_window_size = 3     # the history window for gossips = 3
         self.gossip2reply_ratio = 0.01  # fraction of gossips that elicit a reply = 0.01 (guess)
         self.nodes_per_shard = 10000    # avg number of nodes online and part of single shard
         self.shards_per_node = 3        # avg number of shards a wakunode participates
@@ -45,23 +48,22 @@ class Config:
 
     def __init__(self, num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
-            msg_size=2, msgpsec=0.00139,
-            gossip_msg_size=0.002, gossip_hwindow=3, gossip2reply_ratio=0.01,
-            nodes_per_shard=10000, shards_per_node=3,
-            per_hop_delay=100):
+            msg_size=2, msgpsec=0.00139, per_hop_delay=100,
+            gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
+            nodes_per_shard=10000, shards_per_node=3):
         self.num_nodes = num_nodes
         self.fanout = fanout
         self.network_type = network_type
         self.msg_size = msg_size
         self.msgpsec = msgpsec
-        self.msgphr = msgpsec*60*60
-        self.gossip_msg_size = gossip_msg_size
-        self.gossip_hwindow = gossip_hwindow
-        self.gossip2reply_ratio = gossip2reply_ratio
-        self.nodes_per_shard = nodes_per_shard
-        self.shards_per_node = shards_per_node
         self.per_hop_delay = per_hop_delay
+        self.gossip_msg_size = float(gossip_msg_size)
+        self.gossip_window_size = int(gossip_window_size)
+        self.gossip2reply_ratio = float(gossip2reply_ratio)
+        self.nodes_per_shard = int(nodes_per_shard)
+        self.shards_per_node = int(shards_per_node)
 
+        self.msgphr = msgpsec*60*60
         self.d_lazy = self.fanout        # gossip degree = 6
 
         # Assumption strings (general/topology)
@@ -99,7 +101,13 @@ class Config:
             "a41" : "- A41. Delay is calculated based on an upper bound of the expected distance.",
             "a42" : "- A42. Average delay per hop (static): " + str(self.per_hop_delay) + "s."
         }
+        self.display()
 
+    def display(self):
+        print( "CONFIG = ", self.num_nodes, self.fanout, self.network_type,
+                self.msg_size, self.msgpsec, self.msgphr,
+                self.gossip_msg_size, self.gossip_window_size, self.gossip2reply_ratio,
+                self.nodes_per_shard, self.shards_per_node, self.per_hop_delay, self.d_lazy)
 
 
     def print_assumptions1(self, xs):
@@ -128,13 +136,11 @@ class Config:
 
 class Analysis(Config):
     def __init__(self, num_nodes, fanout,
-            network_type, msg_size, msgpsec, gossip_msg_size,
-            cache, gossip_to_reply_ratio, nodes_per_shard,
-            shards_per_node, per_hop_delay):
+            network_type, msg_size, msgpsec,
+            per_hop_delay, **kwargs):
         Config.__init__(self, num_nodes, fanout,
-            network_type, msg_size, msgpsec, gossip_msg_size,
-            cache, gossip_to_reply_ratio, nodes_per_shard,
-            shards_per_node, per_hop_delay)
+            network_type, msg_size, msgpsec,
+            per_hop_delay, **kwargs)
 
     # Case 1 :: singe shard, unique messages, store
     # sharding case 1: multi shard, n*(d-1) messages, gossip
@@ -181,7 +187,7 @@ class Analysis(Config):
     def load_case4(self, n_users):
         messages_received_per_hour =  self.msgphr * n_users * (self.fanout-1) # see case 3
         messages_load =  self.msg_size * messages_received_per_hour
-        num_ihave = messages_received_per_hour * self.d_lazy * self.gossip_hwindow
+        num_ihave = messages_received_per_hour * self.d_lazy * self.gossip_window_size
         ihave_load  = num_ihave * self.gossip_msg_size
         gossip_response_load  = (num_ihave * (self.gossip_msg_size + self.msg_size)) * self.gossip2reply_ratio # reply load contains both an IWANT (from requester to sender), and the actual wanted message (from sender to requester)
         gossip_total = ihave_load + gossip_response_load
@@ -425,42 +431,70 @@ def avg_node_distance_upper_bound(n_users, degree):
     return math.log(n_users, degree)
 
 
-def _sanity_check(fname, keys, ftype="json"):
+def _sanity_check(fname, keys, ftype=Keys.JSON):
     print(f'sanity check: {fname}, {keys}, {ftype}')
     if not fname.exists():
         log.error(f'The file "{fname}" does not exist')
         sys.exit(0)
     try:
         with open(fname, 'r') as f:     # Load config file
-            if ftype == "json":         # Both batch and kurtosis use json
-                conf = json.load(f)
+            if ftype == Keys.JSON: # Both batch and kurtosis use json
+                json_conf = json.load(f)
                 for key in keys:
-                    if key not in conf:
+                    if key not in json_conf:
                         log.error(f'The json {key} not found in {fname}')
                         sys.exit(0)
+                return json_conf
             elif ftype == "yaml":   # Shadow uses yaml
                 log.error(f'YAML is not yet supported : {fname}')
                 sys.exit(0)
+                #yaml_conf = json.load(f)
+                #return yaml_conf
     except Exception as ex:
         raise typer.BadParameter(str(ex))
     log.debug(f'sanity check: All Ok')
+
+
+# Print goals
+def print_goal():
+    print("")
+    print(bcolors.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + bcolors.ENDC)
 
 app = typer.Typer()
 
 @app.command()
 def kurtosis(ctx: typer.Context, config_file: Path):
-    _sanity_check(config_file, "json", [Keys.GENNET, Keys.GENLOAD])
-    print("kurtosis: done")
+    print_goal()
+    json = _sanity_check(config_file, [Keys.GENNET, Keys.GENLOAD], Keys.JSON)
+    analysis = Analysis(
+            json["gennet"]["num_nodes"],
+            json["gennet"]["fanout"],
+            json["gennet"]["network_type"],
+            (json["wls"]["min_packet_size"] + json["wls"]["max_packet_size"])/2,
+            json["wls"]["message_rate"],
+            per_hop_delay=0.01) # pick up from kurtosis
+    analysis.run()
+
+    print(f'kurtosis: done')
 
 @app.command()
 def batch(ctx: typer.Context, batch_file: Path):
-    _sanity_check(batch_file, "json", [Keys.CONFIG])
-    print("batch: done")
+    print_goal()
+    json = _sanity_check(batch_file, [Keys.CONFIG], Keys.JSON)
+    analysis = Analysis(num_nodes, fanout, network_type,
+            msg_size, msgpsec,
+            gossip_msg_size, hwindow, gossip2reply_ratio,
+            nodes_per_shard, shards_per_node,
+            per_hop_delay)
+    analysis.run()
+
+    print(f'batch: done')
 
 @app.command()
 def shadow(ctx: typer.Context, config_file: Path):
-    _sanity_check(config_file, "yaml", [])
-    print("shadow: done")
+    print_goal()
+    yaml = _sanity_check(config_file, [], Keys.YAML)
+    print("shadow: done {yaml}")
 
 @app.command()
 def cli(ctx: typer.Context,
@@ -476,7 +510,7 @@ def cli(ctx: typer.Context,
              help="Set message rate per second on a shard/topic"),
          gossip_msg_size: float = typer.Option(0.05,
              help="Set gossip message size in KBytes"),
-         hwindow: int = typer.Option(3,
+         gossip_window_size: int = typer.Option(3,
              help="Set gossip history window size"),
          gossip2reply_ratio: float = typer.Option(0.01,
              help="Set the Gossip to reply ratio"),
@@ -486,17 +520,11 @@ def cli(ctx: typer.Context,
              help="Set the number of shards a node is part of"),
          per_hop_delay: float = typer.Option(0.1,
              help="Set the delay per hop")):
-    # Run cases
-    #-----------------------------------------------------------
 
-    # Print goals
-    print("")
-    print(bcolors.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + bcolors.ENDC)
-
-    analysis = Analysis(num_nodes, fanout,
-            network_type, msg_size, msgpsec, gossip_msg_size,
-            hwindow, gossip2reply_ratio, nodes_per_shard,
-            shards_per_node, per_hop_delay)
+    analysis = Analysis(num_nodes, fanout, network_type,
+            msg_size, msgpsec, per_hop_delay,
+            **{"gossip_msg_size" : gossip_msg_size, "gossip_window_size":gossip_window_size,  "gossip2reply_ratio":gossip2reply_ratio,
+                "nodes_per_shard":nodes_per_shard,  "shards_per_node":shards_per_node})
     analysis.run()
     print("cli: done")
 
@@ -521,5 +549,4 @@ avg_shards_per_node = 3    # average number of shards a given node is part of
 
 # latency
 average_delay_per_hop = 0.1 #s
-
 """
