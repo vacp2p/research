@@ -22,18 +22,20 @@ GENLOAD="wls"
 CONFIG="config"
 
 class Config:
-    def __init__(self):         # the defaults
-        self.num_nodes = 4
-        self.fanout = 6
-        self.network_type = networkType.REGULAR.value
-        self.msg_size = 2
-        self.msgpsec = 0.083
-        self.gossip_msg_size = 0.05
-        self.cache = 3
-        self.gossip__to_reply_ratio = 0.01
-        self.nodes_per_shard = 10000
-        self.shards_per_node = 3
-        self.per_hop_delay = 0.1
+    def __init__(self):                 # the defaults
+        self.num_nodes = 4              # number of wakunodes = 4
+        self.fanout = 6                 # 'average' node degree = 6
+        self.network_type = networkType.REGULAR.value   # regular nw: avg node degree is exact
+        self.msg_size = 2               # msg size in KBytes
+        self.msgpsec = 0.00139          # msgs per sec in single pubsub topic/shard = 5 msgs/hr
+        self.gossip_msg_size = 0.05     # gossip message size in KBytes = 50 bytes
+        self.hwindow = 3                # the history window for gossips = 3
+        self.gossip2reply_ratio = 0.01  # fraction of gossips that elicit a reply = 0.01 (guess)
+        self.nodes_per_shard = 10000    # avg number of nodes online and part of single shard
+        self.shards_per_node = 3        # avg number of shards a wakunode participates
+        self.per_hop_delay = 100        # avg delay per hop = 0.1 sec / 100 msec
+
+        self.d_lazy = sef.fanout        # gossip degree = 6
 
     def __init__(self, num_nodes, fanout,
             network_type, msg_size, gossip_msg_size,
@@ -45,11 +47,36 @@ class Config:
         self.msg_size = msg_size
         self.msgpsec = msgpsec
         self.gossip_msg_size = gossip_msg_size
-        self.cache = cache
-        self.gossip_to_reply_ratio = gossip__to_reply_ratio
+        self.hwindow = cache
+        self.gossip2reply_ratio = gossip__to_reply_ratio
         self.nodes_per_shard = nodes_per_shard
         self.shards_per_node = shards_per_node
         self.per_hop_delay = per_hop_delay
+
+        self.d_lazy = sef.fanout        # gossip degree = 6
+
+
+
+# Users sent messages at a constant rate
+# The network topology is a d-regular graph (gossipsub aims at achieving this).
+
+# general / topology
+average_node_degree = 6  # has to be even
+message_size = 0.002 # in MB (Mega Bytes)
+messages_sent_per_hour = 5 # ona a single pubsub topic / shard
+
+# gossip
+gossip_message_size = 0.00005 # 50Bytes in MB (see https://github.com/libp2p/specs/pull/413#discussion_r1018821589 )
+d_lazy = 6 # gossip out degree
+mcache_gossip = 3 # Number of history windows to use when emitting gossip (see https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/gossipsub-v1.0.md)
+avg_ratio_gossip_replys = 0.01 # -> this is a wild guess! (todo: investigate)
+
+# multi shard
+avg_nodes_per_shard = 10000 # average number of nodes that a part of a single shard
+avg_shards_per_node = 3    # average number of shards a given node is part of
+
+
+
 
 
 # Util and format functions
