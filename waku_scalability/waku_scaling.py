@@ -14,6 +14,8 @@ class networkType(Enum):
     NEWMANWATTSSTROGATZ = "newmanwattsstrogatz"  # mesh, smallworld
     REGULAR = "regular"  # libp2p
 
+GENNET="gennet"
+GENLOAD="wls"
 
 # Util and format functions
 #-----------------------------------------------------------
@@ -379,23 +381,94 @@ def _config_file_callback(ctx: typer.Context, param: typer.CallbackParam, cfile:
         try:
             with open(cfile, 'r') as f:  # Load config file
                 conf = json.load(f)
-                if "network" not in conf:
+                if "config" not in conf:
                     print(
-                        f"Network configuration not found in {cfile}. Skipping the analysis.")
+                        f"Configuration not found in {cfile}. Skipping the analysis.")
                     sys.exit(0)
             ctx.default_map.update(conf["network"])  # Merge config and default_map
         except Exception as ex:
             raise typer.BadParameter(str(ex))
     return cfile
 
-def main(ctx: typer.Context,
+@app.command()
+def kurtosis(ctx: typer.Context, config_file: Path):
+    if not config_file.exists():
+        log.error(f'The config file "{config_file}" does not exist')
+        sys.exit(0)
+    try:
+        with open(config_file, 'r') as f:  # Load config file
+            conf = json.load(f)
+            if GENNET not in conf:
+                log.error(f'{GENNET} configuration not found in {config_file}')
+                sys.exit(0)
+            elif GENLOAD not in conf:
+                log.error(f'{GENLOAD} configuration not found in {config_file}')
+                sys.exit(0)
+    except Exception as ex:
+        raise typer.BadParameter(str(ex))
+
+@app.command()
+def batch(ctx: typer.Context, batch_file: Path):
+    if not batch_file.exists():
+        log.error(f'The config file "{batch_file}" does not exist')
+        sys.exit(0)
+    try:
+        with open(config_file, 'r') as f:  # Load config file
+            conf = json.load(f)
+            if GENNET not in conf:
+                log.error(f'{GENNET} configuration not found in {config_file}')
+                sys.exit(0)
+            elif GENLOAD not in conf:
+                log.error(f'{GENLOAD} configuration not found in {config_file}')
+                sys.exit(0)
+    except Exception as ex:
+        raise typer.BadParameter(str(ex))
+
+
+@app.command()
+def cli(ctx: typer.Context,
          num_nodes: int = typer.Option(4,
              help="Set the number of nodes"),
          fanout: int = typer.Option(6,
              help="Set the arity"),
          network_type: networkType = typer.Option(networkType.REGULAR.value,
              help="Set the network type"),
-         config_file: str = typer.Option("", callback=_config_file_callback, is_eager=True,
-             help="Set the input config file (JSON)")):
+         msg_size: float = typer.Option(2,
+             help="Set message size in KBytes"),
+         msgpsec: float = typer.Option(0.083,
+             help="Set message rate per second on a shard/topic"),
+         gossip_msg_size: float = typer.Option(0.05,
+             help="Set gossip message size in KBytes"),
+         cache: int = typer.Option(3,
+             help="Set gossip window size"),
+         gossip__to_reply_ratio: float = typer.Option(0.01,
+             help="Set the Gossip to reply ratio"),
+         nodes_per_shard: int = typer.Option(10000,
+             help="Set the number of nodes per shard/topic"),
+         shards_per_node: int = typer.Option(3,
+             help="Set the number of shards a node is part of"),
+         per_hop_delay: float = typer.Option(0.1,
+             help="Set the delay per hop")):
     plot_load()
     plot_load_sharding()
+
+"""
+# general / topology
+average_node_degree = 6  # has to be even
+message_size = 0.002 # in MB (Mega Bytes)
+messages_sent_per_hour = 5 # ona a single pubsub topic / shard
+
+# gossip
+gossip_message_size = 0.00005 # 50Bytes in MB (see https://github.com/libp2p/specs/pull/413#discussion_r1018821589 )
+d_lazy = 6 # gossip out degree
+mcache_gossip = 3 # Number of history windows to use when emitting gossip (see https://github.com/libp2p/specs/blob/master/pubsub/gossipsub/gossipsub-v1.0.md)
+avg_ratio_gossip_replys = 0.01 # -> this is a wild guess! (todo: investigate)
+
+# multi shard
+avg_nodes_per_shard = 10000 # average number of nodes that a part of a single shard
+avg_shards_per_node = 3    # average number of shards a given node is part of
+
+# latency
+average_delay_per_hop = 0.1 #s
+
+"""
