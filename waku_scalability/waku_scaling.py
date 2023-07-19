@@ -411,6 +411,8 @@ def _sanity_check(fname, keys, ftype="json"):
         raise typer.BadParameter(str(ex))
 
 
+app = typer.Typer()
+
 @app.command()
 def kurtosis(ctx: typer.Context, config_file: Path):
     _sanity_check(fname, "json", [GENNET, GENLOAD])
