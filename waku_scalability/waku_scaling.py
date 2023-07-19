@@ -20,6 +20,33 @@ GENNET="gennet"
 GENLOAD="wls"
 CONFIG="config"
 
+class Config:
+    def __init__(self):
+        self.num_nodes = 4
+        self.fanout = 6
+        self.network_type = networkType.REGULAR.value
+        self.msg_size = 2
+        self.msgpsec = 0.083
+        self.gossip_msg_size = 0.05
+        self.cache = 3
+        self.gossip__to_reply_ratio = 0.01
+        self.nodes_per_shard = 10000
+        self.shards_per_node = 3
+        self.per_hop_delay = 0.1
+
+    def __init__(self, num_nodes, fanout, network_type, msg_size, gossip_msg_size, cache, gossip__to_reply_ratio, nodes_per_shard, shards_per_node, per_hop_delay):
+        self.num_nodes = num_nodes
+        self.fanout = fanout
+        self.network_type = network_type
+        self.msg_size = msg_size
+        self.msgpsec = msgpsec
+        self.gossip_msg_size = gossip_msg_size
+        self.cache = cache
+        self.gossip_to_reply_ratio = gossip__to_reply_ratio
+        self.nodes_per_shard = nodes_per_shard
+        self.shards_per_node = shards_per_node
+        self.per_hop_delay = per_hop_delay
+
 
 # Util and format functions
 #-----------------------------------------------------------
