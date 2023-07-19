@@ -392,7 +392,7 @@ def _config_file_callback(ctx: typer.Context, param: typer.CallbackParam, cfile:
             raise typer.BadParameter(str(ex))
     return cfile
 
-def _sanity_check(fname, ftype="json", keys):
+def _sanity_check(fname, keys, ftype="json"):
     if not fname.exists():
         log.error(f'The file "{fname}" does not exist')
         sys.exit(0)
