@@ -16,6 +16,8 @@ class networkType(Enum):
 
 GENNET="gennet"
 GENLOAD="wls"
+CONFIG="config"
+
 
 # Util and format functions
 #-----------------------------------------------------------
@@ -390,40 +392,36 @@ def _config_file_callback(ctx: typer.Context, param: typer.CallbackParam, cfile:
             raise typer.BadParameter(str(ex))
     return cfile
 
-@app.command()
-def kurtosis(ctx: typer.Context, config_file: Path):
-    if not config_file.exists():
-        log.error(f'The config file "{config_file}" does not exist')
+def _sanity_check(fname, ftype="json", keys):
+    if not fname.exists():
+        log.error(f'The file "{fname}" does not exist')
         sys.exit(0)
     try:
-        with open(config_file, 'r') as f:  # Load config file
-            conf = json.load(f)
-            if GENNET not in conf:
-                log.error(f'{GENNET} configuration not found in {config_file}')
-                sys.exit(0)
-            elif GENLOAD not in conf:
-                log.error(f'{GENLOAD} configuration not found in {config_file}')
+        with open(fname, 'r') as f:     # Load config file
+            if ftype == "json":         # Both batch and kurtosis use json
+                conf = json.load(f)
+                for key in keys:
+                    if key not in conf:
+                        log.error(f'The json {key} not found in {fname}')
+                        sys.exit(0)
+            elif ftype == "yaml":   # Shadow uses yaml
+                log.error(f'YAML is not yet supported : {fname}')
                 sys.exit(0)
     except Exception as ex:
-        raise typer.BadParameter(str(ex))
+
+
+
+@app.command()
+def kurtosis(ctx: typer.Context, config_file: Path):
+    _sanity_check(fname, "json", [GENNET, GENLOAD])
 
 @app.command()
 def batch(ctx: typer.Context, batch_file: Path):
-    if not batch_file.exists():
-        log.error(f'The config file "{batch_file}" does not exist')
-        sys.exit(0)
-    try:
-        with open(config_file, 'r') as f:  # Load config file
-            conf = json.load(f)
-            if GENNET not in conf:
-                log.error(f'{GENNET} configuration not found in {config_file}')
-                sys.exit(0)
-            elif GENLOAD not in conf:
-                log.error(f'{GENLOAD} configuration not found in {config_file}')
-                sys.exit(0)
-    except Exception as ex:
-        raise typer.BadParameter(str(ex))
+    _sanity_check(fname, "json", [CONFIG])
 
+@app.command()
+def shadow(ctx: typer.Context, batch_file: Path):
+    _sanity_check(fname, "yaml", [])
 
 @app.command()
 def cli(ctx: typer.Context,
