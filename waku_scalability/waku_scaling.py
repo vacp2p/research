@@ -408,7 +408,7 @@ def _sanity_check(fname, ftype="json", keys):
                 log.error(f'YAML is not yet supported : {fname}')
                 sys.exit(0)
     except Exception as ex:
-
+        raise typer.BadParameter(str(ex))
 
 
 @app.command()
