@@ -1,18 +1,45 @@
 {
   "config": {
     "prng_seed": 1,
-    "output_dir": "network_data",
+    "output_dir": "analysis_output",
     "benchmark": "False",
-    "networks" : {
-      "net-0": {
+
+    "runs" : {
+      "run-0": {
+        "num_nodes" : 4,
+        "fanout" : 6,
+        "network_type" : "regular",
+        "msg_size" : 2,
+        "msgpsec" : 0.00139,
+        "per_hop_delay" : 100,
+        "gossip_msg_size" : 0.002,
+        "gossip_window_size" : 3,
+        "gossip2reply_ratio" : 0.01,
+        "nodes_per_shard" : 10000,
+        "shards_per_node" : 3,
         "num_nodes": 5,
         "fanout": 3,
-        "network_type": "newmanwattsstrogatz"
+        "network_type": "regular"
        },
-       "net-0": {
+    "run-1": {
+        "num_nodes" : 4,
+        "fanout" : 6,
+        "network_type" : "regular",
+        "msg_size" : 2,
+        "msgpsec" : 0.00139,
+        "per_hop_delay" : 100,
+        "gossip_msg_size" : 0.002,
+        "gossip_window_size" : 3,
+        "gossip2reply_ratio" : 0.01,
+        "nodes_per_shard" : 10000,
+        "shards_per_node" : 3,
         "num_nodes": 5,
         "fanout": 3,
-        "network_type": "newmanwattsstrogatz"
+        "network_type": "regular"
+       },
+    "run-2": {
+        "num_nodes" : 100,
+        "fanout" : 6
        }
     }
   }
