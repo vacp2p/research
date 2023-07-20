@@ -1,5 +1,5 @@
 {
-  "config": {
+  "batch": {
     "prng_seed": 1,
     "output_dir": "analysis_output",
     "benchmark": "False",
