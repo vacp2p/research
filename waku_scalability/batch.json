@@ -17,9 +17,7 @@
         "gossip2reply_ratio" : 0.01,
         "nodes_per_shard" : 10000,
         "shards_per_node" : 3,
-        "num_nodes": 5,
-        "fanout": 3,
-        "network_type": "regular"
+        "num_nodes": 5
        },
     "run-1": {
         "num_nodes" : 4,
@@ -33,10 +31,8 @@
         "gossip2reply_ratio" : 0.01,
         "nodes_per_shard" : 10000,
         "shards_per_node" : 3,
-        "num_nodes": 5,
-        "fanout": 3,
-        "network_type": "regular"
-       },
+        "num_nodes": 5
+    },
     "run-2": {
         "num_nodes" : 100,
         "fanout" : 6
