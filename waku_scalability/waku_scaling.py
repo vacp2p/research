@@ -15,19 +15,23 @@ import logging as log
 from enum import Enum, EnumMeta
 
 
+# we do not currently use these - for future extensions
 class networkType(Enum):
     NEWMANWATTSSTROGATZ = "newmanwattsstrogatz"  # mesh, smallworld
     REGULAR = "regular"  # d_lazy
 
 
+#JSON/YAML keys: for consistency and avoid stupid bugs
 class Keys:
-    GENNET="gennet"
-    GENLOAD="wls"
-    CONFIG="config"
-    JSON="json"
-    YAML="yaml"
+    GENNET  =   "gennet"
+    GENLOAD =   "wls"
+    JSON    =   "json"
+    YAML    =   "yaml"
+    BATCH   =   "batch"
+    RUNS    =   "runs"
 
 
+# Config holds the data for the individual runs. Every analysis instance is a Config instance
 class Config:
     '''
     def __init__(self):                 # the defaults
@@ -46,26 +50,31 @@ class Config:
         self.d_lazy = self.fanout        # gossip degree = 6
     '''
 
+    # We need 12 params to correctly instantiate Config. Set the defaults for the missing
     def __init__(self,
             num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
-            msg_size=2, msgpsec=0.00139, per_hop_delay=100,
+            msg_size=0.002, msgpsec=0.00139, per_hop_delay=100,
             gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
             nodes_per_shard=10000, shards_per_node=3):
-        self.num_nodes = num_nodes
-        self.fanout = fanout
-        self.network_type = network_type
-        self.msg_size = msg_size
-        self.msgpsec = msgpsec
-        self.per_hop_delay = per_hop_delay
-        self.gossip_msg_size = float(gossip_msg_size)
-        self.gossip_window_size = int(gossip_window_size)
-        self.gossip2reply_ratio = float(gossip2reply_ratio)
-        self.nodes_per_shard = int(nodes_per_shard)
-        self.shards_per_node = int(shards_per_node)
+        # set the current Config values
+        self.num_nodes = num_nodes                      # number of nodes
+        self.fanout = fanout                            # avg degree
+        self.network_type = network_type                # regular, small world etc
+        self.msg_size = msg_size                        # avg message size in MBytes
+        self.msgpsec = msgpsec                          # avg # of messages per sec
+        self.per_hop_delay = per_hop_delay              # per-hop delay = 0.01 sec
+        self.gossip_msg_size = gossip_msg_size          # avg gossip msg size in MBytes
+        self.gossip_window_size = gossip_window_size    # max gossip history window size
+        self.gossip2reply_ratio = gossip2reply_ratio    # fraction of replies/hits to a gossip msg
+        self.nodes_per_shard = nodes_per_shard          # max number of nodes per shard
+        self.shards_per_node = shards_per_node          # avg number of shards a node is part of
 
-        self.msgphr = msgpsec*60*60
-        self.d_lazy = self.fanout        # gossip degree = 6
+        # secondary parameters, derived from primary
+        self.msgphr = msgpsec*60*60                     # msgs per hour derived from msgpsec
+        self.d_lazy = self.fanout                       # gossip degree = 6
+
+        self.base_assumptions = ["a1", "a2", "a3", "a4"]
 
         # Assumption strings (general/topology)
         self.Assumptions = {
@@ -104,25 +113,28 @@ class Config:
         }
         self.display()
 
+    # display the Config
     def display(self):
-        print( "CONFIG = ", self.num_nodes, self.fanout, self.network_type,
+        print( "Config = ", self.num_nodes, self.fanout, self.network_type,
                 self.msg_size, self.msgpsec, self.msgphr,
                 self.gossip_msg_size, self.gossip_window_size, self.gossip2reply_ratio,
                 self.nodes_per_shard, self.shards_per_node, self.per_hop_delay, self.d_lazy)
 
 
+    # Print assumptions : with a base set
     def print_assumptions1(self, xs):
         print("Assumptions/Simplifications:")
-        alist = ["a1", "a2", "a3", "a4"] + xs
+        alist = self.base_assumptions + xs
         for a in alist:
             if a in self.Assumptions:
                 print(self.Assumptions[a])
             else:
                 log.error(f'Unknown assumption: ' + a)
                 sys.exit(0)
-    print("")
+        print("")
 
 
+    # Print assumptions: all
     def print_assumptions(self, xs):
         print("Assumptions/Simplifications:")
         for a in xs:
@@ -135,13 +147,11 @@ class Config:
 
 
 
+# Analysis performs the runs. It creates a Config object and runs the analysis on it
 class Analysis(Config):
-    def __init__(self, num_nodes, fanout,
-            network_type, msg_size, msgpsec,
-            per_hop_delay, **kwargs):
-        Config.__init__(self, num_nodes, fanout,
-            network_type, msg_size, msgpsec,
-            per_hop_delay, **kwargs)
+    # accept variable number of parameters with missing values set to defaults
+    def __init__(self, **kwargs):
+        Config.__init__(self, **kwargs)
 
     # Case 1 :: singe shard, unique messages, store
     # sharding case 1: multi shard, n*(d-1) messages, gossip
@@ -348,94 +358,85 @@ class Analysis(Config):
         self.plot_load()
         self.plot_load_sharding()
 
+    def num_edges_dregular(num_nodes, degree):
+        # we assume and even d; d-regular graphs with both where both n and d are odd don't exist
+        return num_nodes * (degree/2)
 
+    def avg_node_distance_upper_bound(n_users, degree):
+        return math.log(n_users, degree)
 
 # Util and format functions
 #-----------------------------------------------------------
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+class IOFormats:
+    self.HEADER = '\033[95m'
+    self.OKBLUE = '\033[94m'
+    self.OKGREEN = '\033[92m'
+    self.WARNING = '\033[93m'
+    self.FAIL = '\033[91m'
+    self.ENDC = '\033[0m'
+    self.BOLD = '\033[1m'
+    self.UNDERLINE = '\033[4m'
+
+    def sizeof_fmt(self, num):
+        return "%.1f%s" % (num, "MB")
+
+    def sizeof_fmt_kb(self, num):
+        return "%.2f%s" % (num*1024, "KB")
+
+    def magnitude_fmt(num):
+        for x in ['','k','m']:
+            if num < 1000:
+                return "%2d%s" % (num, x)
+            num /= 1000
+
+    # Color format based on daily bandwidth usage
+    # <10mb/d = good, <30mb/d ok, <100mb/d bad, 100mb/d+ fail.
+    def load_color_prefix(load):
+        if load < (10):
+            color_level = self.OKBLUE
+        elif load < (30):
+            color_level = self.OKGREEN
+        elif load < (100):
+            color_level = self.WARNING
+        else:
+            color_level = self.FAIL
+        return color_level
+
+    def load_color_fmt(load, string):
+        return load_color_prefix(load) + string + self.ENDC
 
 
-def sizeof_fmt(num):
-    return "%.1f%s" % (num, "MB")
+    def print_header(string):
+        print(self.HEADER + string + self.ENDC + "\n")
 
 
-def sizeof_fmt_kb(num):
-    return "%.2f%s" % (num*1024, "KB")
+    def usage_str(load_users_fn, n_users):
+        load = load_users_fn(n_users)
+        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users_fn(n_users)) + "/hour")
 
 
-def magnitude_fmt(num):
-    for x in ['','k','m']:
-        if num < 1000:
-            return "%2d%s" % (num, x)
-        num /= 1000
+    def print_usage(load_users):
+        print(usage_str(load_users, 100))
+        print(usage_str(load_users, 100 * 100))
+        print(usage_str(load_users, 100 * 100 * 100))
 
 
-# Color format based on daily bandwidth usage
-# <10mb/d = good, <30mb/d ok, <100mb/d bad, 100mb/d+ fail.
-def load_color_prefix(load):
-    if load < (10):
-        color_level = bcolors.OKBLUE
-    elif load < (30):
-        color_level = bcolors.OKGREEN
-    elif load < (100):
-        color_level = bcolors.WARNING
-    else:
-        color_level = bcolors.FAIL
-    return color_level
+    def latency_str(latency_users_fn, n_users, degree):
+        latency =  latency_users_fn(n_users, degree)
+        return load_color_fmt(latency, "For " + magnitude_fmt(n_users) + " the average latency is " + ("%.3f" % latency_users_fn(n_users, degree)) + " s")
 
 
-def load_color_fmt(load, string):
-    return load_color_prefix(load) + string + bcolors.ENDC
+    def print_latency(latency_users, average_node_degree):
+        print(latency_str(latency_users, 100, average_node_degree))
+        print(latency_str(latency_users, 100 * 100, average_node_degree))
+        print(latency_str(latency_users, 100 * 100 * 100, average_node_degree))
 
 
-def print_header(string):
-    print(bcolors.HEADER + string + bcolors.ENDC + "\n")
-
-
-def usage_str(load_users_fn, n_users):
-    load = load_users_fn(n_users)
-    return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users_fn(n_users)) + "/hour")
-
-
-def print_usage(load_users):
-    print(usage_str(load_users, 100))
-    print(usage_str(load_users, 100 * 100))
-    print(usage_str(load_users, 100 * 100 * 100))
-
-
-def latency_str(latency_users_fn, n_users, degree):
-    latency =  latency_users_fn(n_users, degree)
-    return load_color_fmt(latency, "For " + magnitude_fmt(n_users) + " the average latency is " + ("%.3f" % latency_users_fn(n_users, degree)) + " s")
-
-
-def print_latency(latency_users, average_node_degree):
-    print(latency_str(latency_users, 100, average_node_degree))
-    print(latency_str(latency_users, 100 * 100, average_node_degree))
-    print(latency_str(latency_users, 100 * 100 * 100, average_node_degree))
-
-
-def num_edges_dregular(num_nodes, degree):
-    # we assume and even d; d-regular graphs with both where both n and d are odd don't exist
-    return num_nodes * (degree/2)
-
-
-def avg_node_distance_upper_bound(n_users, degree):
-    return math.log(n_users, degree)
-
-
-# Print goals
-def print_goal():
-    print("")
-    print(bcolors.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + bcolors.ENDC)
+    # Print goals
+    def print_goal():
+        print("")
+        print(self.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + self.ENDC)
 
 
 def _sanity_check(fname, keys, ftype=Keys.JSON):
@@ -449,7 +450,7 @@ def _sanity_check(fname, keys, ftype=Keys.JSON):
                 json_conf = json.load(f)
                 for key in keys:
                     if key not in json_conf:
-                        log.error(f'The json {key} not found in {fname}')
+                        log.error(f'The json  key "{key}" not found in {fname}')
                         sys.exit(0)
                 return json_conf
             elif ftype == "yaml":   # Shadow uses yaml
@@ -465,6 +466,7 @@ app = typer.Typer()
 
 @app.command()
 def kurtosis(ctx: typer.Context, config_file: Path):
+    pretty_print = IOFormat()
     print_goal()
     json = _sanity_check(config_file, [Keys.GENNET, Keys.GENLOAD], Keys.JSON)
     analysis = Analysis(
@@ -481,14 +483,12 @@ def kurtosis(ctx: typer.Context, config_file: Path):
 @app.command()
 def batch(ctx: typer.Context, batch_file: Path):
     print_goal()
-    json = _sanity_check(batch_file, [Keys.CONFIG], Keys.JSON)
-    analysis = Analysis(num_nodes, fanout, network_type,
-            msg_size, msgpsec,
-            gossip_msg_size, hwindow, gossip2reply_ratio,
-            nodes_per_shard, shards_per_node,
-            per_hop_delay)
-    analysis.run()
-
+    json = _sanity_check(batch_file, [Keys.BATCH], Keys.JSON)
+    runs = json[Keys.BATCH][Keys.RUNS]
+    for run in runs:
+        print(runs[run])
+        analysis = Analysis(**runs[run])
+        analysis.run()
     print(f'batch: done')
 
 @app.command()
