@@ -15,7 +15,7 @@ import logging as log
 from enum import Enum, EnumMeta
 
 
-# we do not currently use these - for future extensions
+# we currently support the following two network types
 class networkType(Enum):
     NEWMANWATTSSTROGATZ = "newmanwattsstrogatz"  # mesh, smallworld
     REGULAR = "regular"  # d_lazy
@@ -437,10 +437,31 @@ class Analysis(Config):
 
     def num_edges_dregular(self, num_nodes, degree):
         # we assume and even d; d-regular graphs with both where both n and d are odd don't exist
-        return num_nodes * (degree/2)
+        if self.network_type == networkType.REGULAR.value:
+            return num_nodes * (degree/2)
+        elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
+            return num_nodes * (degree/2)
+        else:
+            log.error(f'num_edges_dregular: Unknown network type {self.network_type}')
+            sys.exit(0)
 
     def avg_node_distance_upper_bound(self, n_users, degree):
-        return math.log(n_users, degree)
+        if self.network_type == networkType.REGULAR.value:
+            return math.log(n_users, degree)
+        elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
+            return math.log(n_users, 2)
+        else:
+            log.error(f'avg_node_distance_upper_bound:Unknown network type {self.network_type}')
+            sys.exit(0)
+
+    def avg_node_distance_upper_bound(self, n_users, degree):
+        if self.network_type == networkType.REGULAR.value:
+            return math.log(n_users, degree)
+        elif self.network_type == networkType.NEWMANWATTSSTROGATZ:
+            return math.log(n_users, 2)
+        else:
+            log.error(f'Unknown network type {self.network_type}')
+            sys.exit(0)
 
 def _sanity_check(fname, keys, ftype=Keys.JSON):
     print(f'sanity check: {fname}, {keys}, {ftype}')
