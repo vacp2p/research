@@ -46,7 +46,8 @@ class Config:
         self.d_lazy = self.fanout        # gossip degree = 6
     '''
 
-    def __init__(self, num_nodes=4, fanout=6,
+    def __init__(self,
+            num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
             msg_size=2, msgpsec=0.00139, per_hop_delay=100,
             gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
@@ -431,6 +432,12 @@ def avg_node_distance_upper_bound(n_users, degree):
     return math.log(n_users, degree)
 
 
+# Print goals
+def print_goal():
+    print("")
+    print(bcolors.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + bcolors.ENDC)
+
+
 def _sanity_check(fname, keys, ftype=Keys.JSON):
     print(f'sanity check: {fname}, {keys}, {ftype}')
     if not fname.exists():
@@ -438,7 +445,7 @@ def _sanity_check(fname, keys, ftype=Keys.JSON):
         sys.exit(0)
     try:
         with open(fname, 'r') as f:     # Load config file
-            if ftype == Keys.JSON: # Both batch and kurtosis use json
+            if ftype == Keys.JSON:      # Both batch and kurtosis use json
                 json_conf = json.load(f)
                 for key in keys:
                     if key not in json_conf:
@@ -453,12 +460,6 @@ def _sanity_check(fname, keys, ftype=Keys.JSON):
     except Exception as ex:
         raise typer.BadParameter(str(ex))
     log.debug(f'sanity check: All Ok')
-
-
-# Print goals
-def print_goal():
-    print("")
-    print(bcolors.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + bcolors.ENDC)
 
 app = typer.Typer()
 
@@ -522,9 +523,12 @@ def cli(ctx: typer.Context,
              help="Set the delay per hop")):
 
     analysis = Analysis(num_nodes, fanout, network_type,
-            msg_size, msgpsec, per_hop_delay,
-            **{"gossip_msg_size" : gossip_msg_size, "gossip_window_size":gossip_window_size,  "gossip2reply_ratio":gossip2reply_ratio,
-                "nodes_per_shard":nodes_per_shard,  "shards_per_node":shards_per_node})
+                        msg_size, msgpsec, per_hop_delay,
+                        **{"gossip_msg_size" : gossip_msg_size,
+                        "gossip_window_size":gossip_window_size,
+                        "gossip2reply_ratio":gossip2reply_ratio,
+                        "nodes_per_shard":nodes_per_shard,
+                        "shards_per_node":shards_per_node})
     analysis.run()
     print("cli: done")
 
