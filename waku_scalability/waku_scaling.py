@@ -31,6 +31,82 @@ class Keys:
     RUNS    =   "runs"
 
 
+# Util and format functions
+#-----------------------------------------------------------
+
+class IOFormats:
+    def __init__(self):
+        self.HEADER = '\033[95m'
+        self.OKBLUE = '\033[94m'
+        self.OKGREEN = '\033[92m'
+        self.WARNING = '\033[93m'
+        self.FAIL = '\033[91m'
+        self.ENDC = '\033[0m'
+        self.BOLD = '\033[1m'
+        self.UNDERLINE = '\033[4m'
+
+    def sizeof_fmt(self, num):
+        return "%.1f%s" % (num, "MB")
+
+    def sizeof_fmt_kb(self, num):
+        return "%.2f%s" % (num*1024, "KB")
+
+    def magnitude_fmt(self, num):
+        for x in ['','k','m']:
+            if num < 1000:
+                return "%2d%s" % (num, x)
+            num /= 1000
+
+    # Color format based on daily bandwidth usage
+    # <10mb/d = good, <30mb/d ok, <100mb/d bad, 100mb/d+ fail.
+    def load_color_prefix(self, load):
+        if load < (10):
+            color_level = self.OKBLUE
+        elif load < (30):
+            color_level = self.OKGREEN
+        elif load < (100):
+            color_level = self.WARNING
+        else:
+            color_level = self.FAIL
+        return color_level
+
+    def load_color_fmt(self, load, string):
+        return self.load_color_prefix(load) + string + self.ENDC
+
+
+    def print_header(self, string):
+        print(self.HEADER + string + self.ENDC + "\n")
+
+
+    def usage_str(self, load_users_fn, n_users):
+        load = load_users_fn(n_users)
+        return self.load_color_fmt(load, "For " + self.magnitude_fmt(n_users) + " users, receiving bandwidth is " + self.sizeof_fmt(load_users_fn(n_users)) + "/hour")
+
+
+    def print_usage(self, load_users):
+        print(self.usage_str(load_users, 100))
+        print(self.usage_str(load_users, 100 * 100))
+        print(self.usage_str(load_users, 100 * 100 * 100))
+
+
+    def latency_str(self, latency_users_fn, n_users, degree):
+        latency =  latency_users_fn(n_users, degree)
+        return self.load_color_fmt(latency, "For " + self.magnitude_fmt(n_users) + " the average latency is " + ("%.3f" % latency_users_fn(n_users, degree)) + " s")
+
+
+    def print_latency(self, latency_users, average_node_degree):
+        print(self.latency_str(latency_users, 100, average_node_degree))
+        print(self.latency_str(latency_users, 100 * 100, average_node_degree))
+        print(self.latency_str(latency_users, 100 * 100 * 100, average_node_degree))
+
+
+    # Print goals
+    def print_goal(self):
+        print("")
+        print(self.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + self.ENDC)
+
+
+
 # Config holds the data for the individual runs. Every analysis instance is a Config instance
 class Config:
     '''
@@ -56,7 +132,7 @@ class Config:
             network_type=networkType.REGULAR.value,
             msg_size=0.002, msgpsec=0.00139, per_hop_delay=100,
             gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
-            nodes_per_shard=10000, shards_per_node=3):
+            nodes_per_shard=10000, shards_per_node=3, pretty_print=IOFormats()):
         # set the current Config values
         self.num_nodes = num_nodes                      # number of nodes
         self.fanout = fanout                            # avg degree
@@ -75,10 +151,10 @@ class Config:
         self.d_lazy = self.fanout                       # gossip degree = 6
 
         self.base_assumptions = ["a1", "a2", "a3", "a4"]
-
+        self.pretty_print = pretty_print
         # Assumption strings (general/topology)
         self.Assumptions = {
-            "a1"  :  "- A01. Message size (static): " + sizeof_fmt_kb(self.msg_size),
+            "a1"  :  "- A01. Message size (static): " + self.pretty_print.sizeof_fmt_kb(self.msg_size),
             "a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " + str(self.msgphr),
             "a3"  : "- A03. The network topology is a d-regular graph of degree (static): " + str(self.fanout),
             "a4"  : "- A04. Messages outside of Waku Relay are not considered, e.g. store messages.",
@@ -104,7 +180,7 @@ class Config:
 
             # Assumption strings (gossip)
             "a31" : "- A21. Gossip is not considered.",
-            "a32" : "- A32. Gossip message size (IHAVE/IWANT) (static):" + sizeof_fmt_kb(self.gossip_msg_size),
+            "a32" : "- A32. Gossip message size (IHAVE/IWANT) (static):" + self.pretty_print.sizeof_fmt_kb(self.gossip_msg_size),
             "a33" : "- A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):" + str(self.gossip2reply_ratio),
 
             # Assumption strings (delay)
@@ -112,6 +188,7 @@ class Config:
             "a42" : "- A42. Average delay per hop (static): " + str(self.per_hop_delay) + "s."
         }
         self.display()
+        self.pretty_print.print_goal()
 
     # display the Config
     def display(self):
@@ -164,21 +241,21 @@ class Analysis(Config):
 
     def print_load_case1(self):
         print("")
-        print_header("Load case 1 (store load; corresponds to received load per naive light node)")
+        self.pretty_print.print_header("Load case 1 (store load; corresponds to received load per naive light node)")
         self.print_assumptions1(["a7", "a21"])
-        print_usage(self.load_case1)
+        self.pretty_print.print_usage(self.load_case1)
         print("")
         print("------------------------------------------------------------")
 
     # Case 2 :: single shard, (n*d)/2 messages
     def load_case2(self, n_users):
-        return self.msg_size * self.msgphr * num_edges_dregular(n_users, self.fanout)
+        return self.msg_size * self.msgphr * self.num_edges_dregular(n_users, self.fanout)
 
     def print_load_case2(self):
         print("")
-        print_header("Load case 2 (received load per node)")
+        self.pretty_print.print_header("Load case 2 (received load per node)")
         self.print_assumptions1(["a5", "a7", "a31"])
-        print_usage(self.load_case2)
+        self.pretty_print.print_usage(self.load_case2)
         print("")
         print("------------------------------------------------------------")
 
@@ -188,9 +265,9 @@ class Analysis(Config):
 
     def print_load_case3(self):
         print("")
-        print_header("Load case 3 (received load per node)")
+        self.pretty_print.print_header("Load case 3 (received load per node)")
         self.print_assumptions1(["a6", "a7", "a31"])
-        print_usage(self.load_case3)
+        self.pretty_print.print_usage(self.load_case3)
         print("")
         print("------------------------------------------------------------")
 
@@ -207,30 +284,30 @@ class Analysis(Config):
 
     def print_load_case4(self):
         print("")
-        print_header("Load case 4 (received load per node incl. gossip)")
+        self.pretty_print.print_header("Load case 4 (received load per node incl. gossip)")
         self.print_assumptions1(["a6", "a7", "a32", "a33"])
-        print_usage(self.load_case4)
+        self.pretty_print.print_usage(self.load_case4)
         print("")
         print("------------------------------------------------------------")
 
     # latency cases
     def latency_case1(self, n_users, degree):
-        return avg_node_distance_upper_bound(n_users, degree) * self.per_hop_delay
+        return self.avg_node_distance_upper_bound(n_users, degree) * self.per_hop_delay
 
     def print_latency_case1(self):
         print("")
-        print_header("Latency case 1 :: Topology: 6-regular graph. No gossip (note: gossip would help here)")
+        self.pretty_print.print_header("Latency case 1 :: Topology: 6-regular graph. No gossip (note: gossip would help here)")
         self.print_assumptions(["a3", "a41", "a42"])
-        print_latency(self.latency_case1, self.fanout)
+        self.pretty_print.print_latency(self.latency_case1, self.fanout)
         print("")
         print("------------------------------------------------------------")
 
 
     def print_load_sharding_case1(self):
         print("")
-        print_header("load sharding case 1 (received load per node incl. gossip)")
+        self.pretty_print.print_header("load sharding case 1 (received load per node incl. gossip)")
         self.print_assumptions1(["a6", "a8", "a9", "a10", "a11", "a32", "a33"])
-        print_usage(self.load_sharding_case1)
+        self.pretty_print.print_usage(self.load_sharding_case1)
         print("")
         print("------------------------------------------------------------")
 
@@ -242,9 +319,9 @@ class Analysis(Config):
 
     def print_load_sharding_case2(self):
         print("")
-        print_header("load sharding case 2 (received load per node incl. gossip and 1:1 chat)")
+        self.pretty_print.print_header("load sharding case 2 (received load per node incl. gossip and 1:1 chat)")
         self.print_assumptions1(["a6", "a8", "a9", "a10", "a11", "a12", "a13", "a14", "a32", "a33"])
-        print_usage(self.load_sharding_case2)
+        self.pretty_print.print_usage(self.load_sharding_case2)
         print("")
         print("------------------------------------------------------------")
 
@@ -255,9 +332,9 @@ class Analysis(Config):
 
     def print_load_sharding_case3(self):
         print("")
-        print_header("load sharding case 3 (received load naive light node.)")
+        self.pretty_print.print_header("load sharding case 3 (received load naive light node.)")
         self.print_assumptions1(["a6", "a8", "a9", "a10", "a15", "a32", "a33"])
-        print_usage(self.load_sharding_case3)
+        self.pretty_print.print_usage(self.load_sharding_case3)
         print("")
         print("------------------------------------------------------------")
 
@@ -358,86 +435,12 @@ class Analysis(Config):
         self.plot_load()
         self.plot_load_sharding()
 
-    def num_edges_dregular(num_nodes, degree):
+    def num_edges_dregular(self, num_nodes, degree):
         # we assume and even d; d-regular graphs with both where both n and d are odd don't exist
         return num_nodes * (degree/2)
 
-    def avg_node_distance_upper_bound(n_users, degree):
+    def avg_node_distance_upper_bound(self, n_users, degree):
         return math.log(n_users, degree)
-
-# Util and format functions
-#-----------------------------------------------------------
-
-class IOFormats:
-    self.HEADER = '\033[95m'
-    self.OKBLUE = '\033[94m'
-    self.OKGREEN = '\033[92m'
-    self.WARNING = '\033[93m'
-    self.FAIL = '\033[91m'
-    self.ENDC = '\033[0m'
-    self.BOLD = '\033[1m'
-    self.UNDERLINE = '\033[4m'
-
-    def sizeof_fmt(self, num):
-        return "%.1f%s" % (num, "MB")
-
-    def sizeof_fmt_kb(self, num):
-        return "%.2f%s" % (num*1024, "KB")
-
-    def magnitude_fmt(num):
-        for x in ['','k','m']:
-            if num < 1000:
-                return "%2d%s" % (num, x)
-            num /= 1000
-
-    # Color format based on daily bandwidth usage
-    # <10mb/d = good, <30mb/d ok, <100mb/d bad, 100mb/d+ fail.
-    def load_color_prefix(load):
-        if load < (10):
-            color_level = self.OKBLUE
-        elif load < (30):
-            color_level = self.OKGREEN
-        elif load < (100):
-            color_level = self.WARNING
-        else:
-            color_level = self.FAIL
-        return color_level
-
-    def load_color_fmt(load, string):
-        return load_color_prefix(load) + string + self.ENDC
-
-
-    def print_header(string):
-        print(self.HEADER + string + self.ENDC + "\n")
-
-
-    def usage_str(load_users_fn, n_users):
-        load = load_users_fn(n_users)
-        return load_color_fmt(load, "For " + magnitude_fmt(n_users) + " users, receiving bandwidth is " + sizeof_fmt(load_users_fn(n_users)) + "/hour")
-
-
-    def print_usage(load_users):
-        print(usage_str(load_users, 100))
-        print(usage_str(load_users, 100 * 100))
-        print(usage_str(load_users, 100 * 100 * 100))
-
-
-    def latency_str(latency_users_fn, n_users, degree):
-        latency =  latency_users_fn(n_users, degree)
-        return load_color_fmt(latency, "For " + magnitude_fmt(n_users) + " the average latency is " + ("%.3f" % latency_users_fn(n_users, degree)) + " s")
-
-
-    def print_latency(latency_users, average_node_degree):
-        print(latency_str(latency_users, 100, average_node_degree))
-        print(latency_str(latency_users, 100 * 100, average_node_degree))
-        print(latency_str(latency_users, 100 * 100 * 100, average_node_degree))
-
-
-    # Print goals
-    def print_goal():
-        print("")
-        print(self.HEADER + "Waku relay theoretical model results (single shard and multi shard scenarios)." + self.ENDC)
-
 
 def _sanity_check(fname, keys, ftype=Keys.JSON):
     print(f'sanity check: {fname}, {keys}, {ftype}')
@@ -466,8 +469,6 @@ app = typer.Typer()
 
 @app.command()
 def kurtosis(ctx: typer.Context, config_file: Path):
-    pretty_print = IOFormat()
-    print_goal()
     json = _sanity_check(config_file, [Keys.GENNET, Keys.GENLOAD], Keys.JSON)
     analysis = Analysis(
             json["gennet"]["num_nodes"],
@@ -482,7 +483,6 @@ def kurtosis(ctx: typer.Context, config_file: Path):
 
 @app.command()
 def batch(ctx: typer.Context, batch_file: Path):
-    print_goal()
     json = _sanity_check(batch_file, [Keys.BATCH], Keys.JSON)
     runs = json[Keys.BATCH][Keys.RUNS]
     for run in runs:
@@ -493,7 +493,6 @@ def batch(ctx: typer.Context, batch_file: Path):
 
 @app.command()
 def shadow(ctx: typer.Context, config_file: Path):
-    print_goal()
     yaml = _sanity_check(config_file, [], Keys.YAML)
     print("shadow: done {yaml}")
 
