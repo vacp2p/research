@@ -440,25 +440,25 @@ class Analysis(Config):
         if self.network_type == networkType.REGULAR.value:
             return num_nodes * (degree/2)
         elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
-            return num_nodes * (degree/2)
+            # NEWMANWATTSSTROGATZ starts as a regular graph
+            #   0. rewire random edged
+            #   1. add additional ~ \beta * numnodes*degree/2 edges to shorten paths
+            #       # \beta used = 0.5
+            # this is a relatively tight estimate
+            return num_nodes * (degree/2) + 0.5 * num_nodes * degree/2
         else:
             log.error(f'num_edges_dregular: Unknown network type {self.network_type}')
             sys.exit(0)
 
     def avg_node_distance_upper_bound(self, n_users, degree):
         if self.network_type == networkType.REGULAR.value:
-            return math.log(n_users, degree)
-        elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
-            return math.log(n_users, 2)
-        else:
-            log.error(f'avg_node_distance_upper_bound:Unknown network type {self.network_type}')
-            sys.exit(0)
-
-    def avg_node_distance_upper_bound(self, n_users, degree):
-        if self.network_type == networkType.REGULAR.value:
+            # TODO: this needs checking.
+            # diameter of regular graph is bounded by log(n/k)?
             return math.log(n_users, degree)
         elif self.network_type == networkType.NEWMANWATTSSTROGATZ:
-            return math.log(n_users, 2)
+            # NEWMANWATTSSTROGATZ is small world an random
+            # a slightly less tight estimate
+            return math.log(n_users)/math.log(degree)
         else:
             log.error(f'Unknown network type {self.network_type}')
             sys.exit(0)
