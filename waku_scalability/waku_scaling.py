@@ -73,32 +73,8 @@ class IOFormats:
     def load_color_fmt(self, load, string):
         return self.load_color_prefix(load) + string + self.ENDC
 
-
     def print_header(self, string):
         print(self.HEADER + string + self.ENDC + "\n")
-
-
-    def usage_str(self, load_users_fn, n_users):
-        load = load_users_fn(n_users)
-        return self.load_color_fmt(load, "For " + self.magnitude_fmt(n_users) + " users, receiving bandwidth is " + self.sizeof_fmt(load_users_fn(n_users)) + "/hour")
-
-
-    def print_usage(self, load_users):
-        print(self.usage_str(load_users, 100))
-        print(self.usage_str(load_users, 100 * 100))
-        print(self.usage_str(load_users, 100 * 100 * 100))
-
-
-    def latency_str(self, latency_users_fn, n_users, degree):
-        latency =  latency_users_fn(n_users, degree)
-        return self.load_color_fmt(latency, "For " + self.magnitude_fmt(n_users) + " the average latency is " + ("%.3f" % latency_users_fn(n_users, degree)) + " s")
-
-
-    def print_latency(self, latency_users, average_node_degree):
-        print(self.latency_str(latency_users, 100, average_node_degree))
-        print(self.latency_str(latency_users, 100 * 100, average_node_degree))
-        print(self.latency_str(latency_users, 100 * 100 * 100, average_node_degree))
-
 
     # Print goals
     def print_goal(self):
@@ -230,6 +206,32 @@ class Analysis(Config):
     def __init__(self, **kwargs):
         Config.__init__(self, **kwargs)
 
+    def pretty_print_usage(self, load_fn, num_nodes):
+        load = load_fn(num_nodes)
+        print (self.pretty_print.load_color_fmt(load, "For " + self.pretty_print.magnitude_fmt(num_nodes) + " users, receiving bandwidth is " + self.pretty_print.sizeof_fmt(load) + "/hour"))
+
+    def print_usage(self, load_fn, num_nodes, explore=True):
+        if explore:
+            self.pretty_print_usage(load_fn, 100)
+            self.pretty_print_usage(load_fn, 100 * 100)
+            self.pretty_print_usage(load_fn, 100 * 100 * 100)
+        else:
+            self.pretty_print_usage(load_fn, self.num_nodes)
+
+    def pretty_print_latency(self, latency_fn, num_nodes, degree):
+        latency =  latency_fn(num_nodes, degree)
+        print(self.pretty_print.load_color_fmt(latency, "For " + self.pretty_print.magnitude_fmt(num_nodes) + " the average latency is " + ("%.3f" % latency) + " s"))
+
+
+    def print_latency(self, latency_fn, average_node_degree, explore=True):
+        if explore:
+            self.pretty_print_latency(latency_fn, 100, average_node_degree)
+            self.pretty_print_latency(latency_fn, 100 * 100, average_node_degree)
+            self.pretty_print_latency(latency_fn, 100 * 100 * 100, average_node_degree)
+        else:
+            self.pretty_print_latency(latency_fn, self.num_nodes, average_node_degree)
+
+
     # Case 1 :: singe shard, unique messages, store
     # sharding case 1: multi shard, n*(d-1) messages, gossip
     def load_sharding_case1(self, n_users):
@@ -243,7 +245,7 @@ class Analysis(Config):
         print("")
         self.pretty_print.print_header("Load case 1 (store load; corresponds to received load per naive light node)")
         self.print_assumptions1(["a7", "a21"])
-        self.pretty_print.print_usage(self.load_case1)
+        self.print_usage(self.load_case1, self.num_nodes)
         print("")
         print("------------------------------------------------------------")
 
@@ -251,11 +253,11 @@ class Analysis(Config):
     def load_case2(self, n_users):
         return self.msg_size * self.msgphr * self.num_edges_dregular(n_users, self.fanout)
 
-    def print_load_case2(self):
+    def print_load_case2(self, explore=True):
         print("")
         self.pretty_print.print_header("Load case 2 (received load per node)")
         self.print_assumptions1(["a5", "a7", "a31"])
-        self.pretty_print.print_usage(self.load_case2)
+        self.print_usage(self.load_case2, self.num_nodes, explore)
         print("")
         print("------------------------------------------------------------")
 
@@ -267,7 +269,7 @@ class Analysis(Config):
         print("")
         self.pretty_print.print_header("Load case 3 (received load per node)")
         self.print_assumptions1(["a6", "a7", "a31"])
-        self.pretty_print.print_usage(self.load_case3)
+        self.print_usage(self.load_case3, self.num_nodes)
         print("")
         print("------------------------------------------------------------")
 
@@ -282,11 +284,11 @@ class Analysis(Config):
 
         return messages_load + gossip_total
 
-    def print_load_case4(self):
+    def print_load_case4(self, explore=True):
         print("")
         self.pretty_print.print_header("Load case 4 (received load per node incl. gossip)")
         self.print_assumptions1(["a6", "a7", "a32", "a33"])
-        self.pretty_print.print_usage(self.load_case4)
+        self.print_usage(self.load_case4, self.num_nodes, explore=explore)
         print("")
         print("------------------------------------------------------------")
 
@@ -294,20 +296,19 @@ class Analysis(Config):
     def latency_case1(self, n_users, degree):
         return self.avg_node_distance_upper_bound(n_users, degree) * self.per_hop_delay
 
-    def print_latency_case1(self):
+    def print_latency_case1(self, explore=True):
         print("")
         self.pretty_print.print_header("Latency case 1 :: Topology: 6-regular graph. No gossip (note: gossip would help here)")
         self.print_assumptions(["a3", "a41", "a42"])
-        self.pretty_print.print_latency(self.latency_case1, self.fanout)
+        self.print_latency(self.latency_case1, self.fanout, explore=explore)
         print("")
         print("------------------------------------------------------------")
-
 
     def print_load_sharding_case1(self):
         print("")
         self.pretty_print.print_header("load sharding case 1 (received load per node incl. gossip)")
         self.print_assumptions1(["a6", "a8", "a9", "a10", "a11", "a32", "a33"])
-        self.pretty_print.print_usage(self.load_sharding_case1)
+        self.print_usage(self.load_sharding_case1, self.num_nodes)
         print("")
         print("------------------------------------------------------------")
 
@@ -321,7 +322,7 @@ class Analysis(Config):
         print("")
         self.pretty_print.print_header("load sharding case 2 (received load per node incl. gossip and 1:1 chat)")
         self.print_assumptions1(["a6", "a8", "a9", "a10", "a11", "a12", "a13", "a14", "a32", "a33"])
-        self.pretty_print.print_usage(self.load_sharding_case2)
+        self.print_usage(self.load_sharding_case2, self.num_nodes)
         print("")
         print("------------------------------------------------------------")
 
@@ -334,22 +335,25 @@ class Analysis(Config):
         print("")
         self.pretty_print.print_header("load sharding case 3 (received load naive light node.)")
         self.print_assumptions1(["a6", "a8", "a9", "a10", "a15", "a32", "a33"])
-        self.pretty_print.print_usage(self.load_sharding_case3)
+        self.print_usage(self.load_sharding_case3, self.num_nodes)
         print("")
         print("------------------------------------------------------------")
 
-    def run(self):
-        self.print_load_case1()
-        self.print_load_case2()
-        self.print_load_case3()
-        self.print_load_case4()
+    def run(self, explore=True):
+        if explore :
+            self.print_load_case1()
+            self.print_load_case2()
+            self.print_load_case3()
+            self.print_load_case4()
 
-        self.print_latency_case1()
+            self.print_latency_case1()
 
-        self.print_load_sharding_case1()
-        self.print_load_sharding_case2()
-        self.print_load_sharding_case3()
-
+            self.print_load_sharding_case1()
+            self.print_load_sharding_case2()
+            self.print_load_sharding_case3()
+        else:
+            self.print_load_case4(explore=explore)
+            self.print_latency_case1(explore=explore)
 
     def plot_load(self):
         plt.clf() # clear current plot
@@ -442,10 +446,10 @@ class Analysis(Config):
         elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
             # NEWMANWATTSSTROGATZ starts as a regular graph
             #   0. rewire random edged
-            #   1. add additional ~ \beta * numnodes*degree/2 edges to shorten paths
+            #   1. add additional ~ \beta * num_nodes*degree/2 edges to shorten the paths
             #       # \beta used = 0.5
             # this is a relatively tight estimate
-            return num_nodes * (degree/2) + 0.5 * num_nodes * degree/2
+            return num_nodes * (degree/2) + 0.5 * num_nodes * (degree/2)
         else:
             log.error(f'num_edges_dregular: Unknown network type {self.network_type}')
             sys.exit(0)
@@ -453,12 +457,12 @@ class Analysis(Config):
     def avg_node_distance_upper_bound(self, n_users, degree):
         if self.network_type == networkType.REGULAR.value:
             # TODO: this needs checking.
-            # diameter of regular graph is bounded by log(n/k)?
+            #   1) these are RANDOM regular graphs, the actual bound might be higher!
             return math.log(n_users, degree)
-        elif self.network_type == networkType.NEWMANWATTSSTROGATZ:
-            # NEWMANWATTSSTROGATZ is small world an random
-            # a slightly less tight estimate
-            return math.log(n_users)/math.log(degree)
+        elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
+            # NEWMANWATTSSTROGATZ is small world and random
+            # a marginally tight estimate
+            return 2*math.log(n_users/degree, degree)
         else:
             log.error(f'Unknown network type {self.network_type}')
             sys.exit(0)
@@ -489,31 +493,39 @@ def _sanity_check(fname, keys, ftype=Keys.JSON):
 app = typer.Typer()
 
 @app.command()
-def kurtosis(ctx: typer.Context, config_file: Path):
-    json = _sanity_check(config_file, [Keys.GENNET, Keys.GENLOAD], Keys.JSON)
-    analysis = Analysis(
-            json["gennet"]["num_nodes"],
-            json["gennet"]["fanout"],
-            json["gennet"]["network_type"],
-            (json["wls"]["min_packet_size"] + json["wls"]["max_packet_size"])/2,
-            json["wls"]["message_rate"],
-            per_hop_delay=0.01) # pick up from kurtosis
-    analysis.run()
+def wakurtosis(ctx: typer.Context, config_file: Path,
+                explore : bool = typer.Option(True,
+                    help="Explore or not to explore")):
+    wakurtosis_json = _sanity_check(config_file, [Keys.GENNET, Keys.GENLOAD], Keys.JSON)
+    analysis = Analysis(**{ "num_nodes" : wakurtosis_json["gennet"]["num_nodes"],
+                "fanout" : wakurtosis_json["gennet"]["fanout"],
+                "network_type" : wakurtosis_json["gennet"]["network_type"],
+                "msg_size" : (wakurtosis_json["wls"]["min_packet_size"] +
+                                wakurtosis_json["wls"]["max_packet_size"])/(1024*1024*2),
+                "msgpsec" : wakurtosis_json["wls"]["message_rate"]/wakurtosis_json["gennet"]["num_nodes"],
+                "per_hop_delay" : 0.01 # pick up from kurtosis?
+            })
+
+    analysis.run(explore=explore)
 
     print(f'kurtosis: done')
 
 @app.command()
-def batch(ctx: typer.Context, batch_file: Path):
-    json = _sanity_check(batch_file, [Keys.BATCH], Keys.JSON)
-    runs = json[Keys.BATCH][Keys.RUNS]
+def batch(ctx: typer.Context, batch_file: Path,
+            explore : bool = typer.Option(True,
+                help="Explore or not to explore")):
+    batch_json = _sanity_check(batch_file, [Keys.BATCH], Keys.JSON)
+    runs = batch_json[Keys.BATCH][Keys.RUNS]
     for run in runs:
         print(runs[run])
         analysis = Analysis(**runs[run])
-        analysis.run()
+        analysis.run(explore=explore)
     print(f'batch: done')
 
 @app.command()
-def shadow(ctx: typer.Context, config_file: Path):
+def shadow(ctx: typer.Context, config_file: Path,
+            explore : bool = typer.Option(True,
+                help="Explore or not to explore")):
     yaml = _sanity_check(config_file, [], Keys.YAML)
     print("shadow: done {yaml}")
 
@@ -540,7 +552,9 @@ def cli(ctx: typer.Context,
          shards_per_node: int = typer.Option(3,
              help="Set the number of shards a node is part of"),
          per_hop_delay: float = typer.Option(0.1,
-             help="Set the delay per hop")):
+             help="Set the delay per hop"),
+         explore : bool = typer.Option(True,
+             help="Explore or not to explore")):
 
     analysis = Analysis(num_nodes, fanout, network_type,
                         msg_size, msgpsec, per_hop_delay,
@@ -549,7 +563,7 @@ def cli(ctx: typer.Context,
                         "gossip2reply_ratio":gossip2reply_ratio,
                         "nodes_per_shard":nodes_per_shard,
                         "shards_per_node":shards_per_node})
-    analysis.run()
+    analysis.run(explore=explore)
     print("cli: done")
 
 if __name__ == "__main__":
