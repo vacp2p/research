@@ -2,7 +2,8 @@
   "batch": {
     "prng_seed": 1,
     "output_dir": "analysis_output",
-    "benchmark": "False",
+    "benchmark": false,
+    "explore": false,
 
     "runs" : {
       "run-0": {

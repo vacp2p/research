@@ -85,24 +85,8 @@ class IOFormats:
 
 # Config holds the data for the individual runs. Every analysis instance is a Config instance
 class Config:
-    '''
-    def __init__(self):                 # the defaults
-        self.num_nodes = 4              # number of wakunodes = 4
-        self.fanout = 6                 # 'average' node degree = 6
-        self.network_type = networkType.REGULAR.value   # regular nw: avg node degree is 'exact'
-        self.msg_size = 0.002           # msg size in MBytes
-        self.msgpsec = 0.00139          # msgs per sec in single pubsub topic/shard = 5 msgs/hr
-        self.gossip_msg_size = 0.05     # gossip message size in KBytes = 50 bytes
-        self.gossip_window_size = 3     # the history window for gossips = 3
-        self.gossip2reply_ratio = 0.01  # fraction of gossips that elicit a reply = 0.01 (guess)
-        self.nodes_per_shard = 10000    # avg number of nodes online and part of single shard
-        self.shards_per_node = 3        # avg number of shards a wakunode participates
-        self.per_hop_delay = 100        # avg delay per hop = 0.1 sec / 100 msec
 
-        self.d_lazy = self.fanout        # gossip degree = 6
-    '''
-
-    # We need 12 params to correctly instantiate Config. Set the defaults for the missing
+    # We need 12 params to fully instantiate Config. Set the defaults for the missing
     def __init__(self,
             num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
@@ -110,11 +94,11 @@ class Config:
             gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
             nodes_per_shard=10000, shards_per_node=3, pretty_print=IOFormats()):
         # set the current Config values
-        self.num_nodes = num_nodes                      # number of nodes
-        self.fanout = fanout                            # avg degree
+        self.num_nodes = num_nodes                      # number of wakunodes
+        self.fanout = fanout                            # generative fanout
         self.network_type = network_type                # regular, small world etc
         self.msg_size = msg_size                        # avg message size in MBytes
-        self.msgpsec = msgpsec                          # avg # of messages per sec
+        self.msgpsec = msgpsec                          # avg # of messages per user per sec
         self.per_hop_delay = per_hop_delay              # per-hop delay = 0.01 sec
         self.gossip_msg_size = gossip_msg_size          # avg gossip msg size in MBytes
         self.gossip_window_size = gossip_window_size    # max gossip history window size
@@ -124,7 +108,9 @@ class Config:
 
         # secondary parameters, derived from primary
         self.msgphr = msgpsec*60*60                     # msgs per hour derived from msgpsec
-        self.d_lazy = self.fanout                       # gossip degree = 6
+        self.d_lazy = self.fanout                       # avg degree
+        if network_type == networkType.NEWMANWATTSSTROGATZ.value:
+            self.d_lazy = self.fanout + 0.5 * self.fanout
 
         self.base_assumptions = ["a1", "a2", "a3", "a4"]
         self.pretty_print = pretty_print
@@ -132,7 +118,7 @@ class Config:
         self.Assumptions = {
             "a1"  :  "- A01. Message size (static): " + self.pretty_print.sizeof_fmt_kb(self.msg_size),
             "a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " + str(self.msgphr),
-            "a3"  : "- A03. The network topology is a d-regular graph of degree (static): " + str(self.fanout),
+            "a3"  : "- A03. The network topology is a d-regular graph of degree (static): " + str(int(self.d_lazy)),
             "a4"  : "- A04. Messages outside of Waku Relay are not considered, e.g. store messages.",
             "a5"  : "- A05. Messages are only sent once along an edge. (requires delays before sending)",
             "a6"  : "- A06. Messages are sent to all d-1 neighbours as soon as receiving a message (current operation)", # Thanks @Mmenduist
@@ -251,7 +237,7 @@ class Analysis(Config):
 
     # Case 2 :: single shard, (n*d)/2 messages
     def load_case2(self, n_users):
-        return self.msg_size * self.msgphr * self.num_edges_dregular(n_users, self.fanout)
+        return self.msg_size * self.msgphr * self.num_edges_dregular()
 
     def print_load_case2(self, explore=True):
         print("")
@@ -263,7 +249,7 @@ class Analysis(Config):
 
     # Case 3 :: single shard n*(d-1) messages
     def load_case3(self, n_users):
-        return self.msg_size * self.msgphr * n_users * (self.fanout-1)
+        return self.msg_size * self.msgphr * n_users * (self.d_lazy-1)
 
     def print_load_case3(self):
         print("")
@@ -275,7 +261,7 @@ class Analysis(Config):
 
     # Case 4:single shard n*(d-1) messages, gossip
     def load_case4(self, n_users):
-        messages_received_per_hour =  self.msgphr * n_users * (self.fanout-1) # see case 3
+        messages_received_per_hour =  self.msgphr * n_users * (self.d_lazy-1) # see case 3
         messages_load =  self.msg_size * messages_received_per_hour
         num_ihave = messages_received_per_hour * self.d_lazy * self.gossip_window_size
         ihave_load  = num_ihave * self.gossip_msg_size
@@ -294,7 +280,7 @@ class Analysis(Config):
 
     # latency cases
     def latency_case1(self, n_users, degree):
-        return self.avg_node_distance_upper_bound(n_users, degree) * self.per_hop_delay
+        return self.avg_node_distance_upper_bound() * self.per_hop_delay
 
     def print_latency_case1(self, explore=True):
         print("")
@@ -439,36 +425,36 @@ class Analysis(Config):
         self.plot_load()
         self.plot_load_sharding()
 
-    def num_edges_dregular(self, num_nodes, degree):
+    def num_edges_dregular(self):
         # we assume and even d; d-regular graphs with both where both n and d are odd don't exist
+        num_edges = self.num_nodes * (self.fanout/2)
         if self.network_type == networkType.REGULAR.value:
-            return num_nodes * (degree/2)
+            return num_edges
         elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
             # NEWMANWATTSSTROGATZ starts as a regular graph
             #   0. rewire random edged
             #   1. add additional ~ \beta * num_nodes*degree/2 edges to shorten the paths
             #       # \beta used = 0.5
             # this is a relatively tight estimate
-            return num_nodes * (degree/2) + 0.5 * num_nodes * (degree/2)
+            return num_edges + 0.5 * self.num_nodes * (self.fanout/2)
         else:
             log.error(f'num_edges_dregular: Unknown network type {self.network_type}')
             sys.exit(0)
 
-    def avg_node_distance_upper_bound(self, n_users, degree):
+    def avg_node_distance_upper_bound(self):
         if self.network_type == networkType.REGULAR.value:
             # TODO: this needs checking.
             #   1) these are RANDOM regular graphs, the actual bound might be higher!
-            return math.log(n_users, degree)
+            return math.log(self.num_nodes, self.fanout)
         elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
             # NEWMANWATTSSTROGATZ is small world and random
             # a marginally tight estimate
-            return 2*math.log(n_users/degree, degree)
+            return 2*math.log(self.num_nodes/self.fanout, self.fanout)
         else:
             log.error(f'Unknown network type {self.network_type}')
             sys.exit(0)
 
 def _sanity_check(fname, keys, ftype=Keys.JSON):
-    print(f'sanity check: {fname}, {keys}, {ftype}')
     if not fname.exists():
         log.error(f'The file "{fname}" does not exist')
         sys.exit(0)
@@ -488,7 +474,7 @@ def _sanity_check(fname, keys, ftype=Keys.JSON):
                 #return yaml_conf
     except Exception as ex:
         raise typer.BadParameter(str(ex))
-    log.debug(f'sanity check: All Ok')
+    log.debug(f'Sanity check: All Ok')
 
 app = typer.Typer()
 
@@ -497,17 +483,23 @@ def wakurtosis(ctx: typer.Context, config_file: Path,
                 explore : bool = typer.Option(True,
                     help="Explore or not to explore")):
     wakurtosis_json = _sanity_check(config_file, [Keys.GENNET, Keys.GENLOAD], Keys.JSON)
-    analysis = Analysis(**{ "num_nodes" : wakurtosis_json["gennet"]["num_nodes"],
-                "fanout" : wakurtosis_json["gennet"]["fanout"],
-                "network_type" : wakurtosis_json["gennet"]["network_type"],
-                "msg_size" : (wakurtosis_json["wls"]["min_packet_size"] +
-                                wakurtosis_json["wls"]["max_packet_size"])/(1024*1024*2),
-                "msgpsec" : wakurtosis_json["wls"]["message_rate"]/wakurtosis_json["gennet"]["num_nodes"],
-                "per_hop_delay" : 0.01 # pick up from kurtosis?
-            })
+
+    num_nodes = wakurtosis_json["gennet"]["num_nodes"]
+    network_type = wakurtosis_json["gennet"]["network_type"]
+    msg_size = (wakurtosis_json["wls"]["min_packet_size"] +
+                                wakurtosis_json["wls"]["max_packet_size"])/(2*1024*1024)
+    msgpsec = wakurtosis_json["wls"]["message_rate"]/wakurtosis_json["gennet"]["num_nodes"]
+    fanout = wakurtosis_json["gennet"]["fanout"]
+
+    analysis = Analysis(**{ "num_nodes" : num_nodes,
+                            "fanout" : fanout,
+                            "network_type" : network_type,
+                            "msg_size" :msg_size,
+                            "msgpsec" : msgpsec,
+                            "per_hop_delay" : 0.01 # TODO: pick from wakurtosis
+                            })
 
     analysis.run(explore=explore)
-
     print(f'kurtosis: done')
 
 @app.command()
@@ -533,7 +525,7 @@ def shadow(ctx: typer.Context, config_file: Path,
 def cli(ctx: typer.Context,
          num_nodes: int = typer.Option(4,
              help="Set the number of nodes"),
-         fanout: int = typer.Option(6,
+         fanout: float = typer.Option(6.0,
              help="Set the arity"),
          network_type: networkType = typer.Option(networkType.REGULAR.value,
              help="Set the network type"),
