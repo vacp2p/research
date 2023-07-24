@@ -29,6 +29,10 @@ class Keys:
     YAML    =   "yaml"
     BATCH   =   "batch"
     RUNS    =   "runs"
+    EXPLORE =   "explore"
+    PER_NODE =   "per_node"
+    BMARK   =   "benchmark"
+    OPREFIX =   "out"
 
 
 # Util and format functions
@@ -90,7 +94,7 @@ class Config:
     def __init__(self,
             num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
-            msg_size=0.002, msgpsec=0.00139, per_hop_delay=100,
+            msg_size=0.002, msgpsec=0.00139, per_hop_delay=0.1,
             gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
             nodes_per_shard=10000, shards_per_node=3, pretty_print=IOFormats()):
         # set the current Config values
@@ -199,8 +203,8 @@ class Analysis(Config):
     def print_usage(self, load_fn, num_nodes, explore=True):
         if explore:
             self.pretty_print_usage(load_fn, 100)
-            self.pretty_print_usage(load_fn, 100 * 100)
-            self.pretty_print_usage(load_fn, 100 * 100 * 100)
+            self.pretty_print_usage(load_fn, 1000)
+            self.pretty_print_usage(load_fn, 1000 * 10)
         else:
             self.pretty_print_usage(load_fn, self.num_nodes)
 
@@ -212,8 +216,8 @@ class Analysis(Config):
     def print_latency(self, latency_fn, average_node_degree, explore=True):
         if explore:
             self.pretty_print_latency(latency_fn, 100, average_node_degree)
-            self.pretty_print_latency(latency_fn, 100 * 100, average_node_degree)
-            self.pretty_print_latency(latency_fn, 100 * 100 * 100, average_node_degree)
+            self.pretty_print_latency(latency_fn, 1000, average_node_degree)
+            self.pretty_print_latency(latency_fn, 1000 * 10, average_node_degree)
         else:
             self.pretty_print_latency(latency_fn, self.num_nodes, average_node_degree)
 
@@ -485,39 +489,40 @@ def wakurtosis(ctx: typer.Context, config_file: Path,
     wakurtosis_json = _sanity_check(config_file, [Keys.GENNET, Keys.GENLOAD], Keys.JSON)
 
     num_nodes = wakurtosis_json["gennet"]["num_nodes"]
+    fanout = wakurtosis_json["gennet"]["fanout"]
     network_type = wakurtosis_json["gennet"]["network_type"]
     msg_size = (wakurtosis_json["wls"]["min_packet_size"] +
                                 wakurtosis_json["wls"]["max_packet_size"])/(2*1024*1024)
     msgpsec = wakurtosis_json["wls"]["message_rate"]/wakurtosis_json["gennet"]["num_nodes"]
-    fanout = wakurtosis_json["gennet"]["fanout"]
 
     analysis = Analysis(**{ "num_nodes" : num_nodes,
                             "fanout" : fanout,
                             "network_type" : network_type,
                             "msg_size" :msg_size,
                             "msgpsec" : msgpsec,
-                            "per_hop_delay" : 0.01 # TODO: pick from wakurtosis
+                            "per_hop_delay" : 0.1 # TODO: pick from wakurtosis
                             })
 
     analysis.run(explore=explore)
     print(f'kurtosis: done')
 
 @app.command()
-def batch(ctx: typer.Context, batch_file: Path,
-            explore : bool = typer.Option(True,
-                help="Explore or not to explore")):
-    batch_json = _sanity_check(batch_file, [Keys.BATCH], Keys.JSON)
+def batch(ctx: typer.Context, batch_file: Path):
+    batch_json = _sanity_check(batch_file, [ Keys.BATCH ], Keys.JSON)
+    explore  = batch_json[Keys.BATCH][Keys.EXPLORE]
+    per_node = batch_json[Keys.BATCH][Keys.PER_NODE]
     runs = batch_json[Keys.BATCH][Keys.RUNS]
-    for run in runs:
-        print(runs[run])
-        analysis = Analysis(**runs[run])
-        analysis.run(explore=explore)
+    for r in runs:
+        run = runs[r]
+        print(run)
+        if not per_node:
+            run["msgpsec"] = run["msgpsec"]/run["num_nodes"]
+        analysis = Analysis(**run)
+        #analysis.run(explore=explore)
     print(f'batch: done')
 
 @app.command()
-def shadow(ctx: typer.Context, config_file: Path,
-            explore : bool = typer.Option(True,
-                help="Explore or not to explore")):
+def shadow(ctx: typer.Context, config_file: Path):
     yaml = _sanity_check(config_file, [], Keys.YAML)
     print("shadow: done {yaml}")
 
