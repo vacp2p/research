@@ -12,12 +12,14 @@ import sys
 import json
 import typer
 import logging as log
+
+from scipy.stats import truncnorm
 from enum import Enum, EnumMeta
 
 
 # we currently support the following two network types
 class networkType(Enum):
-    NEWMANWATTSSTROGATZ = "newmanwattsstrogatz"  # mesh, smallworld
+    NEWMANWATTSSTROGATZ = "newmanwattsstrogatz"  # mesh, small-world
     REGULAR = "regular"  # d_lazy
 
 
@@ -158,10 +160,10 @@ class Config:
 
     # display the Config
     def display(self):
-        print( "Config = ", self.num_nodes, self.fanout, self.network_type,
-                self.msg_size, self.msgpsec, self.msgphr,
-                self.gossip_msg_size, self.gossip_window_size, self.gossip2reply_ratio,
-                self.nodes_per_shard, self.shards_per_node, self.per_hop_delay, self.d_lazy)
+        print(f'Config = {self.num_nodes}, {self.fanout}({self.d_lazy}), {self.network_type}, '
+              f'{self.msg_size}MBytes, {self.msgpsec}/sec({self.msgphr}/hr), '
+              f'{self.gossip_msg_size}MBytes, {self.gossip_window_size}, {self.gossip2reply_ratio},'
+              f' {self.nodes_per_shard}, {self.shards_per_node}, {self.per_hop_delay}secs')
 
 
     # Print assumptions : with a base set
@@ -452,7 +454,7 @@ class Analysis(Config):
             return math.log(self.num_nodes, self.fanout)
         elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
             # NEWMANWATTSSTROGATZ is small world and random
-            # a marginally tight estimate
+            # a tighter estimate
             return 2*math.log(self.num_nodes/self.fanout, self.fanout)
         else:
             log.error(f'Unknown network type {self.network_type}')
@@ -491,8 +493,10 @@ def wakurtosis(ctx: typer.Context, config_file: Path,
     num_nodes = wakurtosis_json["gennet"]["num_nodes"]
     fanout = wakurtosis_json["gennet"]["fanout"]
     network_type = wakurtosis_json["gennet"]["network_type"]
-    msg_size = (wakurtosis_json["wls"]["min_packet_size"] +
-                                wakurtosis_json["wls"]["max_packet_size"])/(2*1024*1024)
+    #msg_size = (wakurtosis_json["wls"]["min_packet_size"] +
+    #                            wakurtosis_json["wls"]["max_packet_size"])/(2*1024*1024)
+    msg_size = truncnorm.mean(wakurtosis_json["wls"]["min_packet_size"],
+                                wakurtosis_json["wls"]["max_packet_size"])/(1024*1024)
     msgpsec = wakurtosis_json["wls"]["message_rate"]/wakurtosis_json["gennet"]["num_nodes"]
 
     analysis = Analysis(**{ "num_nodes" : num_nodes,
@@ -514,11 +518,10 @@ def batch(ctx: typer.Context, batch_file: Path):
     runs = batch_json[Keys.BATCH][Keys.RUNS]
     for r in runs:
         run = runs[r]
-        print(run)
         if not per_node:
             run["msgpsec"] = run["msgpsec"]/run["num_nodes"]
         analysis = Analysis(**run)
-        #analysis.run(explore=explore)
+        analysis.run(explore=explore)
     print(f'batch: done')
 
 @app.command()
