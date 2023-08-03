@@ -4,6 +4,7 @@
     "output_dir": "analysis_output",
     "benchmark": false,
     "explore": false,
+    "per_node": true,
 
     "runs" : {
       "run-0": {
