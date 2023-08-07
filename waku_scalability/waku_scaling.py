@@ -91,10 +91,10 @@ class IOFormats:
 
 
 
-# Config holds the data for the individual runs. Every analysis instance is a Config instance
-class Config:
+# WakuConfig holds the data for the individual runs. Every analysis instance is a Config instance
+class WakuConfig:
 
-    # We need 12 params to fully instantiate Config. Set the defaults for the missing
+    # We need 12 params to fully instantiate Libp2pConfig. Set the defaults for the missing
     def __init__(self,
             num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
@@ -217,11 +217,11 @@ class Config:
 
 
 
-# Analysis performs the runs. It creates a Config object and runs the analysis on it
-class Analysis(Config):
+# LibP2P Analysis performs the runs. It creates a Config object and runs the analysis on it
+class WakuAnalysis(WakuConfig):
     # accept variable number of parameters with missing values set to defaults
     def __init__(self, **kwargs):
-        Config.__init__(self, **kwargs)
+        WakuConfig.__init__(self, **kwargs)
 
     def pretty_print_usage(self, load_fn, num_nodes):
         load = load_fn(num_nodes)
@@ -573,7 +573,7 @@ def wakurtosis(ctx: typer.Context, config_file: Path,
 
     messages = {}
     messages["topic1"] = {"size" : msg_size, "msgpsec" : msgpsec}
-    analysis = Analysis(**{ "num_nodes" : num_nodes,
+    analysis = WakuAnalysis(**{ "num_nodes" : num_nodes,
                             "fanout" : fanout,
                             "messages" : messages,
                             "network_type" : network_type,
@@ -595,7 +595,7 @@ def batch(ctx: typer.Context, batch_file: Path):
         if not per_node:
             for k, v in run["messages"].items():
                 run["messages"][k]["msgpsec"] = run["messages"][k]["msgpsec"] / run["num_nodes"]
-        analysis = Analysis(**run)
+        analysis = WakuAnalysis(**run)
         analysis.run(explore=explore)
     print(f'batch: done')
 
@@ -633,7 +633,7 @@ def cli(ctx: typer.Context,
          explore : bool = typer.Option(True,
              help="Explore or not to explore")):
 
-    analysis = Analysis(**{ "num_nodes" : num_nodes,
+    analysis = WakuAnalysis(**{ "num_nodes" : num_nodes,
                             "fanout" : fanout,
                             "network_type" : network_type.value,
                             "messages" : messages,
@@ -648,6 +648,25 @@ def cli(ctx: typer.Context,
                             "shards_per_node":shards_per_node})
     analysis.run(explore=explore)
     print("cli: done")
+
+
+
+@app.command()
+def status(ctx: typer.Context, status_config: Path):
+    status_json = _sanity_check(status_config, [ Keys.STATUS ], Keys.JSON)
+    explore  = batch_json[Keys.BATCH][Keys.EXPLORE]
+    per_node = batch_json[Keys.BATCH][Keys.PER_NODE]
+    runs = batch_json[Keys.BATCH][Keys.RUNS]
+    for r in runs:
+        run = runs[r]
+        run["per_hop_delay"] = 0.010
+        if not per_node:
+            for k, v in run["messages"].items():
+                run["messages"][k]["msgpsec"] = run["messages"][k]["msgpsec"] / run["num_nodes"]
+        analysis = WakuAnalysis(**run)
+        analysis.run(explore=explore)
+    print(f'batch: done')
+
 
 if __name__ == "__main__":
     app()

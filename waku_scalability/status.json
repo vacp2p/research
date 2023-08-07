@@ -1,0 +1,27 @@
+{
+  "status": {
+    "prng_seed": 1,
+    "oprefix": "analysis_output",
+    "benchmark": false,
+    "explore": false,
+    "per_node": false,
+    "runs" : {
+      "run-0": {
+        "num_nodes" : 75,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "community_size" : XXX
+        "TODO" : ["get message sizes as fn of community size",
+                  "permit multiple communities"],
+        "messages" : {
+           "MEMBERSHIP_UPDATE_MESSAGE" : {"fixedsize": XXX, "varsize" = XXX, "mgspsec" :  XXX},
+           "COMMUNITY_DESCRIPTION" : {"size" : XXX, "msgpsec" : XXX},
+           "UNKNOWN": {"size" : XXX, "msgpsec" : XXX},
+           "BACKUP" : {"size" : XXX, "msgpsec" : XXX},
+           "COMMUNITY_REQUEST_TO_JOIN_RESPONSE" : {"size" : XXX, "msgpsec" : XXX},
+           "SYNC_PROFILE_PICTURE" : {"size" : XXX, "msgpsec" : XXX}
+        }
+      }
+    }
+  }
+}
