@@ -268,7 +268,7 @@ class Analysis(Config):
 
     # Case 2 :: single shard, (n*d)/2 messages
     def load_case2(self, n_users):
-        return self.peruser_message_load * self.num_edges(self.network_type.value, self.fanout)
+        return self.peruser_message_load * self.num_edges(self.network_type, self.fanout)
         #return self.msg_size * self.msgphr * self.num_edges(self.network_type, self.fanout)
 
     def print_load_case2(self, explore=True):
@@ -282,7 +282,7 @@ class Analysis(Config):
     def load_case2point1(self, n_users):
         print(f"case 2.1 {self.num_nodes, n_users, self.num_edges(self.network_type, self.fanout)}")
         return self.peruser_message__load * n_users\
-                * self.num_edges(self.network_type.value, self.fanout)
+                * self.num_edges(self.network_type, self.fanout)
         #return self.msg_size * self.msgphr * n_users\
         #        * self.num_edges(self.network_type, self.fanout)
 
@@ -329,7 +329,7 @@ class Analysis(Config):
 
 
     def load_case5(self, n_users):
-        nedges = self.num_edges(self.network_type.value, self.fanout)
+        nedges = self.num_edges(self.network_type, self.fanout)
         nedges_regular = self.num_edges(networkType.REGULAR.value, 6)
         edge_diff = nedges - nedges_regular
 
@@ -339,9 +339,9 @@ class Analysis(Config):
         eager_edges, lazy_edges = nedges * eager_fraction , nedges * lazy_fraction
 
         #print(f"{(nedges, nedges_regular)} = {eager_fraction, lazy_fraction} {self.gossip2reply_ratio}")
-        total_load =  eager_edges * self.msgphr * n_users * self.msg_size \
+        total_load =  eager_edges * n_users * self.peruser_msg_load \
                       + lazy_edges * 60 * self.gossip_window_size \
-                            * (self.gossip_msg_size + self.gossip2reply_ratio * self.msg_size)
+                            * (self.gossip_msg_size + self.gossip2reply_ratio * self.avg_msg_size)
         #print(f"{n_users} users = {total_load}, {eager_edges * self.msgphr * n_users * self.msg_size}")
         return total_load
 
@@ -517,13 +517,13 @@ class Analysis(Config):
             # this is a relatively tight estimate
             return num_edges + 0.5 * self.num_nodes * fanout/2
         else:
-            log.error(f'num_edges: Unknown network type {network_type.value}')
+            log.error(f'num_edges: Unknown network type {network_type}')
             sys.exit(0)
 
     def avg_node_distance_upper_bound(self):
-        if self.network_type.value == networkType.REGULAR.value:
+        if self.network_type == networkType.REGULAR.value:
             return math.log(self.num_nodes, self.fanout)
-        elif self.network_type.value == networkType.NEWMANWATTSSTROGATZ:
+        elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
             # NEWMANWATTSSTROGATZ is small world and random
             # a tighter estimate
             return 2*math.log(self.num_nodes/self.fanout, self.fanout)
@@ -570,11 +570,12 @@ def wakurtosis(ctx: typer.Context, config_file: Path,
     #                            wakurtosis_json["wls"]["max_packet_size"])/(1024*1024)
     msgpsec = wakurtosis_json["wls"]["message_rate"]/wakurtosis_json["gennet"]["num_nodes"]
 
+    messages = {}
+    messages["topic1"] = {"size" : msg_size, "msgpsec" : msgpsec}
     analysis = Analysis(**{ "num_nodes" : num_nodes,
                             "fanout" : fanout,
+                            "messages" : messages,
                             "network_type" : network_type,
-                            "msg_size" :msg_size,
-                            "msgpsec" : msgpsec,
                             "per_hop_delay" : 0.1 # TODO: pick from wakurtosis
                             })
 
@@ -632,7 +633,7 @@ def cli(ctx: typer.Context,
 
     analysis = Analysis(**{ "num_nodes" : num_nodes,
                             "fanout" : fanout,
-                            "network_type" : network_type,
+                            "network_type" : network_type.value,
                             "messages" : messages,
                             #"msgs" : f'{\"msg1\" : { \"msg_size\" : {msg_size}
                             #"msg_size" : msg_size,
