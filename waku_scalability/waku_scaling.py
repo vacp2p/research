@@ -35,6 +35,7 @@ class Keys:
     PER_NODE =  "per_node"
     BMARK   =   "benchmark"
     OPREFIX =   "out"
+    STATUS  =   "status"
 #    MSGPHR  =   "msgphr"
 #    SIZE    =   "size"
 
@@ -654,15 +655,16 @@ def cli(ctx: typer.Context,
 @app.command()
 def status(ctx: typer.Context, status_config: Path):
     status_json = _sanity_check(status_config, [ Keys.STATUS ], Keys.JSON)
-    explore  = batch_json[Keys.BATCH][Keys.EXPLORE]
-    per_node = batch_json[Keys.BATCH][Keys.PER_NODE]
-    runs = batch_json[Keys.BATCH][Keys.RUNS]
+    explore  = batch_json[Keys.STATUS][Keys.EXPLORE]
+    per_node = batch_json[Keys.STATUS][Keys.PER_NODE]
+    runs = batch_json[Keys.STATUS][Keys.RUNS]
     for r in runs:
         run = runs[r]
         run["per_hop_delay"] = 0.010
         if not per_node:
             for k, v in run["messages"].items():
                 run["messages"][k]["msgpsec"] = run["messages"][k]["msgpsec"] / run["num_nodes"]
+        # how to parameterise
         analysis = WakuAnalysis(**run)
         analysis.run(explore=explore)
     print(f'batch: done')
