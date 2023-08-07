@@ -5,18 +5,26 @@
     "benchmark": false,
     "explore": false,
     "per_node": false,
+    "fixed_overhead_list" : ["organization_id","clock", "name", "description", "magnet_uri", "permissions", "chats", "organization_identity", "encryption_key", "ChatIdentity_fields"],
+    "fixed_overhead" : 10,
     "runs" : {
       "run-0": {
+        "TODO" : ["get num_nodes",
+                  "get fanout, d, d_lazy",
+                  "get network type",
+                  "get communities numbers and size",
+                  "get per_hop_delay",
+                  "get channel numbers and size ",
+                  "get message sizes as fn of community size",
+                  "add support for multiple communities"],
         "num_nodes" : 75,
         "fanout" : 3,
         "network_type" : "newmanwattsstrogatz",
-        "community_size" : XXX
-        "TODO" : ["get message sizes as fn of community size",
-                  "permit multiple communities"],
+        "communities" : { "com1" : {"size" : 100, "attr": "addr1"}},
+        "channels" : {"chan1" : {"size" : 100, "attr": "chan1"}},
         "messages" : {
-           "MEMBERSHIP_UPDATE_MESSAGE" : {"fixedsize": XXX, "varsize" = XXX, "mgspsec" :  XXX},
+           "MEMBERSHIP_UPDATE_MESSAGE" : {"fixedsize": 100, "varsize" = XXX, "mgspsec" :  XXX},
            "COMMUNITY_DESCRIPTION" : {"size" : XXX, "msgpsec" : XXX},
-           "UNKNOWN": {"size" : XXX, "msgpsec" : XXX},
            "BACKUP" : {"size" : XXX, "msgpsec" : XXX},
            "COMMUNITY_REQUEST_TO_JOIN_RESPONSE" : {"size" : XXX, "msgpsec" : XXX},
            "SYNC_PROFILE_PICTURE" : {"size" : XXX, "msgpsec" : XXX}
