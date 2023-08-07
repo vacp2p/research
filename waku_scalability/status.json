@@ -23,11 +23,11 @@
         "communities" : { "com1" : {"size" : 100, "attr": "addr1"}},
         "channels" : {"chan1" : {"size" : 100, "attr": "chan1"}},
         "messages" : {
-           "MEMBERSHIP_UPDATE_MESSAGE" : {"fixedsize": 100, "varsize" = XXX, "mgspsec" :  XXX},
-           "COMMUNITY_DESCRIPTION" : {"size" : XXX, "msgpsec" : XXX},
-           "BACKUP" : {"size" : XXX, "msgpsec" : XXX},
-           "COMMUNITY_REQUEST_TO_JOIN_RESPONSE" : {"size" : XXX, "msgpsec" : XXX},
-           "SYNC_PROFILE_PICTURE" : {"size" : XXX, "msgpsec" : XXX}
+           "MEMBERSHIP_UPDATE_MESSAGE" : {"fixedsize":  0.6543, "varsize" : 1, "mgspsec" :0.0298264},
+           "COMMUNITY_DESCRIPTION" : {"size" :0.337891, "msgpsec" : 0.00027777},
+           "BACKUP" : {"size" : 0.03222656, "msgpsec" : 0.0001111111},
+           "COMMUNITY_REQUEST_TO_JOIN_RESPONSE" : {"size" : 0.0234375, "msgpsec" : 0.00002314814814814814},
+           "SYNC_PROFILE_PICTURE" : {"size" : 0.018644333, "msgpsec" : "0.00005787037"}
         }
       }
     }
