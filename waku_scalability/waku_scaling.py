@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 
 import sys
-import json
+import json, ast
 import typer
 import logging as log
 
@@ -96,15 +96,22 @@ class Config:
     def __init__(self,
             num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
-            msg_size=0.002, msgpsec=0.00139, per_hop_delay=0.1,
+            messages="{\"topic1\" : [0.002, 5] }",
+            #_size=0.002, msgpsec=0.00139,
+            per_hop_delay=0.001,
             gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
             nodes_per_shard=10000, shards_per_node=3, pretty_print=IOFormats()):
         # set the current Config values
         self.num_nodes = num_nodes                      # number of wakunodes
         self.fanout = fanout                            # generative fanout
         self.network_type = network_type                # regular, small world etc
+
+        '''
         self.msg_size = msg_size                        # avg message size in MBytes
         self.msgpsec = msgpsec                          # avg # of messages per user per sec
+        '''
+        self.messages = messages
+
         self.per_hop_delay = per_hop_delay              # per-hop delay = 0.01 sec
         self.gossip_msg_size = gossip_msg_size          # avg gossip msg size in MBytes
         self.gossip_window_size = gossip_window_size    # max gossip history window size
@@ -113,18 +120,29 @@ class Config:
         self.shards_per_node = shards_per_node          # avg number of shards a node is part of
 
         # secondary parameters, derived from primary
-        self.msgphr = msgpsec*60*60                     # msgs per hour derived from msgpsec
-        self.d_lazy = self.fanout                       # avg degree
-        if network_type == networkType.NEWMANWATTSSTROGATZ.value:
-            self.d_lazy = self.fanout + 0.5 * self.fanout
+        msg_size = 0
+        for k, v in self.messages.items():
+            self.messages[k][1] = self.messages[k][1]*60*60
+            msg_size += self.messages[k][0]
+            self.peruser_message_load = self.messages[k][0]*self.messages[k][1]
+        self.avg_msg_size = msg_size / len(self.messages)
 
+        '''
+        self.msgphr = msgpsec*60*60                     # msgs per hour derived from msgpsec
+        '''
+        self.d = 1.5 * self.fanout if network_type == networkType.NEWMANWATTSSTROGATZ.value else self.fanout
+        self.d_lazy = self.d - 6  if self.d > 6 else 0 # avg degree for gossip
+        if self.d > 6:
+            self.d = 6
         self.base_assumptions = ["a1", "a2", "a3", "a4"]
         self.pretty_print = pretty_print
         # Assumption strings (general/topology)
         self.Assumptions = {
-            "a1"  :  "- A01. Message size (static): " + self.pretty_print.sizeof_fmt_kb(self.msg_size),
-            "a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " + str(self.msgphr),
-            "a3"  : "- A03. The network topology is a d-regular graph of degree (static): " + str(int(self.d_lazy)),
+           # "a1"  :  "- A01. Message size (static): " + self.pretty_print.sizeof_fmt_kb(self.msg_size),
+            "a1"  :  "- A01. Message size (static): " +  str(self.messages),
+            #"a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " + str(self.msgphr),
+            "a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " +  str(self.messages),
+            "a3"  : "- A03. The network topology is a d-regular graph of degree (static): " + str(int(self.d)),
             "a4"  : "- A04. Messages outside of Waku Relay are not considered, e.g. store messages.",
             "a5"  : "- A05. Messages are only sent once along an edge. (requires delays before sending)",
             "a6"  : "- A06. Messages are sent to all d-1 neighbours as soon as receiving a message (current operation)", # Thanks @Mmenduist
@@ -138,7 +156,8 @@ class Config:
                     These new shards have no influcene on this model, because the nodes we look at are not part of these new shards.",
             "a12" : "- A12. Including 1:1 chat. Messages sent to a given user are sent into a 1:1 shard associated with that user's node.\n\
                     Effectively, 1:1 chat adds a receive load corresponding to one additional shard a given node has to be part of.",
-            "a13" : "- A13. 1:1 chat messages sent per node per hour (static): " + str(self.msgphr), # could introduce a separate variable here
+            #"a13" : "- A13. 1:1 chat messages sent per node per hour (static): " + str(self.msgphr), # could introduce a separate variable here
+            "a13" : "- A13. 1:1 chat messages sent per node per hour (static): " + str(self.messages), # could introduce a separate variable here
             "a14" : "- A14. 1:1 chat shards are filled one by one (not evenly distributed over the shards).\n\
                     This acts as an upper bound and overestimates the 1:1 load for lower node counts.",
             "a15" : "- A15. Naive light node. Requests all messages in shards that have (large) 1:1 mapped multicast groups the light node is interested in.",
@@ -160,8 +179,9 @@ class Config:
 
     # display the Config
     def display(self):
-        print(f'Config = {self.num_nodes}, {self.fanout}({self.d_lazy}), {self.network_type}, '
-              f'{self.msg_size}MBytes, {self.msgpsec}/sec({self.msgphr}/hr), '
+        print(f'Config = {self.num_nodes}, {self.fanout} -> {(self.d, self.d_lazy)}, {self.network_type}, '
+              #f'{self.msg_size}MBytes, {self.msgpsec}/sec({self.msgphr}/hr), '
+              f'messages={str(self.messages)}, '
               f'{self.gossip_msg_size}MBytes, {self.gossip_window_size}, {self.gossip2reply_ratio},'
               f' {self.nodes_per_shard}, {self.shards_per_node}, {self.per_hop_delay}secs')
 
@@ -208,11 +228,11 @@ class Analysis(Config):
             self.pretty_print_usage(load_fn, 1000)
             self.pretty_print_usage(load_fn, 1000 * 10)
         else:
-            self.pretty_print_usage(load_fn, self.num_nodes)
+            self.pretty_print_usage(load_fn, num_nodes)
 
     def pretty_print_latency(self, latency_fn, num_nodes, degree):
         latency =  latency_fn(num_nodes, degree)
-        print(self.pretty_print.load_color_fmt(latency, "For " + self.pretty_print.magnitude_fmt(num_nodes) + " the average latency is " + ("%.3f" % latency) + " s"))
+        print(self.pretty_print.load_color_fmt(latency, "For " + self.pretty_print.magnitude_fmt(num_nodes) + " the average latency is " + ("%.5f" % latency) + " s"))
 
 
     def print_latency(self, latency_fn, average_node_degree, explore=True):
@@ -231,7 +251,8 @@ class Analysis(Config):
         return self.shards_per_node * load_per_node_per_shard
 
     def load_case1(self, n_users):
-        return self.msg_size * self.msgphr * n_users
+        return self.peruser_message_load * n_users
+        #return  self.msg_size *self.msgphr * n_users
 
     def print_load_case1(self):
         print("")
@@ -243,7 +264,8 @@ class Analysis(Config):
 
     # Case 2 :: single shard, (n*d)/2 messages
     def load_case2(self, n_users):
-        return self.msg_size * self.msgphr * self.num_edges_dregular()
+        return self.peruser_message_load * self.num_edges(self.network_type, self.fanout)
+        #return self.msg_size * self.msgphr * self.num_edges(self.network_type, self.fanout)
 
     def print_load_case2(self, explore=True):
         print("")
@@ -253,9 +275,25 @@ class Analysis(Config):
         print("")
         print("------------------------------------------------------------")
 
+    def load_case2point1(self, n_users):
+        print(f"case 2.1 {self.num_nodes, n_users, self.num_edges(self.network_type, self.fanout)}")
+        return self.peruser_message__load * n_users\
+                * self.num_edges(self.network_type, self.fanout)
+        #return self.msg_size * self.msgphr * n_users\
+        #        * self.num_edges(self.network_type, self.fanout)
+
+    def print_load_case2point1(self, explore=True):
+        print("")
+        self.pretty_print.print_header("Load case 2.1 (received load per node)")
+        self.print_assumptions1(["a5", "a7", "a31"])
+        self.print_usage(self.load_case2point1, self.num_nodes, explore)
+        print("")
+        print("------------------------------------------------------------")
+
     # Case 3 :: single shard n*(d-1) messages
     def load_case3(self, n_users):
-        return self.msg_size * self.msgphr * n_users * (self.d_lazy-1)
+        return self.peruser_message_load * n_users * (self.d-1)
+        #return self.msg_size * self.msgphr * n_users * (self.d-1)
 
     def print_load_case3(self):
         print("")
@@ -267,13 +305,17 @@ class Analysis(Config):
 
     # Case 4:single shard n*(d-1) messages, gossip
     def load_case4(self, n_users):
-        messages_received_per_hour =  self.msgphr * n_users * (self.d_lazy-1) # see case 3
-        messages_load =  self.msg_size * messages_received_per_hour
-        num_ihave = messages_received_per_hour * self.d_lazy * self.gossip_window_size
+        msgsphr = 0
+        for k, v in self.messages.items():
+            msgsphr += self.messages[k][0]
+        num_msgsphour =  msgsphr * n_users * (self.d-1) # see case 3
+        #messages_load =  self.msg_size * num_msgsphour
+        messages_load =  self.peruser_message_load * n_users * (self.d-1)
+        num_ihave = num_msgsphour * self.d_lazy * self.gossip_window_size
         ihave_load  = num_ihave * self.gossip_msg_size
-        gossip_response_load  = (num_ihave * (self.gossip_msg_size + self.msg_size)) * self.gossip2reply_ratio # reply load contains both an IWANT (from requester to sender), and the actual wanted message (from sender to requester)
+        gossip_response_load  = (num_ihave * (self.gossip_msg_size + self.avg_msg_size)) * self.gossip2reply_ratio  # reply load contains both an IWANT (from requester to sender), and the actual wanted message (from sender to requester)
         gossip_total = ihave_load + gossip_response_load
-
+        #print(f"bandwidth {(messages_load,  gossip_total,self.d, self.d_lazy)} = {messages_load + gossip_total}")
         return messages_load + gossip_total
 
     def print_load_case4(self, explore=True):
@@ -281,6 +323,33 @@ class Analysis(Config):
         self.pretty_print.print_header("Load case 4 (received load per node incl. gossip)")
         self.print_assumptions1(["a6", "a7", "a32", "a33"])
         self.print_usage(self.load_case4, self.num_nodes, explore=explore)
+        print("")
+        print("------------------------------------------------------------")
+
+
+    def load_case5(self, n_users):
+        nedges = self.num_edges(self.network_type, self.fanout)
+        nedges_regular = self.num_edges(networkType.REGULAR.value, 6)
+        edge_diff = nedges - nedges_regular
+
+        eager_fraction = 1 if self.d_lazy <= 0 or edge_diff <= 0 else nedges_regular / nedges
+        lazy_fraction = 1 - eager_fraction
+
+        eager_edges, lazy_edges = nedges * eager_fraction , nedges * lazy_fraction
+
+        #print(f"{(nedges, nedges_regular)} = {eager_fraction, lazy_fraction} {self.gossip2reply_ratio}")
+        total_load =  eager_edges * self.msgphr * n_users * self.msg_size \
+                      + lazy_edges * 60 * self.gossip_window_size \
+                            * (self.gossip_msg_size + self.gossip2reply_ratio * self.msg_size)
+        #print(f"{n_users} users = {total_load}, {eager_edges * self.msgphr * n_users * self.msg_size}")
+        return total_load
+
+
+    def print_load_case5(self, explore=True):
+        print("")
+        self.pretty_print.print_header("Load case 5 (received load per node incl. gossip)")
+        self.print_assumptions1(["a6", "a7", "a32", "a33"])
+        self.print_usage(self.load_case5, self.num_nodes, explore=explore)
         print("")
         print("------------------------------------------------------------")
 
@@ -344,8 +413,11 @@ class Analysis(Config):
             self.print_load_sharding_case2()
             self.print_load_sharding_case3()
         else:
+            #self.print_load_case2(explore=explore)
+            self.print_load_case2point1(explore=explore)
             self.print_load_case4(explore=explore)
-            self.print_latency_case1(explore=explore)
+            self.print_load_case5(explore=explore)
+            #self.print_latency_case1(explore=explore)
 
     def plot_load(self):
         plt.clf() # clear current plot
@@ -431,33 +503,31 @@ class Analysis(Config):
         self.plot_load()
         self.plot_load_sharding()
 
-    def num_edges_dregular(self):
+    def num_edges(self, network_type, fanout):
         # we assume and even d; d-regular graphs with both where both n and d are odd don't exist
-        num_edges = self.num_nodes * (self.fanout/2)
-        if self.network_type == networkType.REGULAR.value:
+        num_edges = self.num_nodes * fanout/2
+        if network_type == networkType.REGULAR:
             return num_edges
-        elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
+        elif network_type == networkType.NEWMANWATTSSTROGATZ:
             # NEWMANWATTSSTROGATZ starts as a regular graph
             #   0. rewire random edged
             #   1. add additional ~ \beta * num_nodes*degree/2 edges to shorten the paths
             #       # \beta used = 0.5
             # this is a relatively tight estimate
-            return num_edges + 0.5 * self.num_nodes * (self.fanout/2)
+            return num_edges + 0.5 * self.num_nodes * fanout/2
         else:
-            log.error(f'num_edges_dregular: Unknown network type {self.network_type}')
+            log.error(f'num_edges: Unknown network type {network_type.value}')
             sys.exit(0)
 
     def avg_node_distance_upper_bound(self):
-        if self.network_type == networkType.REGULAR.value:
-            # TODO: this needs checking.
-            #   1) these are RANDOM regular graphs, the actual bound might be higher!
+        if self.network_type == networkType.REGULAR:
             return math.log(self.num_nodes, self.fanout)
-        elif self.network_type == networkType.NEWMANWATTSSTROGATZ.value:
+        elif self.network_type == networkType.NEWMANWATTSSTROGATZ:
             # NEWMANWATTSSTROGATZ is small world and random
             # a tighter estimate
             return 2*math.log(self.num_nodes/self.fanout, self.fanout)
         else:
-            log.error(f'Unknown network type {self.network_type}')
+            log.error(f'avg_node_distance: Unknown network type {self.network_type}')
             sys.exit(0)
 
 def _sanity_check(fname, keys, ftype=Keys.JSON):
@@ -493,10 +563,10 @@ def wakurtosis(ctx: typer.Context, config_file: Path,
     num_nodes = wakurtosis_json["gennet"]["num_nodes"]
     fanout = wakurtosis_json["gennet"]["fanout"]
     network_type = wakurtosis_json["gennet"]["network_type"]
-    #msg_size = (wakurtosis_json["wls"]["min_packet_size"] +
-    #                            wakurtosis_json["wls"]["max_packet_size"])/(2*1024*1024)
-    msg_size = truncnorm.mean(wakurtosis_json["wls"]["min_packet_size"],
-                                wakurtosis_json["wls"]["max_packet_size"])/(1024*1024)
+    msg_size = 1.5 * (wakurtosis_json["wls"]["min_packet_size"] +
+                                wakurtosis_json["wls"]["max_packet_size"])/(2*1024*1024)
+    #msg_size = truncnorm.mean(wakurtosis_json["wls"]["min_packet_size"],
+    #                            wakurtosis_json["wls"]["max_packet_size"])/(1024*1024)
     msgpsec = wakurtosis_json["wls"]["message_rate"]/wakurtosis_json["gennet"]["num_nodes"]
 
     analysis = Analysis(**{ "num_nodes" : num_nodes,
@@ -518,8 +588,9 @@ def batch(ctx: typer.Context, batch_file: Path):
     runs = batch_json[Keys.BATCH][Keys.RUNS]
     for r in runs:
         run = runs[r]
+        run["per_hop_delay"] = 0.010
         if not per_node:
-            run["msgpsec"] = run["msgpsec"]/run["num_nodes"]
+            run["msgpsec"] = run["msgpsec"] / run["num_nodes"]
         analysis = Analysis(**run)
         analysis.run(explore=explore)
     print(f'batch: done')
@@ -537,12 +608,14 @@ def cli(ctx: typer.Context,
              help="Set the arity"),
          network_type: networkType = typer.Option(networkType.REGULAR.value,
              help="Set the network type"),
-         msg_size: float = typer.Option(2,
-             help="Set message size in KBytes"),
-         msgpsec: float = typer.Option(0.083,
-             help="Set message rate per second on a shard/topic"),
-         gossip_msg_size: float = typer.Option(0.05,
-             help="Set gossip message size in KBytes"),
+         msgs: str = typer.Argument("{\"topic1\" : [0.002, 5] }",
+             callback=ast.literal_eval, help="Set the node type distribution"),
+         #msg_size: float = typer.Option(0.002,
+         #    help="Set message size in MBytes"),
+         #msgphr: float = typer.Option(5,
+         #    help="Set message rate per hour on a shard/topic"),
+         gossip_msg_size: float = typer.Option(0.00005,
+             help="Set gossip message size in MBytes"),
          gossip_window_size: int = typer.Option(3,
              help="Set gossip history window size"),
          gossip2reply_ratio: float = typer.Option(0.01,
@@ -556,13 +629,21 @@ def cli(ctx: typer.Context,
          explore : bool = typer.Option(True,
              help="Explore or not to explore")):
 
-    analysis = Analysis(num_nodes, fanout, network_type,
-                        msg_size, msgpsec, per_hop_delay,
-                        **{"gossip_msg_size" : gossip_msg_size,
-                        "gossip_window_size":gossip_window_size,
-                        "gossip2reply_ratio":gossip2reply_ratio,
-                        "nodes_per_shard":nodes_per_shard,
-                        "shards_per_node":shards_per_node})
+    for k, v in msgs.items():
+        msgs[k][1] = msgs[k][1]/(60*60)
+    analysis = Analysis(**{ "num_nodes" : num_nodes,
+                            "fanout" : fanout,
+                            "network_type" : network_type,
+                            "messages" : msgs,
+                            #"msgs" : f'{\"msg1\" : { \"msg_size\" : {msg_size}
+                            #"msg_size" : msg_size,
+                            #"msgpsec" : msgphr/(60*60),
+                            "per_hop_delay" : 0.1, # TODO: pick from wakurtosis
+                            "gossip_msg_size" : gossip_msg_size,
+                            "gossip_window_size":gossip_window_size,
+                            "gossip2reply_ratio":gossip2reply_ratio,
+                            "nodes_per_shard":nodes_per_shard,
+                            "shards_per_node":shards_per_node})
     analysis.run(explore=explore)
     print("cli: done")
 
@@ -573,7 +654,7 @@ if __name__ == "__main__":
 # general / topology
 average_node_degree = 6  # has to be even
 message_size = 0.002 # in MB (Mega Bytes)
-self.msgphr = 5 # ona a single pubsub topic / shard
+self.msgphr = 5 # on a a single pubsub topic / shard / per node
 
 # gossip
 self.gossip_msg_size = 0.00005 # 50Bytes in MB (see https://github.com/libp2p/specs/pull/413#discussion_r1018821589 )
