@@ -32,9 +32,11 @@ class Keys:
     BATCH   =   "batch"
     RUNS    =   "runs"
     EXPLORE =   "explore"
-    PER_NODE =   "per_node"
+    PER_NODE =  "per_node"
     BMARK   =   "benchmark"
     OPREFIX =   "out"
+#    MSGPHR  =   "msgphr"
+#    SIZE    =   "size"
 
 
 # Util and format functions
@@ -96,7 +98,7 @@ class Config:
     def __init__(self,
             num_nodes=4, fanout=6,
             network_type=networkType.REGULAR.value,
-            messages="{\"topic1\" : [0.002, 5] }",
+            messages='{\"topic1\":{\"size\":0.002,\"msgpsec\":0.001389}}',
             #_size=0.002, msgpsec=0.00139,
             per_hop_delay=0.001,
             gossip_msg_size=0.002, gossip_window_size=3, gossip2reply_ratio=0.01,
@@ -120,12 +122,14 @@ class Config:
         self.shards_per_node = shards_per_node          # avg number of shards a node is part of
 
         # secondary parameters, derived from primary
-        msg_size = 0
+        msg_size_sum, self.peruser_message_load, self.total_msgphr = 0, 0, 0
         for k, v in self.messages.items():
-            self.messages[k][1] = self.messages[k][1]*60*60
-            msg_size += self.messages[k][0]
-            self.peruser_message_load = self.messages[k][0]*self.messages[k][1]
-        self.avg_msg_size = msg_size / len(self.messages)
+            m = self.messages[k]
+            m["msgphr"] = m["msgpsec"]*60*60
+            msg_size_sum += m["size"]
+            self.peruser_message_load += m["msgphr"]*m["size"]
+            self.total_msgphr += m["msgphr"]
+        self.avg_msg_size = msg_size_sum / len(self.messages)
 
         '''
         self.msgphr = msgpsec*60*60                     # msgs per hour derived from msgpsec
@@ -264,7 +268,7 @@ class Analysis(Config):
 
     # Case 2 :: single shard, (n*d)/2 messages
     def load_case2(self, n_users):
-        return self.peruser_message_load * self.num_edges(self.network_type, self.fanout)
+        return self.peruser_message_load * self.num_edges(self.network_type.value, self.fanout)
         #return self.msg_size * self.msgphr * self.num_edges(self.network_type, self.fanout)
 
     def print_load_case2(self, explore=True):
@@ -278,7 +282,7 @@ class Analysis(Config):
     def load_case2point1(self, n_users):
         print(f"case 2.1 {self.num_nodes, n_users, self.num_edges(self.network_type, self.fanout)}")
         return self.peruser_message__load * n_users\
-                * self.num_edges(self.network_type, self.fanout)
+                * self.num_edges(self.network_type.value, self.fanout)
         #return self.msg_size * self.msgphr * n_users\
         #        * self.num_edges(self.network_type, self.fanout)
 
@@ -305,10 +309,7 @@ class Analysis(Config):
 
     # Case 4:single shard n*(d-1) messages, gossip
     def load_case4(self, n_users):
-        msgsphr = 0
-        for k, v in self.messages.items():
-            msgsphr += self.messages[k][0]
-        num_msgsphour =  msgsphr * n_users * (self.d-1) # see case 3
+        num_msgsphour =  self.total_msgphr * n_users * (self.d-1) # see case 3
         #messages_load =  self.msg_size * num_msgsphour
         messages_load =  self.peruser_message_load * n_users * (self.d-1)
         num_ihave = num_msgsphour * self.d_lazy * self.gossip_window_size
@@ -328,7 +329,7 @@ class Analysis(Config):
 
 
     def load_case5(self, n_users):
-        nedges = self.num_edges(self.network_type, self.fanout)
+        nedges = self.num_edges(self.network_type.value, self.fanout)
         nedges_regular = self.num_edges(networkType.REGULAR.value, 6)
         edge_diff = nedges - nedges_regular
 
@@ -506,9 +507,9 @@ class Analysis(Config):
     def num_edges(self, network_type, fanout):
         # we assume and even d; d-regular graphs with both where both n and d are odd don't exist
         num_edges = self.num_nodes * fanout/2
-        if network_type == networkType.REGULAR:
+        if network_type == networkType.REGULAR.value:
             return num_edges
-        elif network_type == networkType.NEWMANWATTSSTROGATZ:
+        elif network_type == networkType.NEWMANWATTSSTROGATZ.value:
             # NEWMANWATTSSTROGATZ starts as a regular graph
             #   0. rewire random edged
             #   1. add additional ~ \beta * num_nodes*degree/2 edges to shorten the paths
@@ -520,9 +521,9 @@ class Analysis(Config):
             sys.exit(0)
 
     def avg_node_distance_upper_bound(self):
-        if self.network_type == networkType.REGULAR:
+        if self.network_type.value == networkType.REGULAR.value:
             return math.log(self.num_nodes, self.fanout)
-        elif self.network_type == networkType.NEWMANWATTSSTROGATZ:
+        elif self.network_type.value == networkType.NEWMANWATTSSTROGATZ:
             # NEWMANWATTSSTROGATZ is small world and random
             # a tighter estimate
             return 2*math.log(self.num_nodes/self.fanout, self.fanout)
@@ -608,12 +609,12 @@ def cli(ctx: typer.Context,
              help="Set the arity"),
          network_type: networkType = typer.Option(networkType.REGULAR.value,
              help="Set the network type"),
-         msgs: str = typer.Argument("{\"topic1\" : [0.002, 5] }",
-             callback=ast.literal_eval, help="Set the node type distribution"),
+         messages: str = typer.Argument("{\"topic1\":{\"size\":0.002,\"msgpsec\":0.001389}}",
+             callback=ast.literal_eval, help="Topics traffic spec"),
          #msg_size: float = typer.Option(0.002,
          #    help="Set message size in MBytes"),
-         #msgphr: float = typer.Option(5,
-         #    help="Set message rate per hour on a shard/topic"),
+         #msgphr: float = typer.Option(0.001389,
+         #    help="Set message rate per second on a shard/topic"),
          gossip_msg_size: float = typer.Option(0.00005,
              help="Set gossip message size in MBytes"),
          gossip_window_size: int = typer.Option(3,
@@ -629,12 +630,10 @@ def cli(ctx: typer.Context,
          explore : bool = typer.Option(True,
              help="Explore or not to explore")):
 
-    for k, v in msgs.items():
-        msgs[k][1] = msgs[k][1]/(60*60)
     analysis = Analysis(**{ "num_nodes" : num_nodes,
                             "fanout" : fanout,
                             "network_type" : network_type,
-                            "messages" : msgs,
+                            "messages" : messages,
                             #"msgs" : f'{\"msg1\" : { \"msg_size\" : {msg_size}
                             #"msg_size" : msg_size,
                             #"msgpsec" : msgphr/(60*60),
