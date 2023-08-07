@@ -123,6 +123,7 @@ class Config:
 
         # secondary parameters, derived from primary
         msg_size_sum, self.peruser_message_load, self.total_msgphr = 0, 0, 0
+        print(messages)
         for k, v in self.messages.items():
             m = self.messages[k]
             m["msgphr"] = m["msgpsec"]*60*60
@@ -281,7 +282,7 @@ class Analysis(Config):
 
     def load_case2point1(self, n_users):
         print(f"case 2.1 {self.num_nodes, n_users, self.num_edges(self.network_type, self.fanout)}")
-        return self.peruser_message__load * n_users\
+        return self.peruser_message_load * n_users\
                 * self.num_edges(self.network_type, self.fanout)
         #return self.msg_size * self.msgphr * n_users\
         #        * self.num_edges(self.network_type, self.fanout)
@@ -339,7 +340,7 @@ class Analysis(Config):
         eager_edges, lazy_edges = nedges * eager_fraction , nedges * lazy_fraction
 
         #print(f"{(nedges, nedges_regular)} = {eager_fraction, lazy_fraction} {self.gossip2reply_ratio}")
-        total_load =  eager_edges * n_users * self.peruser_msg_load \
+        total_load =  eager_edges * n_users * self.peruser_message_load \
                       + lazy_edges * 60 * self.gossip_window_size \
                             * (self.gossip_msg_size + self.gossip2reply_ratio * self.avg_msg_size)
         #print(f"{n_users} users = {total_load}, {eager_edges * self.msgphr * n_users * self.msg_size}")
@@ -592,7 +593,8 @@ def batch(ctx: typer.Context, batch_file: Path):
         run = runs[r]
         run["per_hop_delay"] = 0.010
         if not per_node:
-            run["msgpsec"] = run["msgpsec"] / run["num_nodes"]
+            for k, v in run["messages"].items():
+                run["messages"][k]["msgpsec"] = run["messages"][k]["msgpsec"] / run["num_nodes"]
         analysis = Analysis(**run)
         analysis.run(explore=explore)
     print(f'batch: done')
