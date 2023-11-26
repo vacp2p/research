@@ -5,31 +5,102 @@
     "benchmark": false,
     "explore": false,
     "per_node": false,
+
+
     "fixed_overhead_list" : ["organization_id","clock", "name", "description", "magnet_uri", "permissions", "chats", "organization_identity", "encryption_key", "ChatIdentity_fields"],
     "fixed_overhead" : 10,
-    "runs" : {
-      "run-0": {
-        "TODO" : ["get num_nodes",
-                  "get fanout, d, d_lazy",
-                  "get network type",
-                  "get communities numbers and size",
-                  "get per_hop_delay",
-                  "get channel numbers and size ",
-                  "get message sizes as fn of community size",
+
+
+    "num_nodes" : 100,
+    "fanout" : 6,
+    "network_type" : "regular",
+    "per_hop_delay" : 0.010,
+    "gossip_msg_size" : 0.002,
+    "gossip_window_size" : 3,
+    "gossip2reply_ratio" : 0.01,
+    "nodes_per_shard" : 10000,
+    "shards_per_node" : 3,
+
+
+    "communities": {"comm1": { "size" : 30, "attr":"comm1"}},
+    "channels": {"chan1": {"size" : 1, "attr": "chan1"}},
+
+
+    "TODO" : [    "right granularity?",
+                  "compute varsize here or in the code?",
+                  "get fleet num_nodes",
+                  "get fleet fanout, d, d_lazy",
+                  "get fleet network type",
+                  "get fleet per_hop_delay",
+                  "get fleet communities numbers and size",
+                  "get fleet channel numbers and size ",
+                  "parse fleet message sizes as fn of community size",
                   "add support for multiple communities"],
-        "num_nodes" : 75,
-        "fanout" : 3,
-        "network_type" : "newmanwattsstrogatz",
-        "communities" : { "com1" : {"size" : 100, "attr": "addr1"}},
-        "channels" : {"chan1" : {"size" : 100, "attr": "chan1"}},
-        "messages" : {
-           "MEMBERSHIP_UPDATE_MESSAGE" : {"fixedsize":  0.6543, "varsize" : 1, "mgspsec" :0.0298264},
-           "COMMUNITY_DESCRIPTION" : {"size" :0.337891, "msgpsec" : 0.00027777},
-           "BACKUP" : {"size" : 0.03222656, "msgpsec" : 0.0001111111},
-           "COMMUNITY_REQUEST_TO_JOIN_RESPONSE" : {"size" : 0.0234375, "msgpsec" : 0.00002314814814814814},
-           "SYNC_PROFILE_PICTURE" : {"size" : 0.018644333, "msgpsec" : "0.00005787037"}
-        }
-      }
+
+
+    "messages" : {
+           "MEMBERSHIP_UPDATE_MESSAGE" :
+                      {"fixedsize":  0.06480, "varsize" : 0, "msgpsec" : 0.029826},
+           "COMMUNITY_DESCRIPTION" :
+                      {"fixedsize":  0.337890, "varsize" : 0, "msgpsec" : 0.0002778},
+           "BACKUP" :
+                      {"fixedsize":  0.0322265, "varsize" : 0, "msgpsec" : 0.000694},
+           "COMMUNITY_REQUEST_TO_JOIN_RESPONSE" :
+                      {"fixedsize":  0.0234375, "varsize" : 0, "msgpsec" : 0.000023},
+           "SYNC_PROFILE_PICTURE" :
+                      {"fixedsize": 0.018644 , "varsize" : 0, "msgpsec" : 0.0000579},
+
+
+          "CONTACT_CODE_ADVERTISEMENT" :
+                      {"fixedsize":  0.00706, "varsize" : 0, "msgpsec" : 0},
+          "CHAT_IDENTITY" :
+                      {"fixedsize":  0.00582, "varsize" : 0, "msgpsec" : 0},
+          "CHAT_MESSAGE" :
+                      {"fixedsize":  0.00445, "varsize" : 0, "msgpsec" : 0},
+          "SYNC_INSTALLATION_COMMUNITY" :
+                      {"fixedsize": 0.00343, "varsize" : 0, "msgpsec" : 0},
+          "CONTACT_UPDATE" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "EDIT_MESSAGE" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "ACCEPT_CONTACT_REQUEST" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "SYNC_CHAT_MESSAGES_READ" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "SYNC_INSTALLATION_CONTACT" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "RETRACT_CONTACT_REQUEST" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "SYNC_ACTIVITY_CENTER_READ" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "REQUEST_CONTACT_VERIFICATION" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "SYNC_CHAT_REMOVED" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "SYNC_CONTACT_REQUEST_DECISION" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "DELETE_MESSAGE" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "COMMUNITY_ARCHIVE_MAGNETLINK" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "EMOJI_REACTION" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "PIN_MESSAGE" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "PAIR_INSTALLATION" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "STATUS_UPDATE" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "PUSH_NOTIFICATION_QUERY" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "COMMUNITY_REQUEST_TO_JOIN" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "COMMUNITY_CANCEL_REQUEST_TO_JOIN" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "COMMUNITY_REQUEST_TO_LEAVE" :
+                      {"fixedsize": 0.00188, "varsize" : 0, "msgpsec" : 0},
+          "UNKNOWN"  :
+                      {"fixedsize": 0.03134, "varsize" : 0, "msgpsec" : 0}
     }
   }
 }
