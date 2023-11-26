@@ -36,6 +36,7 @@ class Keys:
     BMARK   =   "benchmark"
     OPREFIX =   "out"
     STATUS  =   "status"
+    MSGS    =   "messages"
 #    MSGPHR  =   "msgphr"
 #    SIZE    =   "size"
 
@@ -124,7 +125,6 @@ class WakuConfig:
 
         # secondary parameters, derived from primary
         msg_size_sum, self.peruser_message_load, self.total_msgphr = 0, 0, 0
-        print(messages)
         for k, v in self.messages.items():
             m = self.messages[k]
             m["msgphr"] = m["msgpsec"]*60*60
@@ -145,9 +145,9 @@ class WakuConfig:
         # Assumption strings (general/topology)
         self.Assumptions = {
            # "a1"  :  "- A01. Message size (static): " + self.pretty_print.sizeof_fmt_kb(self.msg_size),
-            "a1"  :  "- A01. Message size (static): " +  str(self.messages),
+            "a1"  :  "- A01. Message size (static): " +  str(self.avg_msg_size),
             #"a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " + str(self.msgphr),
-            "a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " +  str(self.messages),
+            "a2"  : "- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): " +  str(self.total_msgphr),
             "a3"  : "- A03. The network topology is a d-regular graph of degree (static): " + str(int(self.d)),
             "a4"  : "- A04. Messages outside of Waku Relay are not considered, e.g. store messages.",
             "a5"  : "- A05. Messages are only sent once along an edge. (requires delays before sending)",
@@ -218,7 +218,7 @@ class WakuConfig:
 
 
 
-# LibP2P Analysis performs the runs. It creates a Config object and runs the analysis on it
+# WakuAnalysis performs the runs. It creates a Config object and runs the analysis on it
 class WakuAnalysis(WakuConfig):
     # accept variable number of parameters with missing values set to defaults
     def __init__(self, **kwargs):
@@ -260,7 +260,7 @@ class WakuAnalysis(WakuConfig):
         return self.peruser_message_load * n_users
         #return  self.msg_size *self.msgphr * n_users
 
-    def print_load_case1(self):
+    def print_load_case1(self, explore=False):
         print("")
         self.pretty_print.print_header("Load case 1 (store load; corresponds to received load per naive light node)")
         self.print_assumptions1(["a7", "a21"])
@@ -301,7 +301,7 @@ class WakuAnalysis(WakuConfig):
         return self.peruser_message_load * n_users * (self.d-1)
         #return self.msg_size * self.msgphr * n_users * (self.d-1)
 
-    def print_load_case3(self):
+    def print_load_case3(self, explore=False):
         print("")
         self.pretty_print.print_header("Load case 3 (received load per node)")
         self.print_assumptions1(["a6", "a7", "a31"])
@@ -416,11 +416,13 @@ class WakuAnalysis(WakuConfig):
             self.print_load_sharding_case2()
             self.print_load_sharding_case3()
         else:
-            #self.print_load_case2(explore=explore)
+            self.print_load_case1(explore=explore)
+            self.print_load_case2(explore=explore)
             self.print_load_case2point1(explore=explore)
+            self.print_load_case3(explore=explore)
             self.print_load_case4(explore=explore)
             self.print_load_case5(explore=explore)
-            #self.print_latency_case1(explore=explore)
+            self.print_latency_case1(explore=explore)
 
     def plot_load(self):
         plt.clf() # clear current plot
@@ -594,8 +596,8 @@ def batch(ctx: typer.Context, batch_file: Path):
         run = runs[r]
         run["per_hop_delay"] = 0.010
         if not per_node:
-            for k, v in run["messages"].items():
-                run["messages"][k]["msgpsec"] = run["messages"][k]["msgpsec"] / run["num_nodes"]
+            for topic in run["messages"].items():
+                run["messages"][topic]["msgpsec"] = run["messages"][topic]["msgpsec"] / run["num_nodes"]
         analysis = WakuAnalysis(**run)
         analysis.run(explore=explore)
     print(f'batch: done')
@@ -651,23 +653,31 @@ def cli(ctx: typer.Context,
     print("cli: done")
 
 
-
 @app.command()
 def status(ctx: typer.Context, status_config: Path):
     status_json = _sanity_check(status_config, [ Keys.STATUS ], Keys.JSON)
-    explore  = batch_json[Keys.STATUS][Keys.EXPLORE]
-    per_node = batch_json[Keys.STATUS][Keys.PER_NODE]
-    runs = batch_json[Keys.STATUS][Keys.RUNS]
-    for r in runs:
-        run = runs[r]
-        run["per_hop_delay"] = 0.010
-        if not per_node:
-            for k, v in run["messages"].items():
-                run["messages"][k]["msgpsec"] = run["messages"][k]["msgpsec"] / run["num_nodes"]
-        # how to parameterise
-        analysis = WakuAnalysis(**run)
-        analysis.run(explore=explore)
-    print(f'batch: done')
+    sjson = status_json[Keys.STATUS]
+    explore, per_node, run  = sjson[Keys.EXPLORE], sjson[Keys.PER_NODE], {}
+
+    # override the defaults if set
+    keys =  ["network_type", "per_hop_delay",  "gossip_msg_size", "gossip_window_size", "gossip2reply_ratio", "nodes_per_shard", "shards_per_node"]
+    run = {k: sjson[k] for k in keys}
+
+    # set the mandatory fields
+    run["num_nodes"]  = sjson["num_nodes"]
+    run["fanout"] = sjson["fanout"]
+
+    # extract the control message size and frequency
+    run["messages"] = {}
+    for topic, msg in status_json[Keys.STATUS][Keys.MSGS].items():
+        run["messages"][topic] = {}
+        run["messages"][topic]["size"] = \
+                                        sjson["communities"]["comm1"]["size"] * msg["varsize"] + \
+                                        msg["fixedsize"]
+        run["messages"][topic]["msgpsec"] = msg["msgpsec"]
+    analysis = WakuAnalysis(**run)
+    analysis.run(explore=explore)
+    print(f'status: done')
 
 
 if __name__ == "__main__":
