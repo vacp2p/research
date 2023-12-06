@@ -1,0 +1,133 @@
+{
+  "batch": {
+    "prng_seed": 1,
+    "oprefix": "analysis_output",
+    "benchmark": false,
+    "explore": false,
+    "per_node": false,
+    "cases" : ["case1", "case2point1"],
+    "runs" : {
+      "run-0": {
+        "num_nodes" : 75,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-1": {
+        "num_nodes" : 100,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+     "run-2": {
+        "num_nodes" : 200,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+     "run-3": {
+        "num_nodes" : 300,
+
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+     "run-4": {
+        "num_nodes" : 400,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-5": {
+        "num_nodes" : 500,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-6": {
+        "num_nodes" : 600,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-7": {
+        "num_nodes" : 700,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-8": {
+        "num_nodes" : 800,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-9": {
+        "num_nodes" : 900,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-10": {
+        "num_nodes" : 1000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-20": {
+        "num_nodes" : 2000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-30": {
+        "num_nodes" : 3000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-40": {
+        "num_nodes" : 4000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-50": {
+        "num_nodes" : 5000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+      "run-60": {
+        "num_nodes" : 6000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-70": {
+        "num_nodes" : 7000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-80": {
+        "num_nodes" : 8000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-90": {
+        "num_nodes" : 9000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       },
+       "run-100": {
+        "num_nodes" : 10000,
+        "fanout" : 3,
+        "network_type" : "newmanwattsstrogatz",
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}}
+       }
+    }
+  }
+}
