@@ -5,7 +5,7 @@
     "benchmark": false,
     "explore": false,
     "per_node": false,
-
+    "cases" : ["case1", "case2point1"],
 
     "fixed_overhead_list" : ["organization_id","clock", "name", "description", "magnet_uri", "permissions", "chats", "organization_identity", "encryption_key", "ChatIdentity_fields"],
     "fixed_overhead" : 10,

@@ -5,39 +5,36 @@
     "benchmark": false,
     "explore": false,
     "per_node": true,
+    "cases" : ["case1", "case2point1"],
 
     "runs" : {
       "run-0": {
-        "num_nodes" : 4,
+        "num_nodes" : 5,
         "fanout" : 6,
         "network_type" : "regular",
-        "msg_size" : 2,
-        "msgpsec" : 0.00139,
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}},
         "per_hop_delay" : 100,
         "gossip_msg_size" : 0.002,
         "gossip_window_size" : 3,
         "gossip2reply_ratio" : 0.01,
         "nodes_per_shard" : 10000,
-        "shards_per_node" : 3,
-        "num_nodes": 5
+        "shards_per_node" : 3
        },
     "run-1": {
-        "num_nodes" : 4,
-        "fanout" : 6,
+        "num_nodes" : 50,
+        "fanout" : 7,
         "network_type" : "regular",
-        "msg_size" : 2,
-        "msgpsec" : 0.00139,
+        "messages" : { "topic1" : {"size" : 0.0007153, "msgpsec" : 100}},
         "per_hop_delay" : 100,
         "gossip_msg_size" : 0.002,
         "gossip_window_size" : 3,
         "gossip2reply_ratio" : 0.01,
         "nodes_per_shard" : 10000,
-        "shards_per_node" : 3,
-        "num_nodes": 5
+        "shards_per_node" : 3
     },
     "run-2": {
         "num_nodes" : 100,
-        "fanout" : 6
+        "fanout" : 8
        }
     }
   }
