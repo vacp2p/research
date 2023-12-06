@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 
 import sys
-import json, ast
+import json, ast, csv
 import typer
 import logging as log
 
@@ -39,9 +39,20 @@ class Keys:
     MSGS    =   "messages"
     MBPHR   =   "MBphr"
     SECS    =   "Secs"
-#    MSGPHR  =   "msgphr"
+    CASES   =   "cases"
 #    SIZE    =   "size"
 
+
+class caseType(Enum):
+    CASE1 = "case1"
+    CASE2 = "case2"
+    CASE2POINT1 = "case2point1"
+    CASE3 = "case3"
+    CASE4 = "case4"
+    CASE5 = "case5"
+    SHARDINGCASE1 =  "sharding_case1"
+    SHARDINGCASE2 = "sharding_case2"
+    SHARDINGCASE3  =       "sharding_case3"
 
 # WakuConfig holds the data for the individual runs. Every analysis instance is a Config instance
 class WakuConfig:
@@ -130,16 +141,24 @@ class WakuConfig:
         }
         self.load = -1
         self.latency = -1
+        self.case = ""
         #self.display_config()
 
     # display the Config
     def display_config(self):
+        print(f'WakuConfig(Config = {self.num_nodes}, {self.fanout},  {self.d}, '
+              f'{self.d_lazy}, {self.network_type}, messages={str(self.messages)}, '
+              f'{self.gossip_msg_size} MBytes, {self.gossip_window_size}, '
+              f' {self.gossip2reply_ratio}, {self.nodes_per_shard}, {self.shards_per_node}, '
+              f' {self.per_hop_delay} secs), {self.case}, {self.latency} secs, {self.load} MBytes')
+        """
         print(f'Config = {self.num_nodes}, {self.fanout} -> {(self.d, self.d_lazy)}, {self.network_type}, '
               #f'{self.msg_size}MBytes, {self.msgpsec}/sec({self.msgphr}/hr), '
               f'messages={str(self.messages)}, '
-              f'{self.gossip_msg_size}MBytes, {self.gossip_window_size}, {self.gossip2reply_ratio},'
-              f' {self.nodes_per_shard}, {self.shards_per_node}, {self.per_hop_delay}secs, '
-              f' {self.load}, {self.latency}')
+              f'{self.gossip_msg_size}MBytes, {self.gossip_window_size}, {self.gossip2reply_ratio}, '
+              f'{self.nodes_per_shard}, {self.shards_per_node}, {self.per_hop_delay}secs, '
+              f'{self.case}, {self.latency}, {self.load}')
+        """
 
 
     # Print assumptions : with a base set
@@ -166,20 +185,19 @@ class WakuConfig:
                 sys.exit(0)
         print("")
 
-
     def __repr__(self):
-        return (f'WakuConfig(Config = {self.num_nodes}, {self.fanout} -> {(self.d, self.d_lazy)}, {self.network_type}, '
-              f'messages={str(self.messages)}, '
-              f'{self.gossip_msg_size}MBytes, {self.gossip_window_size}, {self.gossip2reply_ratio}, '
-              f'{self.nodes_per_shard}, {self.shards_per_node}, {self.per_hop_delay}secs), '
-              f'{self.load}, {self.delay}')
+        return (f'WakuConfig(Config = {self.num_nodes}, {self.fanout},  {self.d}, '
+              f'{self.d_lazy}, {self.network_type}, messages={str(self.messages)}, '
+              f'{self.gossip_msg_size} MBytes, {self.gossip_window_size}, '
+              f' {self.gossip2reply_ratio}, {self.nodes_per_shard}, {self.shards_per_node}, '
+              f' {self.per_hop_delay} secs), {self.case}, {self.latency} secs, {self.load} MBytes')
               #f'{self.msg_size}MBytes, {self.msgpsec}/sec({self.msgphr}/hr), '
 
     def __iter__(self):
         return iter([self.num_nodes, self.fanout, self.d, self.d_lazy, self.network_type,
                         str(self.messages), self.gossip_msg_size, self.gossip_window_size,
                         self.gossip2reply_ratio, self.nodes_per_shard, self.shards_per_node,
-                        self.per_hop_delay, self.load, self.delay])
+                        self.per_hop_delay, self.case, self.load, self.latency])
 
 
 
@@ -279,55 +297,58 @@ class WakuAnalysis(WakuConfig):
         WakuConfig.__init__(self, **kwargs)
          # add  unit (mbps, sec etc), [good, bad, ugly]
         self.cases = {
-                "case1"     :   (load_case1,        ["a7", "a21"], Keys.MBPHR),
-                "case2"     :   (load_case2,        ["a5", "a7", "a31"], Keys.MBPHR),
-                "case2point1"   :   (load_case2point1,  ["a5", "a7", "a31"], Keys.MBPHR),
-                "case3"     :   (load_case3,        ["a6", "a7", "a31"], Keys.MBPHR),
-                "case4"     :   (load_case4,        ["a6", "a7", "a32", "a33"], Keys.MBPHR),
-                "case5"     :   (load_case5,        ["a6", "a7", "a32", "a33"], Keys.MBPHR),
+                caseType.CASE1     :   (load_case1,        ["a7", "a21"], Keys.MBPHR),
+                caseType.CASE2     :   (load_case2,        ["a5", "a7", "a31"], Keys.MBPHR),
+                caseType.CASE2POINT1   :   (load_case2point1,  ["a5", "a7", "a31"], Keys.MBPHR),
+                caseType.CASE3     :   (load_case3,        ["a6", "a7", "a31"], Keys.MBPHR),
+                caseType.CASE4     :   (load_case4,        ["a6", "a7", "a32", "a33"], Keys.MBPHR),
+                caseType.CASE5     :   (load_case5,        ["a6", "a7", "a32", "a33"], Keys.MBPHR),
 
-                "sharding_case1" : (load_sharding_case1, ["a6", "a8", "a9", "a10", "a11", "a32", "a33"], Keys.MBPHR),
-                "sharding_case2" : (load_sharding_case2, ["a6", "a8", "a9", "a10", "a11", "a12", "a13", "a14", "a32", "a33"], Keys.MBPHR),
-                "sharding_case3" : (load_sharding_case3, ["a6", "a8", "a9", "a10", "a15", "a32", "a33"]),
+                caseType.SHARDINGCASE1 : (load_sharding_case1, ["a6", "a8", "a9", "a10", "a11", "a32", "a33"], Keys.MBPHR),
+                caseType.SHARDINGCASE2 : (load_sharding_case2, ["a6", "a8", "a9", "a10", "a11", "a12", "a13", "a14", "a32", "a33"], Keys.MBPHR),
+                caseType.SHARDINGCASE3 : (load_sharding_case3, ["a6", "a8", "a9", "a10", "a15", "a32", "a33"]),
 
 #                "latency_case1" : (latency_case1,   ["a3", "a41", "a42"], Keys.SECS)
                 }
 
+    def conditional_display(self, num_nodes, output, writer):
+        if output:
+            tmp = self.num_nodes
+            self.num_nodes = num_nodes
+            self.display_config()
+            self.num_nodes = tmp
+            writer.writerow(self)
 
-    def print_load(self, num_nodes, case):
-        self.latency = self.cases[case][0](self, num_nodes)
-        tmp = self.num_nodes
-        self.num_nodes = num_nodes
-        self.display_config()
-        self.num_nodes = tmp
+    def print_load(self, num_nodes, case, writer, output=True):
+        self.load = self.cases[caseType(case)][0](self, num_nodes)
+        self.conditional_display(num_nodes, output, writer)
 
-    def print_latency(self, num_nodes, average_node_degree):
+    def print_latency(self, num_nodes, average_node_degree, writer, output=False):
         self.latency = latency_case1(self, num_nodes, average_node_degree)
-        tmp = self.num_nodes
-        self.num_nodes = num_nodes
-        self.display_config()
-        self.num_nodes = tmp
+        self.conditional_display(num_nodes, output, writer)
 
-    def compute_latency(self, average_node_degree, explore=True):
+    def compute_latency(self, average_node_degree, explore, writer):
         if explore:
-            self.print_latency(100, average_node_degree)
-            self.print_latency(1000, average_node_degree)
-            self.print_latency(1000 * 10, average_node_degree)
+            self.print_latency(100, average_node_degree, writer)
+            self.print_latency(1000, average_node_degree, writer)
+            self.print_latency(1000 * 10, average_node_degree, writer)
         else:
-            self.print_latency(self.num_nodes, average_node_degree)
+            self.print_latency(self.num_nodes, average_node_degree, writer)
 
-    def compute_load(self, explore=True, case="case2point1"):
+    def compute_load(self, case, explore, writer):
         if explore :
             for case in self.cases:
-                self.print_load(100, case)
-                self.print_load(1000, case)
-                self.print_load(1000 * 10, case)
+                self.print_load(100, case, writer)
+                self.print_load(1000, case, writer)
+                self.print_load(1000 * 10, case, writer)
         else:
-            self.print_load(self.num_nodes, case)
+            self.print_load(self.num_nodes, case, writer)
 
-    def run(self, explore=True, case="case2point1"):
-        self.compute_load(explore, case)
-        self.compute_latency(self.fanout, explore)
+    def run(self, writer, explore=False, cases=[caseType.CASE2POINT1.value]):
+        for case in cases:
+            self.case = case
+            self.compute_latency(self.fanout, explore, writer)
+            self.compute_load(case, explore, writer)
 
     def plot_load(self):
         plt.clf() # clear current plot
@@ -463,23 +484,31 @@ def wakurtosis(ctx: typer.Context, config_file: Path,
                             "per_hop_delay" : 0.1 # TODO: pick from wakurtosis
                             })
 
-    analysis.run(explore=explore)
+    analysis.run(explore=explore, case="case2point1")
     print(f'kurtosis: done')
 
 @app.command()
-def batch(ctx: typer.Context, batch_file: Path):
+def batch(ctx: typer.Context,
+        batch_file: Path,
+        output_csv : Path = typer.Option("batch-output.csv",
+        help="Set the output CSV file")):
     batch_json = _sanity_check(batch_file, [ Keys.BATCH ], Keys.JSON)
     explore  = batch_json[Keys.BATCH][Keys.EXPLORE]
     per_node = batch_json[Keys.BATCH][Keys.PER_NODE]
     runs = batch_json[Keys.BATCH][Keys.RUNS]
-    for r in runs:
-        run = runs[r]
-        run["per_hop_delay"] = 0.010
-        if not per_node:
-            for topic, msg in run[Keys.MSGS].items():
-                run[Keys.MSGS][topic]["msgpsec"] = run[Keys.MSGS][topic]["msgpsec"] / run["num_nodes"]
-        analysis = WakuAnalysis(**run)
-        analysis.run(explore=explore)
+    cases = batch_json[Keys.BATCH][Keys.CASES]
+
+    with open(output_csv, "w") as stream:
+        writer = csv.writer(stream)
+        for r in runs:
+            run = runs[r]
+            run["per_hop_delay"] = 0.010
+            if not per_node:
+                for topic, msg in run[Keys.MSGS].items():
+                    run[Keys.MSGS][topic]["msgpsec"] = \
+                            run[Keys.MSGS][topic]["msgpsec"] / run["num_nodes"]
+            analysis = WakuAnalysis(**run)
+            analysis.run(cases=cases, explore=explore, writer=writer)
     print(f'batch: done')
 
 @app.command()
@@ -497,10 +526,8 @@ def cli(ctx: typer.Context,
              help="Set the network type"),
          messages: str = typer.Argument("{\"topic1\":{\"size\":0.002,\"msgpsec\":0.001389}}",
              callback=ast.literal_eval, help="Topics traffic spec"),
-         #msg_size: float = typer.Option(0.002,
-         #    help="Set message size in MBytes"),
-         #msgphr: float = typer.Option(0.001389,
-         #    help="Set message rate per second on a shard/topic"),
+         case: caseType = typer.Option(caseType.CASE2POINT1.value,
+             help="Set the case type"),
          gossip_msg_size: float = typer.Option(0.00005,
              help="Set gossip message size in MBytes"),
          gossip_window_size: int = typer.Option(3,
@@ -534,9 +561,13 @@ def cli(ctx: typer.Context,
 
 
 @app.command()
-def status(ctx: typer.Context, status_config: Path):
+def status(ctx: typer.Context,
+            status_config: Path,
+            output_csv : Path = typer.Option("status-output.csv",
+             help="Set the output CSV file")):
     status_json = _sanity_check(status_config, [ Keys.STATUS ], Keys.JSON)
     sjson = status_json[Keys.STATUS]
+    cases = status_json[Keys.STATUS][Keys.CASES]
     explore, per_node, run  = sjson[Keys.EXPLORE], sjson[Keys.PER_NODE], {}
 
     # override the defaults if set
@@ -552,11 +583,13 @@ def status(ctx: typer.Context, status_config: Path):
     for topic, msg in status_json[Keys.STATUS][Keys.MSGS].items():
         run["messages"][topic] = {}
         run["messages"][topic]["size"] = \
-                                        sjson["communities"]["comm1"]["size"] * msg["varsize"] + \
-                                        msg["fixedsize"]
+                                    sjson["communities"]["comm1"]["size"] * msg["varsize"] + \
+                                    msg["fixedsize"]
         run["messages"][topic]["msgpsec"] = msg["msgpsec"]
-    analysis = WakuAnalysis(**run)
-    analysis.run(explore=explore)
+    with open(output_csv, "w") as stream:
+        writer = csv.writer(stream)
+        analysis = WakuAnalysis(**run)
+        analysis.run(cases=cases, explore=explore, writer=writer)
     print(f'status: done')
 
 
