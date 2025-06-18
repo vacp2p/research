@@ -13,6 +13,7 @@ from cases import (
     Case2,
     Case3,
     Case4,
+    Case5,
     LatencyCase1,
     ShardingCase1,
     ShardingCase2,
@@ -36,6 +37,7 @@ cases: List[Case] = [
     Case2(),
     Case3(),
     Case4(),
+    Case5(),
     ShardingCase1(),
     ShardingCase2(),
     ShardingCase3(),
@@ -86,7 +88,7 @@ def plot_load(caption: str, cases: List[Case], file_path: str):
 
 plot_load(
     caption="Plot 1: single shard.",
-    cases=[Case1(), Case2(), Case3(), Case4()],
+    cases=[Case1(), Case2(), Case3(), Case4(), Case5()],
     file_path="waku_scaling_single_shard_plot.png",
 )
 
