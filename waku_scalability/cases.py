@@ -21,12 +21,18 @@ from assumptions import (
     a13,
     a14,
     a15,
+    a16,
+    a17,
     a21,
     a31,
     a32,
     a33,
     a41,
     a42,
+    a34,
+    a35,
+    a36,
+    a37,
 )
 
 from assumptions import (
@@ -40,6 +46,11 @@ from assumptions import (
     avg_nodes_per_shard,
     avg_shards_per_node,
     average_delay_per_hop,
+    ratio_of_big_messages,
+    idontwant_message_size,
+    big_message_size,
+    small_message_size,
+    idontwant_too_late,
 )
 
 from utils import load_color_fmt, magnitude_fmt, get_header, sizeof_fmt
@@ -237,6 +248,64 @@ class Case4(Case):
     @property
     def assumptions(self):
         return [a1, a2, a3, a4, a6, a7, a32, a33]
+
+
+# Case 5:single shard n*(d-1) messages, IDONTWANT
+class Case5(Case):
+    label: str = "case 5"
+    legend: str = (
+        "Case 5. top: 6-regular;  receive load per node, incl. IDONTWANT without IHAVE/IWANT"
+    )
+
+    def load(self, n_users, **kwargs):
+        # Of all messages in the graph, the ratio of relayed messages from another node
+        # Derived from the fact that "per-node messages" = xd - x, where x = messages_sent_per_hour.
+        portion_not_originator = (average_node_degree - 1) / average_node_degree
+
+        # Of the messages a node sees, the ratio of seeing for the first time.
+        # Let d = average_node_degree
+        # For each `d` entrances to the node,
+        # we first see the message through edge 1
+        # then we see message from the other `d - 1` edges.
+        portion_seen_first = 1 / average_node_degree
+
+        # Start per-node calculations.
+        total_small_messages = (
+            messages_sent_per_hour
+            * average_node_degree
+            * (1 - ratio_of_big_messages)
+            * portion_not_originator
+        )
+        total_big_messages = (
+            messages_sent_per_hour
+            * average_node_degree
+            * ratio_of_big_messages
+            * portion_not_originator
+        )
+        num_big_seen_first = total_big_messages * portion_seen_first
+        # Number of messages (per node) which come after the first seen message of its type.
+        # In other words: count(2nd, 3rd, 4th... instance of a big message).
+        num_big_after = total_big_messages * (1 - portion_seen_first)
+        # Not all of the above messages come into existence (see `idontwant_too_late`).
+        num_big_seen_after = num_big_after * idontwant_too_late
+
+        # Factor in message sizes.
+        small_message_load = small_message_size * total_small_messages
+        big_message_load = big_message_size * (num_big_seen_first + num_big_seen_after)
+
+        # End of per-node calculations. Factor in `n_users`.
+        dontwant_load = n_users * num_big_seen_first * idontwant_message_size
+        messages_load = n_users * (big_message_load + small_message_load)
+
+        return messages_load + dontwant_load
+
+    @property
+    def header(self) -> str:
+        return "Load case 5 (received load per node with IDONTWANT messages)"
+
+    @property
+    def assumptions(self):
+        return [a1, a2, a3, a4, a6, a7, a16, a17, a34, a35, a36, a37]
 
 
 # sharding case 1: multi shard, n*(d-1) messages, gossip
