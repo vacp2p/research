@@ -11,7 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: micnncim/action-label-syncer@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           manifest: .github/labels.yml
+        repository: ${{ RESEARCH_LABEL_SYNC_REPOS }}
+        token: ${{ secrets.SYNC_LABELS_PAT }}
+
