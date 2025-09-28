@@ -68,7 +68,7 @@ a15 = "- A15. Naive light node. Requests all messages in shards that have (large
 a21 = "- A21. Store nodes do not store duplicate messages."
 
 # Assumption strings (gossip)
-a31 = "- A21. Gossip is not considered."
+a31 = "- A31. Gossip is not considered."
 a32 = "- A32. Gossip message size (IHAVE/IWANT) (static):" + sizeof_fmt_kb(gossip_message_size)
 a33 = "- A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):" + str(avg_ratio_gossip_replys)
 a34 = "- A34. Gossip message size for IDONTWANT (static): " + sizeof_fmt_kb(idontwant_message_size)

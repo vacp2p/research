@@ -169,7 +169,7 @@ class Case(ABC, BaseModel):
         )
 
 
-# Case 1 :: singe shard, unique messages, store
+# Case 1 :: single shard, unique messages, store
 class Case1(Case):
     label: str = "case 1"
     legend: str = "Case 1. top: 6-regular;  store load (also: naive light node)"
@@ -211,7 +211,7 @@ class Case3(Case):
     legend: str = "Case 3. top: 6-regular;  receive load per node, current operation"
 
     def load(self, n_users, **kwargs):
-        return message_size * messages_sent_per_hour * n_users * (average_node_degree - 1)
+        return message_size * messages_sent_per_hour * (n_users * (average_node_degree - 1) +1)
 
     @property
     def header(self) -> str:
@@ -229,13 +229,13 @@ class Case4(Case):
 
     def load(self, n_users, **kwargs):
         messages_received_per_hour = (
-            messages_sent_per_hour * n_users * (average_node_degree - 1)
+            messages_sent_per_hour * (n_users * (average_node_degree - 1) + 1)
         )  # see case 3
         messages_load = message_size * messages_received_per_hour
-        num_ihave = messages_received_per_hour * d_lazy * mcache_gossip
+        num_ihave = messages_sent_per_hour * n_users * d_lazy * mcache_gossip
         ihave_load = num_ihave * gossip_message_size
         gossip_response_load = (
-            num_ihave * (gossip_message_size + message_size)
+            num_ihave * message_size  #receive load only, IWANT load not included
         ) * avg_ratio_gossip_replys  # reply load contains both an IWANT (from requester to sender), and the actual wanted message (from sender to requester)
         gossip_total = ihave_load + gossip_response_load
 
