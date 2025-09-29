@@ -148,7 +148,7 @@ Assumptions/Simplifications:
 - A04. Messages outside of Waku Relay are not considered, e.g. store messages.
 - A05. Messages are only sent once along an edge. (requires delays before sending)
 - A07. Single shard (i.e. single pubsub mesh)
-- A21. Gossip is not considered.
+- A31. Gossip is not considered.
 
 For 100 users, receiving bandwidth is 3.0MB/hour
 For 10k users, receiving bandwidth is 300.0MB/hour
@@ -164,7 +164,7 @@ Assumptions/Simplifications:
 - A04. Messages outside of Waku Relay are not considered, e.g. store messages.
 - A06. Messages are sent to all d-1 neighbours as soon as receiving a message (current operation)
 - A07. Single shard (i.e. single pubsub mesh)
-- A21. Gossip is not considered.
+- A31. Gossip is not considered.
 
 For 100 users, receiving bandwidth is 5.0MB/hour
 For 10k users, receiving bandwidth is 500.0MB/hour
@@ -183,8 +183,29 @@ Assumptions/Simplifications:
 - A32. Gossip message size (IHAVE/IWANT) (static):0.05KB
 - A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):0.01
 
-For 100 users, receiving bandwidth is 8.2MB/hour
-For 10k users, receiving bandwidth is 817.2MB/hour
+For 100 users, receiving bandwidth is 5.6MB/hour
+For 10k users, receiving bandwidth is 563.0MB/hour
+
+------------------------------------------------------------
+
+Load case 5 (received load per node with IDONTWANT messages, excl. gossip)
+
+Assumptions/Simplifications:
+- A01. Message size (static): 2.05KB
+- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): 5
+- A03. The network topology is a d-regular graph of degree (static): 6
+- A04. Messages outside of Waku Relay are not considered, e.g. store messages.
+- A06. Messages are sent to all d-1 neighbours as soon as receiving a message (current operation)
+- A07. Single shard (i.e. single pubsub mesh)
+- A16. There exists at most one peer edge between any two nodes.
+- A17. The peer network is connected.
+- A34. Gossip message size for IDONTWANT (static): 0.05KB
+- A35. Ratio of messages that are big enough to trigger a IDONTWANT response: 0.2
+- A36. Ratio of big messages that are avoided due to IDONTWANT: 1.67
+- A37. Size of messages large enough to trigger IDONTWANT (static): 6.14KB
+
+For 100 users, receiving bandwidth is 4.0MB/hour
+For 10k users, receiving bandwidth is 400.4MB/hour
 
 ------------------------------------------------------------
 
@@ -206,9 +227,9 @@ Assumptions/Simplifications:
 - A32. Gossip message size (IHAVE/IWANT) (static):0.05KB
 - A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):0.01
 
-For 100 users, receiving bandwidth is 8.2MB/hour
-For 10k users, receiving bandwidth is 817.3MB/hour
-For  1m users, receiving bandwidth is 2451.8MB/hour
+For 100 users, receiving bandwidth is 5.7MB/hour
+For 10k users, receiving bandwidth is 563.0MB/hour
+For  1m users, receiving bandwidth is 1689.0MB/hour
 
 ------------------------------------------------------------
 
@@ -235,9 +256,9 @@ Assumptions/Simplifications:
 - A32. Gossip message size (IHAVE/IWANT) (static):0.05KB
 - A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):0.01
 
-For 100 users, receiving bandwidth is 16.3MB/hour
-For 10k users, receiving bandwidth is 1634.5MB/hour
-For  1m users, receiving bandwidth is 3269.0MB/hour
+For 100 users, receiving bandwidth is 11.3MB/hour
+For 10k users, receiving bandwidth is 1126.0MB/hour
+For  1m users, receiving bandwidth is 2252.0MB/hour
 
 ------------------------------------------------------------
 
@@ -268,10 +289,11 @@ Assumptions/Simplifications:
 - A03. The network topology is a d-regular graph of degree (static): 6
 - A41. Delay is calculated based on an upper bound of the expected distance.
 - A42. Average delay per hop (static): 0.1s.
+- A43. Average peer bandwidth (static): 30Mbps.
 
-For 100 the average latency is 0.257 s
-For 10k the average latency is 0.514 s (max with sharding)
-For  1m the average latency is 0.771 s (even in a single shard)
+For 100 the maximum latency is 0.301 s
+For 10k the maximum latency is 0.733 s (max with sharding)
+For  1m the maximum latency is 18.578  (even in a single shard)
 
 ------------------------------------------------------------
 

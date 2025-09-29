@@ -36,6 +36,9 @@ avg_shards_per_node = 3  # average number of shards a given node is part of
 # latency
 average_delay_per_hop = 0.1  # s
 
+# peer bandwidth
+average_peer_bandwidth = 30  # Mbps
+
 # TODO: load case for status control messages (note: this also introduces messages by currently online, but not active users.)
 # TODO: spread in the latency distribution (the highest 10%ish of latencies might be too high)
 
@@ -79,3 +82,4 @@ a37 = "- A37. Size of messages large enough to trigger IDONTWANT (static): " + s
 # Assumption strings (delay)
 a41 = "- A41. Delay is calculated based on an upper bound of the expected distance."
 a42 = "- A42. Average delay per hop (static): " + str(average_delay_per_hop) + "s."
+a43 = "- A43. Average peer bandwidth (static): " + str(average_peer_bandwidth) + "Mbps."
