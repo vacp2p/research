@@ -291,9 +291,9 @@ Assumptions/Simplifications:
 - A42. Average delay per hop (static): 0.1s.
 - A43. Average peer bandwidth (static): 30Mbps.
 
-For 100 the maximum latency is 0.301 s
-For 10k the maximum latency is 0.733 s (max with sharding)
-For  1m the maximum latency is 18.578  (even in a single shard)
+For 100 users, the expected network-wide dissemination time is 0.301 s
+For 10k users, the expected network-wide dissemination time is 0.733 s (max with sharding)
+For  1m users, the expected network-wide dissemination time is 18.578  (in a single shard)
 
 ------------------------------------------------------------
 
