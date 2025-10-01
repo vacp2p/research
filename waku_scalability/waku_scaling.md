@@ -117,7 +117,7 @@ which simplifies the upper bound on average duplicates received by each peer to 
 This rise indicates that larger messages can lead to more duplicates due to longer contention intervals. 
 It is essential to highlight that the impact of IWANT/IDONTWANT messages is not considered in $\bar{d}$ computations above.
 
-Latency and bandwidth properties based on out current analysis are presented below. 
+Latency and bandwidth properties based on our current analysis are presented below. 
 
 
 ## Model Calculations
