@@ -33,6 +33,7 @@ from assumptions import (
     a35,
     a36,
     a37,
+    a43,
 )
 
 from assumptions import (
@@ -51,6 +52,7 @@ from assumptions import (
     big_message_size,
     small_message_size,
     idontwant_too_late,
+    average_peer_bandwidth,
 )
 
 from utils import load_color_fmt, magnitude_fmt, get_header, sizeof_fmt
@@ -96,7 +98,7 @@ def latency_str(latency_users_fn, n_users, degree):
         latency,
         "For "
         + magnitude_fmt(n_users)
-        + " the average latency is "
+        + " the maximum latency is "
         + ("%.3f" % latency_users_fn(n_users, degree))
         + " s",
     )
@@ -169,7 +171,7 @@ class Case(ABC, BaseModel):
         )
 
 
-# Case 1 :: singe shard, unique messages, store
+# Case 1 :: single shard, unique messages, store
 class Case1(Case):
     label: str = "case 1"
     legend: str = "Case 1. top: 6-regular;  store load (also: naive light node)"
@@ -211,7 +213,7 @@ class Case3(Case):
     legend: str = "Case 3. top: 6-regular;  receive load per node, current operation"
 
     def load(self, n_users, **kwargs):
-        return message_size * messages_sent_per_hour * n_users * (average_node_degree - 1)
+        return message_size * messages_sent_per_hour * (n_users * (average_node_degree - 1) +1)
 
     @property
     def header(self) -> str:
@@ -229,13 +231,13 @@ class Case4(Case):
 
     def load(self, n_users, **kwargs):
         messages_received_per_hour = (
-            messages_sent_per_hour * n_users * (average_node_degree - 1)
+            messages_sent_per_hour * (n_users * (average_node_degree - 1) + 1)
         )  # see case 3
         messages_load = message_size * messages_received_per_hour
-        num_ihave = messages_received_per_hour * d_lazy * mcache_gossip
+        num_ihave = messages_sent_per_hour * n_users * d_lazy * mcache_gossip   # batched messages? n * heartbeat_count * (d-1)_batches * batch size?
         ihave_load = num_ihave * gossip_message_size
         gossip_response_load = (
-            num_ihave * (gossip_message_size + message_size)
+            num_ihave * message_size  #computing receive load only, IWANT load not included
         ) * avg_ratio_gossip_replys  # reply load contains both an IWANT (from requester to sender), and the actual wanted message (from sender to requester)
         gossip_total = ihave_load + gossip_response_load
 
@@ -377,7 +379,15 @@ class LatencyCase1(Case):
     legend: str = "Latency case 1. topology: 6-regular graph. No gossip"
 
     def load(self, n_users, degree):
-        return avg_node_distance_upper_bound(n_users, degree) * average_delay_per_hop
+        #ceil(log_d(n)) can provide closer approximation of longest path involved
+        longest_path = math.ceil(avg_node_distance_upper_bound(n_users, degree))
+        data_per_hour = n_users * messages_sent_per_hour * message_size
+
+        #on average, every peer make d/2 transmissions for each message
+        data_rate = (data_per_hour * (average_node_degree/2) * 8) / 3600        #Mbps
+        tx_time = longest_path * (data_rate / average_peer_bandwidth)           #sec
+        propagation_time = longest_path * average_delay_per_hop                 #sec
+        return propagation_time + tx_time
 
     @property
     def header(self) -> str:
@@ -399,4 +409,4 @@ class LatencyCase1(Case):
 
     @property
     def assumptions(self):
-        return [a3, a41, a42]
+        return [a3, a41, a42, a43]

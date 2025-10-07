@@ -50,14 +50,14 @@ Assume node A is connected to B and C, and B and C are connected to D.
 A relays a message to both B and C, both of which will relay the message to D, so D receives the message twice.
 With local routing decisions (and no additional control messages),
 the number of edges in the graph is a lower bound for the number of hop-to-hop transmissions of a single message.
-A d-regular graph has $(n * d)/2$ edges (proof [here](https://proofwiki.org/wiki/Number_of_Edges_of_Regular_Graph)).
+A d-regular graph has $\frac{(n \times d)}{2}$ edges (proof [here](https://proofwiki.org/wiki/Number_of_Edges_of_Regular_Graph)).
 
 However, there is another practical problem (thanks @Menduist for pointing this out):
 Two nodes that both just got the message might relay the message to each other before either of them registers the receipt.
 
 So, practically a message can go twice over the same edge.
-Each node actually sends the message to `d-1` peers, which leads to a duplication factor of $n * (d-1)$ hop-to-hop transmissions per message.
-Waiting before transmitting can lower this bound to somewhere between $(n * d)/2$ and $n * (d-1)$.
+Each node actually sends the message to `d-1` peers, which leads to a duplication factor of $n \times (d-1)$ hop-to-hop transmissions per message.
+Waiting before transmitting can lower this bound to somewhere between $\frac{(n \times d)}{2}$ and $n \times (d-1)$.
 
 #### gossip
 
@@ -77,11 +77,47 @@ The follow-up causes an additional load of: `(gossip_message_size + message_size
 Sharding allows to bind the maximum load a node/user is exposed to.
 Instead of scaling with the number of nodes in the network, the load scales with the number of nodes in all shards the node is part of.
 
-### Latency
+## Latency and Bandwidth Analysis
 
-In our first analysis based on an upper bound of inter-node distance in d-regular graphs, latency properties are good (see results below).
-However, this needs further investigation, especially in regards to worst case and the upper percentile etc...
-Future work comprises a latency distribution (most likely, we will focus on other parts for the scaling MVP).
+Assuming uniform link characteristics, message dissemination to full-message mesh concludes in 
+$\tau_d \approx (d \times \tau_{tx}) + \tau_p$ time, where $\tau_{tx} = \frac{S}{R}$, 
+with $S$, $R$, and $\tau_p$ being the message size, data rate, and link latency, respectively. 
+This simplifies network-wide dissemination time to $\tau_{n} \approx \tau_d \times h$, 
+with $h$ indicating the number of hops along the longest path, 
+and can be roughly estimated as $h \approx \lceil {log_d(n)} \rceil$. 
+
+During each hop, roughly $(d-1)^{x-1} \times d$ transmissions are made, 
+where $x$ represents the hop number and satisfies $1 \leq x \leq h$. 
+Publisher transmitting to a higher number of peers (floodpublish) can theoretically lower latency ($\tau_n$)
+by increasing the transmissions in each round to $(d-1)^{x-1} \times (f+d)$, 
+where $f$ represents the number of peers included in floodpublish. 
+Similarly, the use of IWANT messages can also reduce latency by enabling distant peers to promptly retrieve overdue messages. 
+However, the impact of floodpublish and IWANT messages is not considered in the latency computations above.
+
+Talking about bandwidth utilization, a network comprising $n$ peers, each with a degree $d$, 
+has a total of $\frac {n \times d}{2}$ edges (links), as every link connects two peers. 
+Assuming that a message traverses every link exactly once, 
+we get at least $\frac {n \times d}{2}$ transmissions for each message. 
+Only $n-1$ transmissions are necessary for delivering a message to all peers. 
+As a result, we get $\frac {n \times d}{2} -(n-1)$ duplicates in the network. 
+We can simplify average duplicates received by a single peer to $\bar{d}_{min} \approx \frac{D}{2}-1$. 
+Here, $\bar{d}_{min}$ represents the lower bound on average duplicates 
+because we assume that the send and receive operations are mutually exclusive. 
+This assumption requires that message transmission times (and link latencies) are so small that 
+no two peers simultaneously transmit the same message to each other.
+
+However, a large message can noticeably increase the contention interval, 
+which increases the likelihood that many peers will simultaneously transmit the same message to each other. Talking about the maximum bandwidth utilization, 
+we assume that all peers forward every received message to $d-1$ peers 
+while the original publisher sends it to $d$ peers. 
+As a result, we get $n(d-1)+1$ transmissions in the network. 
+Only $n-1$ transmissions are necessary to deliver a message to all peers. 
+Remaining $n(d-1)+1-(n-1)$ transmissions are duplicates, 
+which simplifies the upper bound on average duplicates received by each peer to $\bar{d}_{max} \approx d-2$. 
+This rise indicates that larger messages can lead to more duplicates due to longer contention intervals. 
+It is essential to highlight that the impact of IWANT/IDONTWANT messages is not considered in $\bar{d}$ computations above.
+
+Latency and bandwidth properties based on our current analysis are presented below. 
 
 
 ## Model Calculations
@@ -112,7 +148,7 @@ Assumptions/Simplifications:
 - A04. Messages outside of Waku Relay are not considered, e.g. store messages.
 - A05. Messages are only sent once along an edge. (requires delays before sending)
 - A07. Single shard (i.e. single pubsub mesh)
-- A21. Gossip is not considered.
+- A31. Gossip is not considered.
 
 For 100 users, receiving bandwidth is 3.0MB/hour
 For 10k users, receiving bandwidth is 300.0MB/hour
@@ -128,7 +164,7 @@ Assumptions/Simplifications:
 - A04. Messages outside of Waku Relay are not considered, e.g. store messages.
 - A06. Messages are sent to all d-1 neighbours as soon as receiving a message (current operation)
 - A07. Single shard (i.e. single pubsub mesh)
-- A21. Gossip is not considered.
+- A31. Gossip is not considered.
 
 For 100 users, receiving bandwidth is 5.0MB/hour
 For 10k users, receiving bandwidth is 500.0MB/hour
@@ -147,8 +183,29 @@ Assumptions/Simplifications:
 - A32. Gossip message size (IHAVE/IWANT) (static):0.05KB
 - A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):0.01
 
-For 100 users, receiving bandwidth is 8.2MB/hour
-For 10k users, receiving bandwidth is 817.2MB/hour
+For 100 users, receiving bandwidth is 5.6MB/hour
+For 10k users, receiving bandwidth is 563.0MB/hour
+
+------------------------------------------------------------
+
+Load case 5 (received load per node with IDONTWANT messages, excl. gossip)
+
+Assumptions/Simplifications:
+- A01. Message size (static): 2.05KB
+- A02. Messages sent per node per hour (static) (assuming no spam; but also no rate limiting.): 5
+- A03. The network topology is a d-regular graph of degree (static): 6
+- A04. Messages outside of Waku Relay are not considered, e.g. store messages.
+- A06. Messages are sent to all d-1 neighbours as soon as receiving a message (current operation)
+- A07. Single shard (i.e. single pubsub mesh)
+- A16. There exists at most one peer edge between any two nodes.
+- A17. The peer network is connected.
+- A34. Gossip message size for IDONTWANT (static): 0.05KB
+- A35. Ratio of messages that are big enough to trigger a IDONTWANT response: 0.2
+- A36. Ratio of big messages that are avoided due to IDONTWANT: 1.67
+- A37. Size of messages large enough to trigger IDONTWANT (static): 6.14KB
+
+For 100 users, receiving bandwidth is 4.0MB/hour
+For 10k users, receiving bandwidth is 400.4MB/hour
 
 ------------------------------------------------------------
 
@@ -170,9 +227,9 @@ Assumptions/Simplifications:
 - A32. Gossip message size (IHAVE/IWANT) (static):0.05KB
 - A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):0.01
 
-For 100 users, receiving bandwidth is 8.2MB/hour
-For 10k users, receiving bandwidth is 817.3MB/hour
-For  1m users, receiving bandwidth is 2451.8MB/hour
+For 100 users, receiving bandwidth is 5.7MB/hour
+For 10k users, receiving bandwidth is 563.0MB/hour
+For  1m users, receiving bandwidth is 1689.0MB/hour
 
 ------------------------------------------------------------
 
@@ -199,9 +256,9 @@ Assumptions/Simplifications:
 - A32. Gossip message size (IHAVE/IWANT) (static):0.05KB
 - A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):0.01
 
-For 100 users, receiving bandwidth is 16.3MB/hour
-For 10k users, receiving bandwidth is 1634.5MB/hour
-For  1m users, receiving bandwidth is 3269.0MB/hour
+For 100 users, receiving bandwidth is 11.3MB/hour
+For 10k users, receiving bandwidth is 1126.0MB/hour
+For  1m users, receiving bandwidth is 2252.0MB/hour
 
 ------------------------------------------------------------
 
@@ -232,10 +289,11 @@ Assumptions/Simplifications:
 - A03. The network topology is a d-regular graph of degree (static): 6
 - A41. Delay is calculated based on an upper bound of the expected distance.
 - A42. Average delay per hop (static): 0.1s.
+- A43. Average peer bandwidth (static): 30Mbps.
 
-For 100 the average latency is 0.257 s
-For 10k the average latency is 0.514 s (max with sharding)
-For  1m the average latency is 0.771 s (even in a single shard)
+For 100 users, the expected network-wide dissemination time is 0.301 s
+For 10k users, the expected network-wide dissemination time is 0.733 s (max with sharding)
+For  1m users, the expected network-wide dissemination time is 18.578  (in a single shard)
 
 ------------------------------------------------------------
 

@@ -36,6 +36,9 @@ avg_shards_per_node = 3  # average number of shards a given node is part of
 # latency
 average_delay_per_hop = 0.1  # s
 
+# peer bandwidth
+average_peer_bandwidth = 30  # Mbps
+
 # TODO: load case for status control messages (note: this also introduces messages by currently online, but not active users.)
 # TODO: spread in the latency distribution (the highest 10%ish of latencies might be too high)
 
@@ -68,7 +71,7 @@ a15 = "- A15. Naive light node. Requests all messages in shards that have (large
 a21 = "- A21. Store nodes do not store duplicate messages."
 
 # Assumption strings (gossip)
-a31 = "- A21. Gossip is not considered."
+a31 = "- A31. Gossip is not considered."
 a32 = "- A32. Gossip message size (IHAVE/IWANT) (static):" + sizeof_fmt_kb(gossip_message_size)
 a33 = "- A33. Ratio of IHAVEs followed-up by an IWANT (incl. the actual requested message):" + str(avg_ratio_gossip_replys)
 a34 = "- A34. Gossip message size for IDONTWANT (static): " + sizeof_fmt_kb(idontwant_message_size)
@@ -79,3 +82,4 @@ a37 = "- A37. Size of messages large enough to trigger IDONTWANT (static): " + s
 # Assumption strings (delay)
 a41 = "- A41. Delay is calculated based on an upper bound of the expected distance."
 a42 = "- A42. Average delay per hop (static): " + str(average_delay_per_hop) + "s."
+a43 = "- A43. Average peer bandwidth (static): " + str(average_peer_bandwidth) + "Mbps."
