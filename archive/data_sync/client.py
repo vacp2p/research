@@ -35,7 +35,7 @@ class TestClient():
         self.client_id = "0xdeadbeef"
 
 
-    # NOTE: Client should decide policy, implict group
+    # NOTE: Client should decide policy, implicit group
 #    a.share("B")
 #    b.share("A")
 
